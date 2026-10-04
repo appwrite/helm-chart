@@ -42,6 +42,10 @@ PASSTHROUGH = {
     "extraInitContainers": OBJECT_LIST,
     "extraContainers": OBJECT_LIST,
     "extraObjects": {"type": "array"},
+    # networkPolicy peers and rules
+    "from": OBJECT_LIST,
+    "dns": OBJECT_LIST,
+    "extraRules": OBJECT_LIST,
 }
 
 

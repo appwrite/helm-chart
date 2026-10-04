@@ -239,6 +239,11 @@ helm uninstall appwrite --namespace appwrite
 | image.repository | string | `"appwrite/appwrite"` | Image repository. |
 | image.tag | string | `""` | Image tag. Defaults to the chart appVersion. |
 | nameOverride | string | `""` | Override the chart name used in resource names. |
+| networkPolicy.egress.dns | list | `[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]` | DNS servers to allow (NetworkPolicyPeer) when egress is restricted. |
+| networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor and other external services. |
+| networkPolicy.egress.extraRules | list | `[]` | Extra egress rules (NetworkPolicyEgressRule) when egress is restricted. |
+| networkPolicy.enabled | bool | `false` | Create NetworkPolicies. They only take effect with a CNI that enforces them. |
+| networkPolicy.ingress.from | list | `[]` | Sources (NetworkPolicyPeer) allowed to reach the API, console and realtime, typically your ingress controller or Gateway. Empty allows any source. Pods of this release can always reach them. |
 | persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. Use ReadWriteMany (or S3 storage) to spread API and worker pods across nodes. |
 | persistence.annotations | object | `{}` | Annotations for the PersistentVolumeClaim. |
 | persistence.colocateReadWriteOnce | bool | `true` | With a ReadWriteOnce volume, schedule every pod that mounts it on the same node so the volume can be attached. |

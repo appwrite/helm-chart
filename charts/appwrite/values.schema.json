@@ -1285,6 +1285,53 @@
       "description": "Override the chart name used in resource names.",
       "type": "string"
     },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "egress": {
+          "type": "object",
+          "properties": {
+            "dns": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "DNS servers to allow (NetworkPolicyPeer) when egress is restricted."
+            },
+            "enabled": {
+              "description": "Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor and other external services.",
+              "type": "boolean"
+            },
+            "extraRules": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Extra egress rules (NetworkPolicyEgressRule) when egress is restricted."
+            }
+          },
+          "additionalProperties": false
+        },
+        "enabled": {
+          "description": "Create NetworkPolicies. They only take effect with a CNI that enforces them.",
+          "type": "boolean"
+        },
+        "ingress": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Sources (NetworkPolicyPeer) allowed to reach the API, console and realtime, typically your ingress controller or Gateway. Empty allows any source. Pods of this release can always reach them."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "persistence": {
       "type": "object",
       "properties": {

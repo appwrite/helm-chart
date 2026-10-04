@@ -1,0 +1,90 @@
+suite: NetworkPolicies
+templates:
+  - templates/networkpolicy/edge.yaml
+  - templates/networkpolicy/internal.yaml
+  - templates/networkpolicy/datastores.yaml
+  - templates/networkpolicy/background.yaml
+  - templates/networkpolicy/egress.yaml
+release:
+  name: aw
+  namespace: appwrite
+values:
+  - values/required.yaml
+tests:
+  - it: renders nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: lets any source reach the entry points when no sources are configured
+    template: templates/networkpolicy/edge.yaml
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.podSelector.matchExpressions[0].values
+          value: [api, console, realtime]
+      - equal:
+          path: spec.ingress[0]
+          value:
+            ports:
+              - port: http
+
+  - it: restricts the entry points to the configured sources
+    template: templates/networkpolicy/edge.yaml
+    set:
+      networkPolicy.enabled: true
+      networkPolicy.ingress.from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[0].namespaceSelector.matchLabels
+          value:
+            kubernetes.io/metadata.name: ingress
+
+  - it: only lets Appwrite pods reach the datastores
+    template: templates/networkpolicy/datastores.yaml
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: appwrite
+            app.kubernetes.io/instance: aw
+            appwrite/datastore-client: "true"
+
+  - it: denies all ingress to workers and tasks
+    template: templates/networkpolicy/background.yaml
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.policyTypes
+          value: [Ingress]
+      - notExists:
+          path: spec.ingress
+
+  - it: restricts egress only when asked
+    template: templates/networkpolicy/egress.yaml
+    set:
+      networkPolicy.enabled: true
+      networkPolicy.egress.enabled: true
+      networkPolicy.egress.extraRules:
+        - to:
+            - ipBlock:
+                cidr: 0.0.0.0/0
+          ports:
+            - port: 587
+    asserts:
+      - equal:
+          path: spec.policyTypes
+          value: [Egress]
+      - lengthEqual:
+          path: spec.egress
+          count: 3
+      - equal:
+          path: spec.egress[2].ports[0].port
+          value: 587

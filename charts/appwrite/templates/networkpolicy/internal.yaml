@@ -1,0 +1,13 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- /* Internal services: only pods of this release may call them. */}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+{{ include "appwrite.networkPolicy.metadata" (dict "root" . "name" "internal") }}
+spec:
+  podSelector:
+    {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "geo")) | nindent 4 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - {{- include "appwrite.networkPolicy.releasePeer" . | nindent 10 }}
+{{- end }}

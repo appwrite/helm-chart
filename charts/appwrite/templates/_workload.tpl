@@ -37,8 +37,12 @@ Usage: include "appwrite.deployment" (dict
 {{- $extraVolumes := concat ($parent.extraVolumes | default list) ($v.extraVolumes | default list) }}
 {{- $extraVolumeMounts := concat ($parent.extraVolumeMounts | default list) ($v.extraVolumeMounts | default list) }}
 {{- $podLabels := dict }}
+{{- if .appwrite }}
+{{- /* Selects the pods NetworkPolicies let through to the datastores. */}}
+{{- $_ := set $podLabels "appwrite/datastore-client" "true" }}
+{{- end }}
 {{- if .storage }}
-{{- $_ := set $podLabels "appwrite-storage" "shared" }}
+{{- $_ := set $podLabels "appwrite/storage" "shared" }}
 {{- end }}
 {{- $podAnnotations := dict }}
 {{- if .appwrite }}

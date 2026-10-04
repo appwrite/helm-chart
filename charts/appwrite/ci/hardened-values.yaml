@@ -1,0 +1,15 @@
+# Locked-down install: NetworkPolicies on, egress restricted to DNS and the
+# release itself.
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  forceHttps: false
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+networkPolicy:
+  enabled: true
+  egress:
+    enabled: true

@@ -153,7 +153,7 @@ tests:
   - it: keeps ReadWriteOnce storage users on one node
     asserts:
       - equal:
-          path: spec.template.metadata.labels.appwrite-storage
+          path: spec.template.metadata.labels["appwrite/storage"]
           value: shared
       - equal:
           path: spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[0]
@@ -161,7 +161,7 @@ tests:
             labelSelector:
               matchLabels:
                 app.kubernetes.io/instance: aw
-                appwrite-storage: shared
+                appwrite/storage: shared
             topologyKey: kubernetes.io/hostname
 
   - it: doesn't constrain ReadWriteMany storage users

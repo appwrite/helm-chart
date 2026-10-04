@@ -1,0 +1,10 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- /* Workers and tasks serve nothing: deny all ingress. */}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+{{ include "appwrite.networkPolicy.metadata" (dict "root" . "name" "background") }}
+spec:
+  podSelector:
+    {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "worker" "scheduler" "maintenance" "interval")) | nindent 4 }}
+  policyTypes: [Ingress]
+{{- end }}

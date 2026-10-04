@@ -25,7 +25,7 @@ Usage: include "appwrite.pod.scheduling" (dict
 {{- if and .storage (include "appwrite.storage.colocate" $root) }}
 {{- /* A ReadWriteOnce volume can only be attached to one node: keep every pod that mounts it together. */}}
 {{- $term := dict
-  "labelSelector" (dict "matchLabels" (dict "app.kubernetes.io/instance" $root.Release.Name "appwrite-storage" "shared"))
+  "labelSelector" (dict "matchLabels" (dict "app.kubernetes.io/instance" $root.Release.Name "appwrite/storage" "shared"))
   "topologyKey" "kubernetes.io/hostname" }}
 {{- $podAffinity := get $affinity "podAffinity" | default dict }}
 {{- $required := get $podAffinity "requiredDuringSchedulingIgnoredDuringExecution" | default list }}

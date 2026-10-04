@@ -1,0 +1,20 @@
+suite: pod labels used by NetworkPolicies
+templates:
+  - templates/api/deployment.yaml
+  - templates/console/deployment.yaml
+release:
+  name: aw
+values:
+  - values/required.yaml
+tests:
+  - it: marks Appwrite pods as datastore clients
+    template: templates/api/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["appwrite/datastore-client"]
+          value: "true"
+  - it: doesn't mark the console
+    template: templates/console/deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels["appwrite/datastore-client"]

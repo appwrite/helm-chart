@@ -914,6 +914,28 @@ persistence:
   # same node so the volume can be attached.
   colocateReadWriteOnce: true
 
+networkPolicy:
+  # -- Create NetworkPolicies. They only take effect with a CNI that enforces them.
+  enabled: false
+  ingress:
+    # -- Sources (NetworkPolicyPeer) allowed to reach the API, console and
+    # realtime, typically your ingress controller or Gateway. Empty allows any
+    # source. Pods of this release can always reach them.
+    from: [] # @schema item: object
+  egress:
+    # -- Restrict egress to DNS, pods of this release and `extraRules`. Off by
+    # default: Appwrite calls webhooks, SMTP servers, OAuth providers, the
+    # executor and other external services.
+    enabled: false
+    # -- DNS servers to allow (NetworkPolicyPeer) when egress is restricted.
+    dns:
+      - namespaceSelector: {}
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+    # -- Extra egress rules (NetworkPolicyEgressRule) when egress is restricted.
+    extraRules: [] # @schema item: object
+
 tests:
   # -- Render `helm test` pods.
   enabled: true
