@@ -1,0 +1,30 @@
+{{- if .Values.mqtt.enabled }}
+{{- $s := .Values.mqtt.service }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "appwrite.componentName" (dict "root" . "component" "mqtt") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "mqtt") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" . "annotations" $s.annotations) | trim }}{{ . | nindent 2 }}{{ end }}
+spec:
+  type: {{ $s.type }}
+  {{- with $s.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  ports:
+    - name: mqtt
+      port: {{ $s.port }}
+      targetPort: mqtt
+      protocol: TCP
+      appProtocol: mqtt
+    - name: mqtt-ws
+      port: {{ $s.wsPort }}
+      targetPort: mqtt-ws
+      protocol: TCP
+      appProtocol: kubernetes.io/ws
+  selector:
+    {{- include "appwrite.componentSelectorLabels" (dict "root" . "component" "mqtt") | nindent 4 }}
+{{- end }}

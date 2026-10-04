@@ -1,0 +1,24 @@
+{{- if .Values.embedding.enabled }}
+{{- $v := .Values.embedding }}
+{{- $handler := dict "tcpSocket" (dict "port" "http") }}
+{{- $probes := dict "startupProbe" (dict "enabled" true "periodSeconds" 10 "failureThreshold" 90 "timeoutSeconds" 5) "readinessProbe" (dict "enabled" true "periodSeconds" 10 "timeoutSeconds" 5) "livenessProbe" (dict "enabled" true "periodSeconds" 20 "timeoutSeconds" 5 "failureThreshold" 3) }}
+{{- $models := dict "name" "models" }}
+{{- if $v.persistence.enabled }}
+{{- $_ := set $models "persistentVolumeClaim" (dict "claimName" (include "appwrite.componentName" (dict "root" . "component" "embedding"))) }}
+{{- else }}
+{{- $_ := set $models "emptyDir" dict }}
+{{- end }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "embedding"
+  "values" (merge (dict "updateStrategy" (dict "type" "Recreate")) $v)
+  "image" (include "appwrite.image" (dict "root" . "image" $v.image))
+  "pullPolicy" $v.image.pullPolicy
+  "env" (toYaml (list (dict "name" "EMBEDDING_MODELS" "value" (join "," $v.models))))
+  "ports" (list (dict "name" "http" "containerPort" 3000 "protocol" "TCP"))
+  "probes" (include "appwrite.probes" (dict "values" $probes "handler" $handler))
+  "replicas" 1
+  "volumeMounts" (toYaml (list (dict "name" "tmp" "mountPath" "/tmp") (dict "name" "models" "mountPath" "/home/embedder/models")))
+  "volumes" (toYaml (list (dict "name" "tmp" "emptyDir" dict) $models))
+) }}
+{{- end }}

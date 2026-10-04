@@ -1,0 +1,3 @@
+{{- if .Values.browser.enabled }}
+{{- include "appwrite.service" (dict "root" . "component" "browser" "service" (dict) "ports" (list (dict "name" "http" "port" 3000 "targetPort" "http" "appProtocol" "http"))) }}
+{{- end }}

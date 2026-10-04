@@ -53,6 +53,11 @@ template`, Argo CD) lookup returns nothing, so set
 {{- $_ := set $data (index . 2) ($c.password | toString | b64enc) }}
 {{- end }}
 {{- end }}
+{{- with .Values.assistant }}
+{{- if and .enabled .openaiApiKey (not .existingSecret) }}
+{{- $_ := set $data "openai-api-key" (.openaiApiKey | b64enc) }}
+{{- end }}
+{{- end }}
 {{- with .Values.appwrite.smtp }}
 {{- if and .password (not .existingSecret) }}
 {{- $_ := set $data "smtp-password" (.password | b64enc) }}

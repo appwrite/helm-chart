@@ -1,0 +1,161 @@
+suite: optional components
+templates:
+  - templates/browser/deployment.yaml
+  - templates/assistant/deployment.yaml
+  - templates/assistant/service.yaml
+  - templates/autogravity/deployment.yaml
+  - templates/embedding/deployment.yaml
+  - templates/embedding/pvc.yaml
+  - templates/mqtt/deployment.yaml
+  - templates/mqtt/service.yaml
+  - templates/configmap-env.yaml
+  - templates/api/deployment.yaml
+release:
+  name: aw
+values:
+  - values/required.yaml
+tests:
+  - it: deploys none of them by default
+    templates:
+      - templates/browser/deployment.yaml
+      - templates/assistant/deployment.yaml
+      - templates/autogravity/deployment.yaml
+      - templates/embedding/deployment.yaml
+      - templates/mqtt/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: disables embedding features without the embedding service
+    template: templates/configmap-env.yaml
+    asserts:
+      - equal:
+          path: data._APP_EMBEDDING
+          value: disabled
+      - equal:
+          path: data._APP_AUTOGRAVITY_HOST
+          value: ""
+
+  - it: wires the optional services into Appwrite
+    template: templates/configmap-env.yaml
+    set:
+      browser.enabled: true
+      autogravity.enabled: true
+      embedding.enabled: true
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_BROWSER_HOST: http://aw-appwrite-browser:3000/v1
+            _APP_AUTOGRAVITY_HOST: http://aw-appwrite-autogravity:8080
+            _APP_EMBEDDING: enabled
+            _APP_EMBEDDING_ENDPOINT: http://aw-appwrite-embedding:3000/embed
+
+  - it: gives Chromium a writable /tmp and shared memory
+    template: templates/browser/deployment.yaml
+    set:
+      browser.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: shm
+            emptyDir: {medium: Memory, sizeLimit: 256Mi}
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 999
+
+  - it: names the assistant Service as Appwrite expects
+    template: templates/assistant/service.yaml
+    set:
+      assistant.enabled: true
+      assistant.openaiApiKey: sk
+    asserts:
+      - equal:
+          path: metadata.name
+          value: appwrite-assistant
+      - equal:
+          path: spec.ports[0].port
+          value: 3003
+
+  - it: gives Appwrite the assistant key so the console shows it
+    template: templates/api/deployment.yaml
+    set:
+      assistant.enabled: true
+      assistant.existingSecret: openai
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_ASSISTANT_OPENAI_API_KEY
+            valueFrom:
+              secretKeyRef: {name: openai, key: openai-api-key}
+
+  - it: requires an OpenAI key for the assistant
+    template: templates/configmap-env.yaml
+    set:
+      assistant.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: assistant.enabled needs
+
+  - it: keeps embedding models on a volume and recreates the pod on updates
+    template: templates/embedding/deployment.yaml
+    set:
+      embedding.enabled: true
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: models
+            persistentVolumeClaim: {claimName: aw-appwrite-embedding}
+
+  - it: runs the MQTT broker with the Appwrite image
+    template: templates/mqtt/deployment.yaml
+    set:
+      mqtt.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [php, app/mqtt.php]
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+          value: mqtt
+
+  - it: exposes MQTT through a LoadBalancer when asked
+    template: templates/mqtt/service.yaml
+    set:
+      mqtt.enabled: true
+      mqtt.service.type: LoadBalancer
+      mqtt.service.loadBalancerSourceRanges: [203.0.113.0/24]
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports[0].port
+          value: 1883
+      - equal:
+          path: spec.loadBalancerSourceRanges
+          value: [203.0.113.0/24]
+
+  - it: rejects Redis ACL users with MQTT
+    template: templates/configmap-env.yaml
+    set:
+      mqtt.enabled: true
+      redis.enabled: false
+      externalRedis.host: redis.example.com
+      externalRedis.username: appwrite
+    asserts:
+      - failedTemplate:
+          errorPattern: ignores Redis ACL users
+
+  - it: gives every Appwrite container a writable home for Swoole
+    template: templates/api/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: {name: home, mountPath: /home/www-data}

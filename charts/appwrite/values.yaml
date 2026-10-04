@@ -1043,6 +1043,274 @@ geo:
   # -- Priority class. Empty inherits `defaults.priorityClassName`.
   priorityClassName: ""
 
+# Headless Chromium that renders site screenshots and the avatars
+# screenshot API. With NetworkPolicies enabled, it may only reach the
+# Appwrite API and public addresses.
+browser:
+  # -- Deploy the browser service.
+  enabled: false
+  image:
+    # -- Image registry.
+    registry: docker.io
+    # -- Image repository.
+    repository: appwrite/browser
+    # -- Image tag.
+    tag: 0.3.4
+    # -- Image digest.
+    digest: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent # @schema enum: [Always, IfNotPresent, Never]
+  # -- Number of replicas.
+  replicaCount: 1 # @schema minimum: 0
+  # -- Resource requests and limits.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+  # -- Pod security context.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    privileged: false
+    capabilities:
+      drop: [ALL]
+  # -- Pod annotations, merged over `defaults.podAnnotations`.
+  podAnnotations: {} # @schema additionalProperties: {type: string}
+  # -- Pod labels, merged over `defaults.podLabels`.
+  podLabels: {} # @schema additionalProperties: {type: string}
+  # -- Node selector. Empty inherits `defaults.nodeSelector`.
+  nodeSelector: {} # @schema additionalProperties: {type: string}
+  # -- Tolerations. Empty inherits `defaults.tolerations`.
+  tolerations: [] # @schema item: object
+  # -- Affinity. Empty inherits `defaults.affinity`.
+  affinity: {} # @schema additionalProperties: true
+  # -- Priority class. Empty inherits `defaults.priorityClassName`.
+  priorityClassName: ""
+
+# AI assistant in the console, backed by OpenAI. Appwrite reaches it at the
+# fixed address `appwrite-assistant:3003`, so its Service is named
+# `appwrite-assistant` and only one release per namespace can enable it.
+assistant:
+  # -- Deploy the assistant.
+  enabled: false
+  image:
+    # -- Image registry.
+    registry: docker.io
+    # -- Image repository.
+    repository: appwrite/assistant
+    # -- Image tag.
+    tag: 0.8.4
+    # -- Image digest.
+    digest: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent # @schema enum: [Always, IfNotPresent, Never]
+  # -- OpenAI API key (`_APP_ASSISTANT_OPENAI_API_KEY`). Ignored when `existingSecret` is set.
+  openaiApiKey: ""
+  # -- Existing Secret holding the OpenAI API key.
+  existingSecret: ""
+  # -- Key in the Secret holding the OpenAI API key.
+  secretKey: openai-api-key
+  # -- Resource requests and limits.
+  resources:
+    requests:
+      cpu: 20m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  # -- Pod security context.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    privileged: false
+    capabilities:
+      drop: [ALL]
+  # -- Pod annotations, merged over `defaults.podAnnotations`.
+  podAnnotations: {} # @schema additionalProperties: {type: string}
+  # -- Pod labels, merged over `defaults.podLabels`.
+  podLabels: {} # @schema additionalProperties: {type: string}
+  # -- Node selector. Empty inherits `defaults.nodeSelector`.
+  nodeSelector: {} # @schema additionalProperties: {type: string}
+  # -- Tolerations. Empty inherits `defaults.tolerations`.
+  tolerations: [] # @schema item: object
+  # -- Affinity. Empty inherits `defaults.affinity`.
+  affinity: {} # @schema additionalProperties: true
+  # -- Priority class. Empty inherits `defaults.priorityClassName`.
+  priorityClassName: ""
+
+# Image analysis that picks the focal point of images for smart cropping
+# (`_APP_AUTOGRAVITY_HOST`).
+autogravity:
+  # -- Deploy autogravity.
+  enabled: false
+  image:
+    # -- Image registry.
+    registry: ghcr.io
+    # -- Image repository.
+    repository: appwrite/autogravity
+    # -- Image tag.
+    tag: 0.0.11
+    # -- Image digest.
+    digest: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent # @schema enum: [Always, IfNotPresent, Never]
+  # -- Model backend (`MODEL_BACKEND`).
+  modelBackend: focalnet
+  # -- Resource requests and limits.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+  # -- Pod security context.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    privileged: false
+    capabilities:
+      drop: [ALL]
+  # -- Pod annotations, merged over `defaults.podAnnotations`.
+  podAnnotations: {} # @schema additionalProperties: {type: string}
+  # -- Pod labels, merged over `defaults.podLabels`.
+  podLabels: {} # @schema additionalProperties: {type: string}
+  # -- Node selector. Empty inherits `defaults.nodeSelector`.
+  nodeSelector: {} # @schema additionalProperties: {type: string}
+  # -- Tolerations. Empty inherits `defaults.tolerations`.
+  tolerations: [] # @schema item: object
+  # -- Affinity. Empty inherits `defaults.affinity`.
+  affinity: {} # @schema additionalProperties: true
+  # -- Priority class. Empty inherits `defaults.priorityClassName`.
+  priorityClassName: ""
+
+# Text embedding service for VectorsDB (`_APP_EMBEDDING`).
+embedding:
+  # -- Deploy the embedding service. When disabled, Appwrite's embedding features are turned off.
+  enabled: false
+  image:
+    # -- Image registry.
+    registry: docker.io
+    # -- Image repository.
+    repository: appwrite/embedding
+    # -- Image tag.
+    tag: 0.3.1
+    # -- Image digest.
+    digest: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent # @schema enum: [Always, IfNotPresent, Never]
+  # -- Models to load (`EMBEDDING_MODELS`).
+  models: [nomic-embed-text] # @schema item: string
+  # -- Resource requests and limits.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      memory: 4Gi
+  persistence:
+    # -- Keep downloaded models in a PersistentVolumeClaim.
+    enabled: true
+    # -- Storage class. Empty uses the cluster default.
+    storageClass: ""
+    # -- Volume size.
+    size: 5Gi
+  # -- Pod security context.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    privileged: false
+    capabilities:
+      drop: [ALL]
+  # -- Pod annotations, merged over `defaults.podAnnotations`.
+  podAnnotations: {} # @schema additionalProperties: {type: string}
+  # -- Pod labels, merged over `defaults.podLabels`.
+  podLabels: {} # @schema additionalProperties: {type: string}
+  # -- Node selector. Empty inherits `defaults.nodeSelector`.
+  nodeSelector: {} # @schema additionalProperties: {type: string}
+  # -- Tolerations. Empty inherits `defaults.tolerations`.
+  tolerations: [] # @schema item: object
+  # -- Affinity. Empty inherits `defaults.affinity`.
+  affinity: {} # @schema additionalProperties: true
+  # -- Priority class. Empty inherits `defaults.priorityClassName`.
+  priorityClassName: ""
+
+# MQTT broker for realtime events (`php app/mqtt.php`): plain MQTT on 1883
+# and MQTT over WebSocket on 8083. Expose it with a LoadBalancer Service and
+# terminate TLS there, or in front of it.
+mqtt:
+  # -- Deploy the MQTT broker.
+  enabled: false
+  # -- Number of replicas.
+  replicaCount: 1 # @schema minimum: 0
+  # -- CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty.
+  cpuNum: "" # @schema type: [string, integer]
+  # -- Resource requests and limits.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  service:
+    # -- Service type. Use LoadBalancer to reach MQTT from outside the cluster.
+    type: ClusterIP
+    # -- MQTT port.
+    port: 1883
+    # -- MQTT over WebSocket port.
+    wsPort: 8083
+    # -- Service annotations, e.g. for a cloud load balancer with TLS.
+    annotations: {} # @schema additionalProperties: {type: string}
+    # -- Source ranges allowed through a LoadBalancer.
+    loadBalancerSourceRanges: [] # @schema item: string
+  # -- Pod security context. Empty inherits `podSecurityContext`.
+  podSecurityContext: {} # @schema additionalProperties: true
+  # -- Container security context. Empty inherits `containerSecurityContext`.
+  containerSecurityContext: {} # @schema additionalProperties: true
+  # -- Pod annotations, merged over `defaults.podAnnotations`.
+  podAnnotations: {} # @schema additionalProperties: {type: string}
+  # -- Pod labels, merged over `defaults.podLabels`.
+  podLabels: {} # @schema additionalProperties: {type: string}
+  # -- Node selector. Empty inherits `defaults.nodeSelector`.
+  nodeSelector: {} # @schema additionalProperties: {type: string}
+  # -- Tolerations. Empty inherits `defaults.tolerations`.
+  tolerations: [] # @schema item: object
+  # -- Affinity. Empty inherits `defaults.affinity`.
+  affinity: {} # @schema additionalProperties: true
+  # -- Priority class. Empty inherits `defaults.priorityClassName`.
+  priorityClassName: ""
+
 # Built-in PostgreSQL, a single-replica StatefulSet meant for evaluation and
 # small installs. Use a managed or operator-run database in production and
 # configure it under `externalDatabase`.

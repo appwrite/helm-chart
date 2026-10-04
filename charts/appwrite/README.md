@@ -157,6 +157,56 @@ helm uninstall appwrite --namespace appwrite
 | appwrite.vectorsDb.port | int | `5432` | PostgreSQL port. |
 | appwrite.vectorsDb.username | string | `""` | User. Empty uses the main database user. |
 | appwrite.workerPerCore | int | `6` | Swoole workers per CPU in the API (`_APP_WORKER_PER_CORE`). |
+| assistant.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
+| assistant.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
+| assistant.enabled | bool | `false` | Deploy the assistant. |
+| assistant.existingSecret | string | `""` | Existing Secret holding the OpenAI API key. |
+| assistant.image.digest | string | `""` | Image digest. |
+| assistant.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| assistant.image.registry | string | `"docker.io"` | Image registry. |
+| assistant.image.repository | string | `"appwrite/assistant"` | Image repository. |
+| assistant.image.tag | string | `"0.8.4"` | Image tag. |
+| assistant.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
+| assistant.openaiApiKey | string | `""` | OpenAI API key (`_APP_ASSISTANT_OPENAI_API_KEY`). Ignored when `existingSecret` is set. |
+| assistant.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
+| assistant.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
+| assistant.podSecurityContext | object | `{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| assistant.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| assistant.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"20m","memory":"128Mi"}}` | Resource requests and limits. |
+| assistant.secretKey | string | `"openai-api-key"` | Key in the Secret holding the OpenAI API key. |
+| assistant.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
+| autogravity.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
+| autogravity.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
+| autogravity.enabled | bool | `false` | Deploy autogravity. |
+| autogravity.image.digest | string | `""` | Image digest. |
+| autogravity.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| autogravity.image.registry | string | `"ghcr.io"` | Image registry. |
+| autogravity.image.repository | string | `"appwrite/autogravity"` | Image repository. |
+| autogravity.image.tag | string | `"0.0.11"` | Image tag. |
+| autogravity.modelBackend | string | `"focalnet"` | Model backend (`MODEL_BACKEND`). |
+| autogravity.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
+| autogravity.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
+| autogravity.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
+| autogravity.podSecurityContext | object | `{"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| autogravity.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| autogravity.resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"100m","memory":"512Mi"}}` | Resource requests and limits. |
+| autogravity.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
+| browser.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
+| browser.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
+| browser.enabled | bool | `false` | Deploy the browser service. |
+| browser.image.digest | string | `""` | Image digest. |
+| browser.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| browser.image.registry | string | `"docker.io"` | Image registry. |
+| browser.image.repository | string | `"appwrite/browser"` | Image repository. |
+| browser.image.tag | string | `"0.3.4"` | Image tag. |
+| browser.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
+| browser.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
+| browser.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
+| browser.podSecurityContext | object | `{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| browser.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| browser.replicaCount | int | `1` | Number of replicas. |
+| browser.resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"100m","memory":"512Mi"}}` | Resource requests and limits. |
+| browser.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | clickhouse.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | clickhouse.auth.database | string | `"appwrite"` | Database name. |
 | clickhouse.auth.existingSecret | string | `""` | Existing Secret holding the password. |
@@ -251,6 +301,25 @@ helm uninstall appwrite --namespace appwrite
 | defaults.priorityClassName | string | `""` | Priority class for every pod. |
 | defaults.tolerations | list | `[]` | Tolerations for every pod. |
 | defaults.topologySpreadConstraints | list | `[]` | Topology spread constraints for every pod. The component's selector labels are filled in when `labelSelector` is omitted. Leave empty for a soft spread across nodes on scalable components. |
+| embedding.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
+| embedding.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
+| embedding.enabled | bool | `false` | Deploy the embedding service. When disabled, Appwrite's embedding features are turned off. |
+| embedding.image.digest | string | `""` | Image digest. |
+| embedding.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| embedding.image.registry | string | `"docker.io"` | Image registry. |
+| embedding.image.repository | string | `"appwrite/embedding"` | Image repository. |
+| embedding.image.tag | string | `"0.3.1"` | Image tag. |
+| embedding.models | list | `["nomic-embed-text"]` | Models to load (`EMBEDDING_MODELS`). |
+| embedding.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
+| embedding.persistence.enabled | bool | `true` | Keep downloaded models in a PersistentVolumeClaim. |
+| embedding.persistence.size | string | `"5Gi"` | Volume size. |
+| embedding.persistence.storageClass | string | `""` | Storage class. Empty uses the cluster default. |
+| embedding.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
+| embedding.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
+| embedding.podSecurityContext | object | `{"fsGroup":10001,"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10001,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| embedding.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| embedding.resources | object | `{"limits":{"memory":"4Gi"},"requests":{"cpu":"250m","memory":"1Gi"}}` | Resource requests and limits. |
+| embedding.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | externalClickhouse.database | string | `"appwrite"` | Database name. |
 | externalClickhouse.existingSecret | string | `""` | Existing Secret holding the password. |
 | externalClickhouse.password | string | `""` | Password. Ignored when `existingSecret` is set. Must be URL-safe, or URL-encoded, because Appwrite reads it from a connection URL. |
@@ -317,6 +386,23 @@ helm uninstall appwrite --namespace appwrite
 | ingress.wildcard.enabled | bool | `true` | Route `*.<functionsDomain>` and `*.<sitesDomain>` (function and site preview URLs) to the API. |
 | ingress.wildcard.tls.enabled | bool | `false` | Terminate TLS for the wildcard hosts. Needs a wildcard certificate, which ACME issues through DNS-01. |
 | ingress.wildcard.tls.secretName | string | `""` | Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`. |
+| mqtt.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
+| mqtt.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
+| mqtt.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |
+| mqtt.enabled | bool | `false` | Deploy the MQTT broker. |
+| mqtt.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
+| mqtt.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
+| mqtt.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
+| mqtt.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
+| mqtt.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| mqtt.replicaCount | int | `1` | Number of replicas. |
+| mqtt.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests and limits. |
+| mqtt.service.annotations | object | `{}` | Service annotations, e.g. for a cloud load balancer with TLS. |
+| mqtt.service.loadBalancerSourceRanges | list | `[]` | Source ranges allowed through a LoadBalancer. |
+| mqtt.service.port | int | `1883` | MQTT port. |
+| mqtt.service.type | string | `"ClusterIP"` | Service type. Use LoadBalancer to reach MQTT from outside the cluster. |
+| mqtt.service.wsPort | int | `8083` | MQTT over WebSocket port. |
+| mqtt.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | nameOverride | string | `""` | Override the chart name used in resource names. |
 | networkPolicy.egress.dns | list | `[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]` | DNS servers to allow (NetworkPolicyPeer) when egress is restricted. |
 | networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor and other external services. |

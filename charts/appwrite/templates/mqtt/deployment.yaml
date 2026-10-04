@@ -1,0 +1,19 @@
+{{- if .Values.mqtt.enabled }}
+{{- $v := .Values.mqtt }}
+{{- $env := include "appwrite.env" (dict "root" . "cpuNum" (include "appwrite.cpuNum" $v) "extra" (dict "_APP_MQTT_WS_PORT" "8083")) }}
+{{- $handler := dict "tcpSocket" (dict "port" "mqtt") }}
+{{- $probes := dict "startupProbe" (dict "enabled" true "periodSeconds" 5 "failureThreshold" 60 "timeoutSeconds" 5) "readinessProbe" (dict "enabled" true "periodSeconds" 10 "timeoutSeconds" 5) "livenessProbe" (dict "enabled" true "periodSeconds" 20 "timeoutSeconds" 5 "failureThreshold" 3) }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "mqtt"
+  "values" $v
+  "appwrite" true
+  "command" (list "php" "app/mqtt.php")
+  "env" $env
+  "ports" (list (dict "name" "mqtt" "containerPort" 1883 "protocol" "TCP") (dict "name" "mqtt-ws" "containerPort" 8083 "protocol" "TCP"))
+  "probes" (include "appwrite.probes" (dict "values" $probes "handler" $handler))
+  "replicas" $v.replicaCount
+  "spread" true
+  "initContainers" (include "appwrite.initContainer.waitForApi" .)
+) }}
+{{- end }}

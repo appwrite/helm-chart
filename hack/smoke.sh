@@ -46,6 +46,18 @@ echo "attribute is available"
 log "Create a document"
 call POST /databases/smoke/collections/items/documents '{"documentId":"unique()","data":{"title":"hello"}}' "$project" | jq -e '.title == "hello"' >/dev/null
 
+if kubectl -n "$NAMESPACE" get svc "${API_SERVICE%-api}-browser" >/dev/null 2>&1; then
+  log "Screenshot through the browser service"
+  shot="$API_TMP/shot.png"
+  code=$(curl -sS -o "$shot" -w '%{http_code}' -H "Host: $API_HOST" -H "X-Appwrite-Project: console" \
+    -H "X-Fallback-Cookies: $API_COOKIES" \
+    "http://127.0.0.1:$API_PORT/v1/avatars/screenshots?url=https%3A%2F%2Fexample.com&width=640&height=360")
+  if [[ "$code" != 200 || "$(head -c 4 "$shot" | tail -c 3)" != PNG ]]; then
+    fail "screenshot returned HTTP $code"
+  fi
+  echo "screenshot OK ($(wc -c < "$shot") bytes)"
+fi
+
 log "Console"
 console="${API_SERVICE%-api}-console"
 kubectl -n "$NAMESPACE" run "smoke-$(date +%s)" --rm -i --restart=Never --quiet \

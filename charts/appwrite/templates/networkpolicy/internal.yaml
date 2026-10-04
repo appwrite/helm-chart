@@ -5,7 +5,7 @@ kind: NetworkPolicy
 {{ include "appwrite.networkPolicy.metadata" (dict "root" . "name" "internal") }}
 spec:
   podSelector:
-    {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "geo")) | nindent 4 }}
+    {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "geo" "browser" "assistant" "autogravity" "embedding")) | nindent 4 }}
   policyTypes: [Ingress]
   ingress:
     - from:

@@ -88,10 +88,10 @@ kind-down: ## Delete the local kind cluster
 	kind delete cluster --name $(KIND_CLUSTER)
 
 .PHONY: install
-install: ## Install or upgrade the chart into a namespace that enforces the restricted Pod Security Standard
+install: ## Install or upgrade the chart (VALUES: space-separated values files) into a namespace enforcing the restricted Pod Security Standard
 	kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
 	kubectl label namespace $(NAMESPACE) --overwrite pod-security.kubernetes.io/enforce=restricted pod-security.kubernetes.io/warn=restricted
-	helm upgrade --install $(RELEASE) $(CHART) -n $(NAMESPACE) -f $(VALUES) --wait --timeout 15m
+	helm upgrade --install $(RELEASE) $(CHART) -n $(NAMESPACE) $(foreach f,$(VALUES),-f $(f)) --wait --timeout 15m
 
 .PHONY: helm-test
 helm-test: ## Run helm test against the installed release

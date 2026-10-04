@@ -1,0 +1,3 @@
+{{- if .Values.autogravity.enabled }}
+{{- include "appwrite.service" (dict "root" . "component" "autogravity" "service" (dict) "ports" (list (dict "name" "http" "port" 8080 "targetPort" "http" "appProtocol" "http"))) }}
+{{- end }}

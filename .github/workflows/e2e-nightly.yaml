@@ -16,7 +16,7 @@ env:
 
 jobs:
   functions:
-    name: Functions (external compute plane)
+    name: Functions and optional components
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -39,9 +39,11 @@ jobs:
             -n traefik --create-namespace -f hack/fixtures/traefik-values.yaml --wait --timeout 5m
       - name: Start the compute plane
         run: hack/compute-plane.sh "${RUNNER_TEMP}/compute-values.yaml" appwrite
-      - name: Install
-        run: make install VALUES="${RUNNER_TEMP}/compute-values.yaml"
-      - name: Smoke test
+      - name: Install with every optional component
+        run: make install VALUES="charts/appwrite/ci/full-values.yaml ${RUNNER_TEMP}/compute-values.yaml"
+      - name: helm test
+        run: make helm-test
+      - name: Smoke test (includes a screenshot through the browser service)
         run: make smoke
       - name: Functions
         run: hack/functions-smoke.sh appwrite appwrite node-22

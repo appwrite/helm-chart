@@ -48,7 +48,13 @@ the env ConfigMap. Precedence, lowest first:
   "_APP_WORKER_SCREENSHOTS_ROUTER" (printf "http://%s" $apiHost)
   "_APP_JOBS_ENDPOINT" (printf "http://%s" $apiHost)
   "_APP_GEO_ENDPOINT" (ternary (printf "http://%s/v1" (include "appwrite.componentName" (dict "root" . "component" "geo"))) "" .Values.geo.enabled)
+  "_APP_AUTOGRAVITY_HOST" (ternary (printf "http://%s:8080" (include "appwrite.componentName" (dict "root" . "component" "autogravity"))) "" .Values.autogravity.enabled)
+  "_APP_EMBEDDING" (get $enabled (.Values.embedding.enabled | toString))
+  "_APP_EMBEDDING_ENDPOINT" (printf "http://%s:3000/embed" (include "appwrite.componentName" (dict "root" . "component" "embedding")))
 }}
+{{- if .Values.browser.enabled }}
+{{- $_ := set $computed "_APP_BROWSER_HOST" (printf "http://%s:3000/v1" (include "appwrite.componentName" (dict "root" . "component" "browser"))) }}
+{{- end }}
 
 {{- /* Main database */}}
 {{- $db := include "appwrite.db" . | fromYaml }}
@@ -217,6 +223,12 @@ Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WO
 - name: _APP_JOBS_SECRET
   valueFrom:
     {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $cs.existingSecret "key" $cs.orchestratorSecretKey "defaultKey" "orchestrator-secret") | nindent 4 }}
+{{- end }}
+{{- if $v.assistant.enabled }}
+{{- /* The console shows the assistant when Appwrite has the key. */}}
+- name: _APP_ASSISTANT_OPENAI_API_KEY
+  valueFrom:
+    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $v.assistant.existingSecret "key" $v.assistant.secretKey "defaultKey" "openai-api-key") | nindent 4 }}
 {{- end }}
 {{- if or $v.appwrite.smtp.password $v.appwrite.smtp.existingSecret }}
 - name: _APP_SMTP_PASSWORD

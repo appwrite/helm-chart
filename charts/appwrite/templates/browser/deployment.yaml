@@ -1,0 +1,18 @@
+{{- if .Values.browser.enabled }}
+{{- $v := .Values.browser }}
+{{- $handler := dict "tcpSocket" (dict "port" "http") }}
+{{- $probes := dict "startupProbe" (dict "enabled" true "periodSeconds" 5 "failureThreshold" 30 "timeoutSeconds" 5) "readinessProbe" (dict "enabled" true "periodSeconds" 10 "timeoutSeconds" 5) "livenessProbe" (dict "enabled" true "periodSeconds" 20 "timeoutSeconds" 5 "failureThreshold" 3) }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "browser"
+  "values" $v
+  "image" (include "appwrite.image" (dict "root" . "image" $v.image))
+  "pullPolicy" $v.image.pullPolicy
+  "env" (toYaml (list (dict "name" "PORT" "value" "3000") (dict "name" "HOME" "value" "/tmp")))
+  "ports" (list (dict "name" "http" "containerPort" 3000 "protocol" "TCP"))
+  "probes" (include "appwrite.probes" (dict "values" $probes "handler" $handler))
+  "replicas" $v.replicaCount
+  "volumeMounts" (toYaml (list (dict "name" "tmp" "mountPath" "/tmp") (dict "name" "shm" "mountPath" "/dev/shm")))
+  "volumes" (toYaml (list (dict "name" "tmp" "emptyDir" dict) (dict "name" "shm" "emptyDir" (dict "medium" "Memory" "sizeLimit" "256Mi"))))
+) }}
+{{- end }}

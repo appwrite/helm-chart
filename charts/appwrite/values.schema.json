@@ -696,6 +696,375 @@
       },
       "additionalProperties": false
     },
+    "assistant": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the assistant.",
+          "type": "boolean"
+        },
+        "existingSecret": {
+          "description": "Existing Secret holding the OpenAI API key.",
+          "type": "string"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "openaiApiKey": {
+          "description": "OpenAI API key (`_APP_ASSISTANT_OPENAI_API_KEY`). Ignored when `existingSecret` is set.",
+          "type": "string"
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "secretKey": {
+          "description": "Key in the Secret holding the OpenAI API key.",
+          "type": "string"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "autogravity": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy autogravity.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "modelBackend": {
+          "description": "Model backend (`MODEL_BACKEND`).",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "browser": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the browser service.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "replicaCount": {
+          "description": "Number of replicas.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
     "clickhouse": {
       "type": "object",
       "properties": {
@@ -1322,6 +1691,147 @@
       },
       "additionalProperties": false
     },
+    "embedding": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the embedding service. When disabled, Appwrite's embedding features are turned off.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "models": {
+          "description": "Models to load (`EMBEDDING_MODELS`).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Keep downloaded models in a PersistentVolumeClaim.",
+              "type": "boolean"
+            },
+            "size": {
+              "description": "Volume size.",
+              "type": "string"
+            },
+            "storageClass": {
+              "description": "Storage class. Empty uses the cluster default.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
     "externalClickhouse": {
       "type": "object",
       "properties": {
@@ -1764,6 +2274,135 @@
             }
           },
           "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "mqtt": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context. Empty inherits `containerSecurityContext`."
+        },
+        "cpuNum": {
+          "description": "CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "enabled": {
+          "description": "Deploy the MQTT broker.",
+          "type": "boolean"
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. Empty inherits `podSecurityContext`."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "replicaCount": {
+          "description": "Number of replicas.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "description": "Service annotations, e.g. for a cloud load balancer with TLS.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "loadBalancerSourceRanges": {
+              "description": "Source ranges allowed through a LoadBalancer.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "port": {
+              "description": "MQTT port.",
+              "type": "integer"
+            },
+            "type": {
+              "description": "Service type. Use LoadBalancer to reach MQTT from outside the cluster.",
+              "type": "string"
+            },
+            "wsPort": {
+              "description": "MQTT over WebSocket port.",
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
         }
       },
       "additionalProperties": false

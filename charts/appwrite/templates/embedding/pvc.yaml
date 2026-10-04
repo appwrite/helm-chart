@@ -1,0 +1,19 @@
+{{- $v := .Values.embedding }}
+{{- if and $v.enabled $v.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "appwrite.componentName" (dict "root" . "component" "embedding") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "embedding") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with ($v.persistence.storageClass | default .Values.global.storageClass) }}
+  storageClassName: {{ if eq . "-" }}""{{ else }}{{ . }}{{ end }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $v.persistence.size }}
+{{- end }}

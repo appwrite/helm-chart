@@ -114,6 +114,8 @@ Usage: include "appwrite.volumes" (dict "root" $ "storage" true "certbot" true)
 {{- define "appwrite.volumes" -}}
 - name: tmp
   emptyDir: {}
+- name: home
+  emptyDir: {}
 - name: cache
   emptyDir: {}
 {{- if .storage }}
@@ -138,6 +140,9 @@ Usage: include "appwrite.volumeMounts" (dict "root" $ "storage" true "certbot" t
 {{- define "appwrite.volumeMounts" -}}
 - name: tmp
   mountPath: /tmp
+{{- /* Swoole keeps lock files for coroutine DNS lookups in $HOME/.swoole. */}}
+- name: home
+  mountPath: /home/www-data
 - name: cache
   mountPath: /storage/cache
 {{- if .storage }}

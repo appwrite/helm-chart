@@ -96,6 +96,12 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- $errors = append $errors "compute.enabled needs appwrite.storage.device=s3: the executor and orchestrator run outside the cluster and can't reach the /storage volume." }}
 {{- end }}
 {{- end }}
+{{- if and $v.assistant.enabled (not (or $v.assistant.openaiApiKey $v.assistant.existingSecret)) }}
+{{- $errors = append $errors "assistant.enabled needs assistant.openaiApiKey or assistant.existingSecret." }}
+{{- end }}
+{{- if and $v.mqtt.enabled (not $v.redis.enabled) $v.externalRedis.username }}
+{{- $errors = append $errors "mqtt.enabled doesn't work with externalRedis.username: Appwrite's MQTT server ignores Redis ACL users. Use the default user." }}
+{{- end }}
 {{- if and $v.httpRoute.enabled (not $v.httpRoute.parentRefs) }}
 {{- $errors = append $errors "httpRoute.parentRefs is required when httpRoute.enabled is true: name the Gateway to attach to." }}
 {{- end }}
