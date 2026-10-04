@@ -2,13 +2,69 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    "helpers:pinGitHubActionDigests",
+    ":dependencyDashboard"
   ],
   "labels": ["dependencies"],
   "helm-values": {
     "managerFilePatterns": ["/charts/.+/values\\.yaml$/"]
   },
+  "customManagers": [
+    {
+      "description": "Appwrite version the chart ships (Chart.yaml appVersion)",
+      "customType": "regex",
+      "managerFilePatterns": ["/charts/appwrite/Chart\\.yaml$/"],
+      "matchStrings": ["appVersion: \"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "docker.io/appwrite/appwrite",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Images listed in the artifacthub.io/images annotation, kept in step with values.yaml",
+      "customType": "regex",
+      "managerFilePatterns": ["/charts/appwrite/Chart\\.yaml$/"],
+      "matchStrings": ["image: (?<depName>[^:\\s]+):(?<currentValue>[^\\s]+)"],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Tool versions in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": ["/^Makefile$/", "/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "HELM_UNITTEST\\s*\\?=\\s*(?<currentValue>v[\\d.]+)",
+        "HELM_UNITTEST_VERSION:\\s*(?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "helm-unittest/helm-unittest",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
   "packageRules": [
+    {
+      "description": "Appwrite, its console and its services change together and need the chart reviewed against the release: group them and wait for approval",
+      "matchPackageNames": [
+        "docker.io/appwrite/appwrite",
+        "docker.io/appwrite/new",
+        "docker.io/appwrite/geo",
+        "docker.io/appwrite/browser",
+        "docker.io/appwrite/assistant",
+        "docker.io/appwrite/embedding",
+        "docker.io/appwrite/postgres",
+        "ghcr.io/appwrite/autogravity"
+      ],
+      "groupName": "appwrite",
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "The console's tags carry a -self-hosted suffix; only follow those",
+      "matchPackageNames": ["docker.io/appwrite/new"],
+      "allowedVersions": "/-self-hosted$/",
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-self-hosted$"
+    },
+    {
+      "description": "Keep datastore images on their current major version",
+      "matchPackageNames": ["docker.io/redis", "docker.io/clickhouse/clickhouse-server"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
     {
       "description": "Group GitHub Actions updates",
       "matchManagers": ["github-actions"],

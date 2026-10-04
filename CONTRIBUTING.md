@@ -25,8 +25,8 @@ Install the Helm plugins with `make tools`. It installs
    Never edit those two files by hand.
 3. Add or update unit tests under `charts/appwrite/tests/`.
 4. Run `make test`.
-5. Bump `version` in `charts/appwrite/Chart.yaml` (SemVer), add an entry to
-   `CHANGELOG.md`, and mirror it into the `artifacthub.io/changes` annotation.
+5. Add an entry under `[Unreleased]` in `CHANGELOG.md`. Releases are cut as
+   described in [RELEASING.md](RELEASING.md).
 
 Run `make help` to list every target.
 

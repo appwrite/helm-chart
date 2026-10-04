@@ -1,0 +1,50 @@
+name: Upstream drift
+
+# Opens an issue when Appwrite releases a version the chart doesn't ship yet,
+# with the environment variables that changed, so the chart can follow.
+on:
+  schedule:
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Compare with the latest Appwrite release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          current=$(yq '.appVersion' charts/appwrite/Chart.yaml)
+          latest=$(gh api repos/appwrite/appwrite/releases/latest --jq .tag_name)
+          echo "chart ships ${current}, latest Appwrite is ${latest}"
+          if [[ "$current" == "$latest" ]]; then
+            exit 0
+          fi
+          title="Appwrite ${latest} is available"
+          if gh issue list --state open --search "in:title \"${title}\"" --json number --jq '.[0].number' | grep -q .; then
+            echo "issue already open"
+            exit 0
+          fi
+          make env-defaults APP_VERSION="${latest}"
+          {
+            echo "Appwrite [${latest}](https://github.com/appwrite/appwrite/releases/tag/${latest}) is out; the chart ships ${current}."
+            echo
+            echo "Changes to the installer's environment defaults (\`files/env-defaults.yaml\`):"
+            echo
+            echo '```diff'
+            git diff --no-color -- charts/appwrite/files/env-defaults.yaml || true
+            echo '```'
+            echo
+            echo "Also compare docker-compose.yml between the two versions for new services, images and volumes:"
+            echo "https://github.com/appwrite/appwrite/compare/${current}...${latest}"
+          } > body.md
+          gh issue create --title "$title" --body-file body.md
