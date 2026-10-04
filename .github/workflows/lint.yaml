@@ -68,12 +68,12 @@ jobs:
           version: ${{ matrix.helm }}
       - name: Install helm-unittest
         run: |
-          v="${HELM_UNITTEST_VERSION#v}"
-          url="https://github.com/helm-unittest/helm-unittest/releases/download/${HELM_UNITTEST_VERSION}/unittest-${v}.tgz"
+          # Helm 4 installs the signed release archive; Helm 3 only installs from git.
           if helm version --short | grep -q '^v4'; then
-            helm plugin install "$url" --verify=false
+            v="${HELM_UNITTEST_VERSION#v}"
+            helm plugin install "https://github.com/helm-unittest/helm-unittest/releases/download/${HELM_UNITTEST_VERSION}/unittest-${v}.tgz" --verify=false
           else
-            helm plugin install "$url"
+            helm plugin install https://github.com/helm-unittest/helm-unittest --version "${HELM_UNITTEST_VERSION}"
           fi
       - name: helm unittest
         run: helm unittest --strict --output-type JUnit --output-file test-results/unittest.xml charts/appwrite
