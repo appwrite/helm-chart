@@ -1,0 +1,19 @@
+# Gateway API routing, exercised through Traefik's Gateway
+# (hack/fixtures/traefik-values.yaml).
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  forceHttps: false
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: traefik
+      namespace: traefik
+  hostnameHeaderMatch: true
+  customDomains:
+    enabled: true

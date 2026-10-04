@@ -1,0 +1,11 @@
+{{- $i := .Values.ingress }}
+{{- if and $i.enabled $i.wildcard.enabled }}
+{{- include "appwrite.ingress" (dict
+  "root" .
+  "name" "wildcard"
+  "hosts" (include "appwrite.routes.wildcardHosts" . | fromYamlArray)
+  "paths" (list (dict "path" "/" "service" "api" "port" .Values.api.service.port))
+  "annotations" $i.wildcard.annotations
+  "tls" (dict "enabled" $i.wildcard.tls.enabled "secretName" ($i.wildcard.tls.secretName | default (printf "%s-wildcard-tls" (include "appwrite.fullname" .))))
+) }}
+{{- end }}

@@ -1200,6 +1200,64 @@ persistence:
   # same node so the volume can be attached.
   colocateReadWriteOnce: true
 
+# Ingress resources for the routes Appwrite's Docker install serves through
+# Traefik. See docs/networking.md for controller-specific settings.
+ingress:
+  # -- Create Ingress resources.
+  enabled: false
+  # -- IngressClass to use. Empty uses the cluster default.
+  className: ""
+  # -- Annotations for every Ingress, e.g. a cert-manager issuer.
+  annotations: {} # @schema additionalProperties: {type: string}
+  # -- Labels for every Ingress.
+  labels: {} # @schema additionalProperties: {type: string}
+  tls:
+    # -- Terminate TLS for `appwrite.domain` and `appwrite.consoleDomain`.
+    enabled: false
+    # -- Secret with the certificate. Defaults to `<release>-tls`.
+    secretName: ""
+  wildcard:
+    # -- Route `*.<functionsDomain>` and `*.<sitesDomain>` (function and site preview URLs) to the API.
+    enabled: true
+    # -- Annotations for the wildcard Ingress, merged over `ingress.annotations`.
+    annotations: {} # @schema additionalProperties: {type: string}
+    tls:
+      # -- Terminate TLS for the wildcard hosts. Needs a wildcard certificate, which ACME issues through DNS-01.
+      enabled: false
+      # -- Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`.
+      secretName: ""
+  customDomains:
+    # -- Route every other hostname to the API, for custom domains of
+    # projects, functions and sites. Creates an Ingress rule without a host.
+    enabled: false
+    # -- Annotations for the custom-domain Ingress, merged over `ingress.annotations`.
+    annotations: {} # @schema additionalProperties: {type: string}
+
+# Gateway API HTTPRoutes for the same routes as `ingress`.
+httpRoute:
+  # -- Create HTTPRoutes (gateway.networking.k8s.io/v1).
+  enabled: false
+  # -- Gateways (and listeners) to attach to. Required when enabled.
+  parentRefs: [] # @schema item: object
+  # -- Annotations for every HTTPRoute.
+  annotations: {} # @schema additionalProperties: {type: string}
+  # -- Labels for every HTTPRoute.
+  labels: {} # @schema additionalProperties: {type: string}
+  # -- Send requests that carry an `x-appwrite-hostname` header to the API
+  # instead of the console, as Appwrite's Traefik setup does. Uses a
+  # RegularExpression header match, which not every Gateway implements.
+  hostnameHeaderMatch: false
+  wildcard:
+    # -- Route `*.<functionsDomain>` and `*.<sitesDomain>` to the API.
+    enabled: true
+    # -- Gateways to attach the wildcard route to. Defaults to `httpRoute.parentRefs`.
+    parentRefs: [] # @schema item: object
+  customDomains:
+    # -- Route every hostname the Gateway listener accepts to the API, for custom domains.
+    enabled: false
+    # -- Gateways (typically a dedicated catch-all listener) to attach the route to. Defaults to `httpRoute.parentRefs`.
+    parentRefs: [] # @schema item: object
+
 networkPolicy:
   # -- Create NetworkPolicies. They only take effect with a CNI that enforces them.
   enabled: false

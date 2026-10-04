@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+env:
+  GATEWAY_API_VERSION: v1.6.2
+  TRAEFIK_CHART_VERSION: 41.6.1
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -41,6 +45,14 @@ jobs:
             kubernetes: v1.37.0
           - scenario: grouped-workers
             kubernetes: v1.37.0
+          # Routing through Traefik, as an Ingress controller and as a Gateway.
+          - scenario: ingress
+            kubernetes: v1.37.0
+            traefik: true
+          - scenario: gateway-api
+            kubernetes: v1.37.0
+            traefik: true
+            routes-args: --header-match
     steps:
       - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
@@ -54,12 +66,21 @@ jobs:
           cluster_name: appwrite
           node_image: kindest/node:${{ matrix.kubernetes }}
           config: hack/kind-config.yaml
+      - name: Install Traefik and the Gateway API CRDs
+        if: matrix.traefik
+        run: |
+          kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
+          helm upgrade --install traefik traefik --repo https://traefik.github.io/charts --version "${TRAEFIK_CHART_VERSION}" \
+            -n traefik --create-namespace -f hack/fixtures/traefik-values.yaml --wait --timeout 5m
       - name: Install
         run: make install VALUES=charts/appwrite/ci/${{ matrix.scenario }}-values.yaml
       - name: helm test
         run: make helm-test
       - name: Smoke test
         run: make smoke
+      - name: Routes
+        if: matrix.traefik
+        run: hack/routes.sh appwrite.ci.local traefik traefik ${{ matrix.routes-args }}
       - name: Upgrade without changes keeps credentials and pods
         run: |
           before=$(kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}')

@@ -1,0 +1,14 @@
+# Ingress routing, exercised through Traefik (hack/fixtures/traefik-values.yaml).
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  forceHttps: false
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+ingress:
+  enabled: true
+  customDomains:
+    enabled: true

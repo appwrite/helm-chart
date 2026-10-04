@@ -233,11 +233,32 @@ helm uninstall appwrite --namespace appwrite
 | global.imagePullSecrets | list | `[]` | Image pull secrets added to every pod, as a list of Secret names. |
 | global.imageRegistry | string | `""` | Registry that replaces the registry of every image, e.g. a pull-through cache. |
 | global.storageClass | string | `""` | Storage class for every PersistentVolumeClaim that doesn't set one. `-` means no class. |
+| httpRoute.annotations | object | `{}` | Annotations for every HTTPRoute. |
+| httpRoute.customDomains.enabled | bool | `false` | Route every hostname the Gateway listener accepts to the API, for custom domains. |
+| httpRoute.customDomains.parentRefs | list | `[]` | Gateways (typically a dedicated catch-all listener) to attach the route to. Defaults to `httpRoute.parentRefs`. |
+| httpRoute.enabled | bool | `false` | Create HTTPRoutes (gateway.networking.k8s.io/v1). |
+| httpRoute.hostnameHeaderMatch | bool | `false` | Send requests that carry an `x-appwrite-hostname` header to the API instead of the console, as Appwrite's Traefik setup does. Uses a RegularExpression header match, which not every Gateway implements. |
+| httpRoute.labels | object | `{}` | Labels for every HTTPRoute. |
+| httpRoute.parentRefs | list | `[]` | Gateways (and listeners) to attach to. Required when enabled. |
+| httpRoute.wildcard.enabled | bool | `true` | Route `*.<functionsDomain>` and `*.<sitesDomain>` to the API. |
+| httpRoute.wildcard.parentRefs | list | `[]` | Gateways to attach the wildcard route to. Defaults to `httpRoute.parentRefs`. |
 | image.digest | string | `""` | Image digest (`sha256:...`). When set it pins the image and the tag is informational. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.registry | string | `"docker.io"` | Image registry. |
 | image.repository | string | `"appwrite/appwrite"` | Image repository. |
 | image.tag | string | `""` | Image tag. Defaults to the chart appVersion. |
+| ingress.annotations | object | `{}` | Annotations for every Ingress, e.g. a cert-manager issuer. |
+| ingress.className | string | `""` | IngressClass to use. Empty uses the cluster default. |
+| ingress.customDomains.annotations | object | `{}` | Annotations for the custom-domain Ingress, merged over `ingress.annotations`. |
+| ingress.customDomains.enabled | bool | `false` | Route every other hostname to the API, for custom domains of projects, functions and sites. Creates an Ingress rule without a host. |
+| ingress.enabled | bool | `false` | Create Ingress resources. |
+| ingress.labels | object | `{}` | Labels for every Ingress. |
+| ingress.tls.enabled | bool | `false` | Terminate TLS for `appwrite.domain` and `appwrite.consoleDomain`. |
+| ingress.tls.secretName | string | `""` | Secret with the certificate. Defaults to `<release>-tls`. |
+| ingress.wildcard.annotations | object | `{}` | Annotations for the wildcard Ingress, merged over `ingress.annotations`. |
+| ingress.wildcard.enabled | bool | `true` | Route `*.<functionsDomain>` and `*.<sitesDomain>` (function and site preview URLs) to the API. |
+| ingress.wildcard.tls.enabled | bool | `false` | Terminate TLS for the wildcard hosts. Needs a wildcard certificate, which ACME issues through DNS-01. |
+| ingress.wildcard.tls.secretName | string | `""` | Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`. |
 | nameOverride | string | `""` | Override the chart name used in resource names. |
 | networkPolicy.egress.dns | list | `[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]` | DNS servers to allow (NetworkPolicyPeer) when egress is restricted. |
 | networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor and other external services. |

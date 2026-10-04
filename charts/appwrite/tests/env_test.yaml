@@ -123,3 +123,10 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "appwrite.config.PATH: keys must be Appwrite variables"
+
+  - it: requires parentRefs for HTTPRoutes
+    set:
+      httpRoute.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: httpRoute.parentRefs is required

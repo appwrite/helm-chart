@@ -1,0 +1,41 @@
+{{- $h := .Values.httpRoute }}
+{{- if $h.enabled }}
+{{- $api := dict "root" . "service" "api" "port" .Values.api.service.port }}
+{{ include "appwrite.httpRoute.head" (dict "root" . "name" "main") }}
+  hostnames:
+    {{- include "appwrite.routes.mainHosts" . | nindent 4 }}
+  rules:
+    {{- if .Values.realtime.enabled }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1/realtime
+      {{- include "appwrite.httpRoute.backend" (dict "root" . "service" "realtime" "port" .Values.realtime.service.port) | nindent 6 }}
+    {{- end }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+        - path:
+            type: PathPrefix
+            value: /.well-known
+        {{- if $h.hostnameHeaderMatch }}
+        - path:
+            type: PathPrefix
+            value: /
+          headers:
+            - name: x-appwrite-hostname
+              type: RegularExpression
+              value: ".+"
+        {{- end }}
+      {{- include "appwrite.httpRoute.backend" $api | nindent 6 }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      {{- if .Values.console.enabled }}
+      {{- include "appwrite.httpRoute.backend" (dict "root" . "service" "console" "port" .Values.console.service.port) | nindent 6 }}
+      {{- else }}
+      {{- include "appwrite.httpRoute.backend" $api | nindent 6 }}
+      {{- end }}
+{{- end }}

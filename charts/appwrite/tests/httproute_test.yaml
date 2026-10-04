@@ -1,0 +1,78 @@
+suite: HTTPRoute
+templates:
+  - templates/httproute/main.yaml
+  - templates/httproute/wildcard.yaml
+  - templates/httproute/custom-domains.yaml
+release:
+  name: aw
+values:
+  - values/required.yaml
+set:
+  httpRoute.enabled: true
+  httpRoute.parentRefs:
+    - name: gateway
+      namespace: infra
+tests:
+  - it: attaches to the configured Gateway
+    template: templates/httproute/main.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: gateway
+              namespace: infra
+      - equal:
+          path: spec.hostnames
+          value: [appwrite.example.com]
+
+  - it: routes realtime, API and console
+    template: templates/httproute/main.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /v1/realtime
+      - equal:
+          path: spec.rules[1].matches[0].path.value
+          value: /v1
+      - equal:
+          path: spec.rules[1].matches[1].path.value
+          value: /.well-known
+      - equal:
+          path: spec.rules[2].backendRefs[0].name
+          value: aw-appwrite-console
+
+  - it: optionally matches the x-appwrite-hostname header
+    template: templates/httproute/main.yaml
+    set:
+      httpRoute.hostnameHeaderMatch: true
+    asserts:
+      - equal:
+          path: spec.rules[1].matches[2].headers[0]
+          value:
+            name: x-appwrite-hostname
+            type: RegularExpression
+            value: .+
+
+  - it: lets the wildcard route use its own Gateway
+    template: templates/httproute/wildcard.yaml
+    set:
+      httpRoute.wildcard.parentRefs:
+        - name: wildcard-gateway
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: wildcard-gateway
+      - equal:
+          path: spec.hostnames
+          value: ["*.functions.appwrite.example.com", "*.sites.appwrite.example.com"]
+
+  - it: has no hostnames on the custom-domain route
+    template: templates/httproute/custom-domains.yaml
+    set:
+      httpRoute.customDomains.enabled: true
+    asserts:
+      - notExists:
+          path: spec.hostnames
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: aw-appwrite-api

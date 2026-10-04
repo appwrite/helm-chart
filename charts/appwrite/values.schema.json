@@ -1250,6 +1250,75 @@
       },
       "additionalProperties": false
     },
+    "httpRoute": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations for every HTTPRoute.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "customDomains": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Route every hostname the Gateway listener accepts to the API, for custom domains.",
+              "type": "boolean"
+            },
+            "parentRefs": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Gateways (typically a dedicated catch-all listener) to attach the route to. Defaults to `httpRoute.parentRefs`."
+            }
+          },
+          "additionalProperties": false
+        },
+        "enabled": {
+          "description": "Create HTTPRoutes (gateway.networking.k8s.io/v1).",
+          "type": "boolean"
+        },
+        "hostnameHeaderMatch": {
+          "description": "Send requests that carry an `x-appwrite-hostname` header to the API instead of the console, as Appwrite's Traefik setup does. Uses a RegularExpression header match, which not every Gateway implements.",
+          "type": "boolean"
+        },
+        "labels": {
+          "description": "Labels for every HTTPRoute.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "parentRefs": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Gateways (and listeners) to attach to. Required when enabled."
+        },
+        "wildcard": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Route `*.<functionsDomain>` and `*.<sitesDomain>` to the API.",
+              "type": "boolean"
+            },
+            "parentRefs": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Gateways to attach the wildcard route to. Defaults to `httpRoute.parentRefs`."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "image": {
       "type": "object",
       "properties": {
@@ -1277,6 +1346,96 @@
         "tag": {
           "description": "Image tag. Defaults to the chart appVersion.",
           "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations for every Ingress, e.g. a cert-manager issuer.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "className": {
+          "description": "IngressClass to use. Empty uses the cluster default.",
+          "type": "string"
+        },
+        "customDomains": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "description": "Annotations for the custom-domain Ingress, merged over `ingress.annotations`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "enabled": {
+              "description": "Route every other hostname to the API, for custom domains of projects, functions and sites. Creates an Ingress rule without a host.",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "enabled": {
+          "description": "Create Ingress resources.",
+          "type": "boolean"
+        },
+        "labels": {
+          "description": "Labels for every Ingress.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Terminate TLS for `appwrite.domain` and `appwrite.consoleDomain`.",
+              "type": "boolean"
+            },
+            "secretName": {
+              "description": "Secret with the certificate. Defaults to `<release>-tls`.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "wildcard": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "description": "Annotations for the wildcard Ingress, merged over `ingress.annotations`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "enabled": {
+              "description": "Route `*.<functionsDomain>` and `*.<sitesDomain>` (function and site preview URLs) to the API.",
+              "type": "boolean"
+            },
+            "tls": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "description": "Terminate TLS for the wildcard hosts. Needs a wildcard certificate, which ACME issues through DNS-01.",
+                  "type": "boolean"
+                },
+                "secretName": {
+                  "description": "Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`.",
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

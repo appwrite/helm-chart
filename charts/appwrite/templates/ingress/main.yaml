@@ -1,0 +1,10 @@
+{{- if .Values.ingress.enabled }}
+{{- $tls := .Values.ingress.tls }}
+{{- include "appwrite.ingress" (dict
+  "root" .
+  "name" "main"
+  "hosts" (include "appwrite.routes.mainHosts" . | fromYamlArray)
+  "paths" (include "appwrite.routes.mainPaths" . | fromYamlArray)
+  "tls" (dict "enabled" $tls.enabled "secretName" ($tls.secretName | default (printf "%s-tls" (include "appwrite.fullname" .))))
+) }}
+{{- end }}

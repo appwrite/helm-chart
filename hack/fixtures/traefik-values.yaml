@@ -1,0 +1,23 @@
+# Traefik as both Ingress controller and Gateway API implementation, used by
+# the ingress and gateway-api CI scenarios.
+image:
+  tag: v3.7.13
+providers:
+  kubernetesIngress:
+    enabled: true
+  kubernetesGateway:
+    enabled: true
+gateway:
+  enabled: true
+  name: traefik
+  listeners:
+    web:
+      port: 8000
+      protocol: HTTP
+      namespacePolicy:
+        from: All
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+service:
+  type: ClusterIP

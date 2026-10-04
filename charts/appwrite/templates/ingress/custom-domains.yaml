@@ -1,0 +1,10 @@
+{{- $i := .Values.ingress }}
+{{- if and $i.enabled $i.customDomains.enabled }}
+{{- include "appwrite.ingress" (dict
+  "root" .
+  "name" "custom-domains"
+  "hosts" (list "")
+  "paths" (list (dict "path" "/" "service" "api" "port" .Values.api.service.port))
+  "annotations" $i.customDomains.annotations
+) }}
+{{- end }}

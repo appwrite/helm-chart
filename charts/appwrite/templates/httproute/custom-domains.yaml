@@ -1,0 +1,7 @@
+{{- $h := .Values.httpRoute }}
+{{- if and $h.enabled $h.customDomains.enabled }}
+{{- /* No hostnames: matches whatever the attached listener accepts. */}}
+{{ include "appwrite.httpRoute.head" (dict "root" . "name" "custom-domains" "parentRefs" $h.customDomains.parentRefs) }}
+  rules:
+    - {{- include "appwrite.httpRoute.backend" (dict "root" . "service" "api" "port" .Values.api.service.port) | nindent 6 }}
+{{- end }}

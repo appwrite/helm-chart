@@ -1,0 +1,8 @@
+{{- $h := .Values.httpRoute }}
+{{- if and $h.enabled $h.wildcard.enabled }}
+{{ include "appwrite.httpRoute.head" (dict "root" . "name" "wildcard" "parentRefs" $h.wildcard.parentRefs) }}
+  hostnames:
+    {{- include "appwrite.routes.wildcardHosts" . | nindent 4 }}
+  rules:
+    - {{- include "appwrite.httpRoute.backend" (dict "root" . "service" "api" "port" .Values.api.service.port) | nindent 6 }}
+{{- end }}

@@ -49,6 +49,9 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- end }}
 {{- end }}
 {{- end }}
+{{- if and $v.httpRoute.enabled (not $v.httpRoute.parentRefs) }}
+{{- $errors = append $errors "httpRoute.parentRefs is required when httpRoute.enabled is true: name the Gateway to attach to." }}
+{{- end }}
 {{- range $k, $_ := $v.appwrite.config }}
 {{- if not (regexMatch "^_APP_[A-Z0-9_]+$" $k) }}
 {{- $errors = append $errors (printf "appwrite.config.%s: keys must be Appwrite variables matching ^_APP_[A-Z0-9_]+$." $k) }}

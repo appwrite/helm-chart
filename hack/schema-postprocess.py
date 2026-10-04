@@ -70,6 +70,7 @@ PASSTHROUGH = {
     "from": OBJECT_LIST,
     "dns": OBJECT_LIST,
     "extraRules": OBJECT_LIST,
+    "parentRefs": OBJECT_LIST,
 }
 WORKER_GROUP["properties"]["resources"] = PASSTHROUGH["resources"]
 PASSTHROUGH["groups"] = {"type": "object", "additionalProperties": WORKER_GROUP}

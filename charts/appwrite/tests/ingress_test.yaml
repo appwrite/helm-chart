@@ -1,0 +1,119 @@
+suite: Ingress
+templates:
+  - templates/ingress/main.yaml
+  - templates/ingress/wildcard.yaml
+  - templates/ingress/custom-domains.yaml
+release:
+  name: aw
+values:
+  - values/required.yaml
+tests:
+  - it: renders nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: routes realtime, API and console paths, most specific first
+    template: templates/ingress/main.yaml
+    set:
+      ingress.enabled: true
+      ingress.className: traefik
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: traefik
+      - equal:
+          path: spec.rules[0].host
+          value: appwrite.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /v1/realtime
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: aw-appwrite-realtime
+      - equal:
+          path: spec.rules[0].http.paths[1].path
+          value: /v1
+      - equal:
+          path: spec.rules[0].http.paths[1].backend.service.name
+          value: aw-appwrite-api
+      - equal:
+          path: spec.rules[0].http.paths[2].path
+          value: /.well-known
+      - equal:
+          path: spec.rules[0].http.paths[2].backend.service.name
+          value: aw-appwrite-api
+      - equal:
+          path: spec.rules[0].http.paths[3].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[3].backend.service.name
+          value: aw-appwrite-console
+
+  - it: adds the console domain as a second host
+    template: templates/ingress/main.yaml
+    set:
+      ingress.enabled: true
+      appwrite.consoleDomain: console.example.com
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: appwrite.example.com
+      - equal:
+          path: spec.rules[1].host
+          value: console.example.com
+
+  - it: sends / to the API without a console
+    template: templates/ingress/main.yaml
+    set:
+      ingress.enabled: true
+      console.enabled: false
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[3].backend.service.name
+          value: aw-appwrite-api
+
+  - it: terminates TLS with a default secret name
+    template: templates/ingress/main.yaml
+    set:
+      ingress.enabled: true
+      ingress.tls.enabled: true
+    asserts:
+      - equal:
+          path: spec.tls[0]
+          value:
+            hosts: [appwrite.example.com]
+            secretName: aw-appwrite-tls
+
+  - it: routes preview wildcards to the API
+    template: templates/ingress/wildcard.yaml
+    set:
+      ingress.enabled: true
+      ingress.annotations:
+        a: shared
+      ingress.wildcard.annotations:
+        cert-manager.io/cluster-issuer: dns01
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: "*.functions.appwrite.example.com"
+      - equal:
+          path: spec.rules[1].host
+          value: "*.sites.appwrite.example.com"
+      - equal:
+          path: metadata.annotations
+          value:
+            a: shared
+            cert-manager.io/cluster-issuer: dns01
+
+  - it: catches every other host for custom domains
+    template: templates/ingress/custom-domains.yaml
+    set:
+      ingress.enabled: true
+      ingress.customDomains.enabled: true
+    asserts:
+      - notExists:
+          path: spec.rules[0].host
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: aw-appwrite-api
