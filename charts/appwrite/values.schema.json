@@ -361,6 +361,47 @@
           },
           "additionalProperties": false
         },
+        "documentsDb": {
+          "type": "object",
+          "properties": {
+            "database": {
+              "description": "Database name. Empty uses the main database name.",
+              "type": "string"
+            },
+            "enabled": {
+              "description": "Enable DocumentsDB databases (`_APP_DOCUMENTSDB`), backed by a MongoDB replica set.",
+              "type": "boolean"
+            },
+            "existingSecret": {
+              "description": "Existing Secret holding the password.",
+              "type": "string"
+            },
+            "host": {
+              "description": "MongoDB hostname.",
+              "type": "string"
+            },
+            "password": {
+              "description": "Password. Ignored when `existingSecret` is set. Empty uses the main database password.",
+              "type": "string"
+            },
+            "passwordKey": {
+              "description": "Key in the Secret holding the password.",
+              "type": "string"
+            },
+            "port": {
+              "description": "MongoDB port.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            "username": {
+              "description": "User. Empty uses the main database user.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
         "domain": {
           "description": "Hostname of the Appwrite API and console (`_APP_DOMAIN`). Required.",
           "type": "string"
@@ -543,6 +584,47 @@
         "usageStats": {
           "description": "Collect usage statistics in ClickHouse (`_APP_USAGE_STATS`).",
           "type": "boolean"
+        },
+        "vectorsDb": {
+          "type": "object",
+          "properties": {
+            "database": {
+              "description": "Database name. Empty uses the main database name.",
+              "type": "string"
+            },
+            "enabled": {
+              "description": "Enable VectorsDB databases (`_APP_VECTORSDB`), backed by PostgreSQL with pgvector.",
+              "type": "boolean"
+            },
+            "existingSecret": {
+              "description": "Existing Secret holding the password.",
+              "type": "string"
+            },
+            "host": {
+              "description": "PostgreSQL hostname. Empty uses the main database, which must then be PostgreSQL.",
+              "type": "string"
+            },
+            "password": {
+              "description": "Password. Ignored when `existingSecret` is set. Empty uses the main database password.",
+              "type": "string"
+            },
+            "passwordKey": {
+              "description": "Key in the Secret holding the password.",
+              "type": "string"
+            },
+            "port": {
+              "description": "PostgreSQL port.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            "username": {
+              "description": "User. Empty uses the main database user.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         },
         "workerPerCore": {
           "description": "Swoole workers per CPU in the API (`_APP_WORKER_PER_CORE`).",
@@ -1100,6 +1182,116 @@
             "type": "object"
           },
           "description": "Topology spread constraints for every pod. The component's selector labels are filled in when `labelSelector` is omitted. Leave empty for a soft spread across nodes on scalable components."
+        }
+      },
+      "additionalProperties": false
+    },
+    "externalClickhouse": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "description": "Database name.",
+          "type": "string"
+        },
+        "existingSecret": {
+          "description": "Existing Secret holding the password.",
+          "type": "string"
+        },
+        "password": {
+          "description": "Password. Ignored when `existingSecret` is set. Must be URL-safe, or URL-encoded, because Appwrite reads it from a connection URL.",
+          "type": "string"
+        },
+        "passwordKey": {
+          "description": "Key in the Secret holding the password.",
+          "type": "string"
+        },
+        "url": {
+          "description": "HTTP(S) endpoint, e.g. `https://abc.clickhouse.cloud:8443`.",
+          "type": "string"
+        },
+        "username": {
+          "description": "User.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "externalDatabase": {
+      "type": "object",
+      "properties": {
+        "adapter": {
+          "description": "Database engine (`_APP_DB_ADAPTER`).",
+          "type": "string",
+          "enum": [
+            "postgresql",
+            "mariadb",
+            "mysql",
+            "mongodb"
+          ]
+        },
+        "database": {
+          "description": "Database (schema) name.",
+          "type": "string"
+        },
+        "existingSecret": {
+          "description": "Existing Secret holding the password.",
+          "type": "string"
+        },
+        "host": {
+          "description": "Hostname.",
+          "type": "string"
+        },
+        "password": {
+          "description": "Password. Ignored when `existingSecret` is set.",
+          "type": "string"
+        },
+        "passwordKey": {
+          "description": "Key in the Secret holding the password.",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port. Defaults to the engine's standard port.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "username": {
+          "description": "User.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "externalRedis": {
+      "type": "object",
+      "properties": {
+        "existingSecret": {
+          "description": "Existing Secret holding the password.",
+          "type": "string"
+        },
+        "host": {
+          "description": "Hostname.",
+          "type": "string"
+        },
+        "password": {
+          "description": "Password. Ignored when `existingSecret` is set.",
+          "type": "string"
+        },
+        "passwordKey": {
+          "description": "Key in the Secret holding the password.",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "username": {
+          "description": "ACL user (`_APP_REDIS_USER`). The MQTT server ignores it, so leave it empty when MQTT is enabled.",
+          "type": "string"
         }
       },
       "additionalProperties": false

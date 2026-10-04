@@ -28,6 +28,20 @@ template`, Argo CD) lookup returns nothing, so set
 {{- $_ := set $data $key (include "appwrite.secret.value" (dict "root" $ "existing" $existing "key" $key "explicit" $auth.password)) }}
 {{- end }}
 {{- end }}
+{{- /* Inline passwords of external services, stored so pods can reference them. */}}
+{{- $external := list
+  (list (not .Values.postgresql.enabled) .Values.externalDatabase "db-password")
+  (list (not .Values.redis.enabled) .Values.externalRedis "redis-password")
+  (list (not .Values.clickhouse.enabled) .Values.externalClickhouse "clickhouse-password")
+  (list .Values.appwrite.documentsDb.enabled .Values.appwrite.documentsDb "documentsdb-password")
+  (list .Values.appwrite.vectorsDb.enabled .Values.appwrite.vectorsDb "vectorsdb-password") }}
+{{- range $external }}
+{{- $on := index . 0 }}
+{{- $c := index . 1 }}
+{{- if and $on $c.password (not $c.existingSecret) }}
+{{- $_ := set $data (index . 2) ($c.password | toString | b64enc) }}
+{{- end }}
+{{- end }}
 {{- with .Values.appwrite.smtp }}
 {{- if and .password (not .existingSecret) }}
 {{- $_ := set $data "smtp-password" (.password | b64enc) }}

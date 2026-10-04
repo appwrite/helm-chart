@@ -51,16 +51,38 @@ the env ConfigMap. Precedence, lowest first:
 }}
 
 {{- /* Main database */}}
-{{- $_ := set $computed "_APP_DB_ADAPTER" "postgresql" }}
-{{- $_ := set $computed "_APP_DB_HOST" (include "appwrite.componentName" (dict "root" . "component" "postgresql")) }}
-{{- $_ := set $computed "_APP_DB_PORT" "5432" }}
-{{- $_ := set $computed "_APP_DB_SCHEMA" .Values.postgresql.auth.database }}
-{{- $_ := set $computed "_APP_DB_USER" .Values.postgresql.auth.username }}
+{{- $db := include "appwrite.db" . | fromYaml }}
+{{- $_ := set $computed "_APP_DB_ADAPTER" $db.adapter }}
+{{- $_ := set $computed "_APP_DB_HOST" $db.host }}
+{{- $_ := set $computed "_APP_DB_PORT" ($db.port | toString) }}
+{{- $_ := set $computed "_APP_DB_SCHEMA" $db.database }}
+{{- $_ := set $computed "_APP_DB_USER" $db.username }}
 
 {{- /* Redis */}}
-{{- $_ := set $computed "_APP_REDIS_HOST" (include "appwrite.componentName" (dict "root" . "component" "redis")) }}
-{{- $_ := set $computed "_APP_REDIS_PORT" "6379" }}
-{{- $_ := set $computed "_APP_REDIS_USER" "" }}
+{{- $redis := include "appwrite.redis" . | fromYaml }}
+{{- $_ := set $computed "_APP_REDIS_HOST" $redis.host }}
+{{- $_ := set $computed "_APP_REDIS_PORT" ($redis.port | toString) }}
+{{- $_ := set $computed "_APP_REDIS_USER" ($redis.username | default "") }}
+
+{{- /* Optional DocumentsDB (MongoDB) and VectorsDB (PostgreSQL) databases */}}
+{{- $docs := $v.documentsDb }}
+{{- $_ := set $computed "_APP_DOCUMENTSDB" (get $enabled ($docs.enabled | toString)) }}
+{{- if $docs.enabled }}
+{{- $_ := set $computed "_APP_DB_ADAPTER_DOCUMENTSDB" "mongodb" }}
+{{- $_ := set $computed "_APP_DB_HOST_DOCUMENTSDB" $docs.host }}
+{{- $_ := set $computed "_APP_DB_PORT_DOCUMENTSDB" ($docs.port | toString) }}
+{{- $_ := set $computed "_APP_DB_SCHEMA_DOCUMENTSDB" $docs.database }}
+{{- $_ := set $computed "_APP_DB_USER_DOCUMENTSDB" $docs.username }}
+{{- end }}
+{{- $vectors := $v.vectorsDb }}
+{{- $_ := set $computed "_APP_VECTORSDB" (get $enabled ($vectors.enabled | toString)) }}
+{{- if $vectors.enabled }}
+{{- $_ := set $computed "_APP_DB_ADAPTER_VECTORSDB" "postgresql" }}
+{{- $_ := set $computed "_APP_DB_HOST_VECTORSDB" ($vectors.host | default $db.host) }}
+{{- $_ := set $computed "_APP_DB_PORT_VECTORSDB" (ternary ($vectors.port | toString) ($db.port | toString) (not (empty $vectors.host))) }}
+{{- $_ := set $computed "_APP_DB_SCHEMA_VECTORSDB" $vectors.database }}
+{{- $_ := set $computed "_APP_DB_USER_VECTORSDB" $vectors.username }}
+{{- end }}
 
 {{- range $k, $val := $computed }}
 {{- $_ := set $env $k ($val | toString) }}
@@ -95,16 +117,6 @@ secretKeyRef:
 {{- end }}
 
 {{/*
-ClickHouse connection string Appwrite uses for usage and execution logs. The
-password is substituted by Kubernetes from _APP_USAGE_PASS, which must be
-defined earlier in the container's env list.
-*/}}
-{{- define "appwrite.clickhouse.dsn" -}}
-{{- $ch := .Values.clickhouse }}
-{{- printf "http://%s:$(_APP_USAGE_PASS)@%s:8123/%s" $ch.auth.username (include "appwrite.componentName" (dict "root" . "component" "clickhouse")) $ch.auth.database }}
-{{- end }}
-
-{{/*
 Environment variables for every Appwrite container: credentials from Secrets
 plus values that differ per component.
 Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WORKERS_NUM" "1"))
@@ -122,21 +134,47 @@ Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WO
 - name: _APP_GEO_SECRET
   valueFrom:
     {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $secrets.existingSecret "key" $secrets.keys.geoSecret "defaultKey" "_APP_GEO_SECRET") | nindent 4 }}
+{{- $db := include "appwrite.db" $root | fromYaml }}
+{{- with $db.secret }}
 - name: _APP_DB_PASS
   valueFrom:
-    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $v.postgresql.auth.existingSecret "key" $v.postgresql.auth.passwordKey "defaultKey" "postgres-password") | nindent 4 }}
-{{- if $v.redis.auth.enabled }}
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+{{- with (include "appwrite.redis" $root | fromYaml).secret }}
 - name: _APP_REDIS_PASS
   valueFrom:
-    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $v.redis.auth.existingSecret "key" $v.redis.auth.passwordKey "defaultKey" "redis-password") | nindent 4 }}
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
 {{- end }}
+{{- $ch := include "appwrite.clickhouse" $root | fromYaml }}
+{{- $credentials := $ch.username }}
+{{- with $ch.secret }}
 - name: _APP_USAGE_PASS
   valueFrom:
-    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $v.clickhouse.auth.existingSecret "key" $v.clickhouse.auth.passwordKey "defaultKey" "clickhouse-password") | nindent 4 }}
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- $credentials = printf "%s:$(_APP_USAGE_PASS)" $ch.username }}
+{{- end }}
+{{- $dsn := printf "%s://%s@%s/%s" $ch.scheme $credentials $ch.address $ch.database }}
 - name: _APP_CONNECTIONS_DB_USAGE
-  value: {{ include "appwrite.clickhouse.dsn" $root | quote }}
+  value: {{ $dsn | quote }}
 - name: _APP_CONNECTIONS_DB_EXECUTIONS
-  value: {{ include "appwrite.clickhouse.dsn" $root | quote }}
+  value: {{ $dsn | quote }}
+{{- range $name, $c := dict "DOCUMENTSDB" $v.appwrite.documentsDb "VECTORSDB" $v.appwrite.vectorsDb }}
+{{- if $c.enabled }}
+{{- with (include "appwrite.datastore.secret" (dict "root" $root "config" $c "chartKey" (printf "%s-password" (lower $name))) | fromYaml).secret }}
+- name: _APP_DB_PASS_{{ $name }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if or $v.appwrite.smtp.password $v.appwrite.smtp.existingSecret }}
 - name: _APP_SMTP_PASSWORD
   valueFrom:

@@ -96,6 +96,14 @@ helm uninstall appwrite --namespace appwrite
 | appwrite.consoleDomain | string | `""` | Hostname of the console (`_APP_CONSOLE_DOMAIN`). Defaults to `domain`. |
 | appwrite.database.connectionsMax | int | `151` | Total connections Appwrite may open to the database, shared by all pods (`_APP_CONNECTIONS_MAX`). Keep it below the database's `max_connections`. |
 | appwrite.database.poolClients | int | `15` | Number of Appwrite processes sharing `connectionsMax` (`_APP_POOL_CLIENTS`). Must be at least the number of Appwrite pods. |
+| appwrite.documentsDb.database | string | `""` | Database name. Empty uses the main database name. |
+| appwrite.documentsDb.enabled | bool | `false` | Enable DocumentsDB databases (`_APP_DOCUMENTSDB`), backed by a MongoDB replica set. |
+| appwrite.documentsDb.existingSecret | string | `""` | Existing Secret holding the password. |
+| appwrite.documentsDb.host | string | `""` | MongoDB hostname. |
+| appwrite.documentsDb.password | string | `""` | Password. Ignored when `existingSecret` is set. Empty uses the main database password. |
+| appwrite.documentsDb.passwordKey | string | `"documentsdb-password"` | Key in the Secret holding the password. |
+| appwrite.documentsDb.port | int | `27017` | MongoDB port. |
+| appwrite.documentsDb.username | string | `""` | User. Empty uses the main database user. |
 | appwrite.domain | string | `""` | Hostname of the Appwrite API and console (`_APP_DOMAIN`). Required. |
 | appwrite.domainTargets.a | string | `""` | IPv4 addresses custom domains may point an A record to, comma-separated (`_APP_DOMAIN_TARGET_A`). |
 | appwrite.domainTargets.aaaa | string | `""` | IPv6 addresses custom domains may point an AAAA record to, comma-separated (`_APP_DOMAIN_TARGET_AAAA`). |
@@ -129,6 +137,14 @@ helm uninstall appwrite --namespace appwrite
 | appwrite.system.emailName | string | `"Appwrite"` | Sender name for emails Appwrite sends (`_APP_SYSTEM_EMAIL_NAME`). |
 | appwrite.system.securityEmailAddress | string | `""` | Address shown to users for security issues (`_APP_EMAIL_SECURITY`). |
 | appwrite.usageStats | bool | `true` | Collect usage statistics in ClickHouse (`_APP_USAGE_STATS`). |
+| appwrite.vectorsDb.database | string | `""` | Database name. Empty uses the main database name. |
+| appwrite.vectorsDb.enabled | bool | `false` | Enable VectorsDB databases (`_APP_VECTORSDB`), backed by PostgreSQL with pgvector. |
+| appwrite.vectorsDb.existingSecret | string | `""` | Existing Secret holding the password. |
+| appwrite.vectorsDb.host | string | `""` | PostgreSQL hostname. Empty uses the main database, which must then be PostgreSQL. |
+| appwrite.vectorsDb.password | string | `""` | Password. Ignored when `existingSecret` is set. Empty uses the main database password. |
+| appwrite.vectorsDb.passwordKey | string | `"vectorsdb-password"` | Key in the Secret holding the password. |
+| appwrite.vectorsDb.port | int | `5432` | PostgreSQL port. |
+| appwrite.vectorsDb.username | string | `""` | User. Empty uses the main database user. |
 | appwrite.workerPerCore | int | `6` | Swoole workers per CPU in the API (`_APP_WORKER_PER_CORE`). |
 | clickhouse.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | clickhouse.auth.database | string | `"appwrite"` | Database name. |
@@ -213,6 +229,26 @@ helm uninstall appwrite --namespace appwrite
 | defaults.priorityClassName | string | `""` | Priority class for every pod. |
 | defaults.tolerations | list | `[]` | Tolerations for every pod. |
 | defaults.topologySpreadConstraints | list | `[]` | Topology spread constraints for every pod. The component's selector labels are filled in when `labelSelector` is omitted. Leave empty for a soft spread across nodes on scalable components. |
+| externalClickhouse.database | string | `"appwrite"` | Database name. |
+| externalClickhouse.existingSecret | string | `""` | Existing Secret holding the password. |
+| externalClickhouse.password | string | `""` | Password. Ignored when `existingSecret` is set. Must be URL-safe, or URL-encoded, because Appwrite reads it from a connection URL. |
+| externalClickhouse.passwordKey | string | `"clickhouse-password"` | Key in the Secret holding the password. |
+| externalClickhouse.url | string | `""` | HTTP(S) endpoint, e.g. `https://abc.clickhouse.cloud:8443`. |
+| externalClickhouse.username | string | `"appwrite"` | User. |
+| externalDatabase.adapter | string | `"postgresql"` | Database engine (`_APP_DB_ADAPTER`). |
+| externalDatabase.database | string | `"appwrite"` | Database (schema) name. |
+| externalDatabase.existingSecret | string | `""` | Existing Secret holding the password. |
+| externalDatabase.host | string | `""` | Hostname. |
+| externalDatabase.password | string | `""` | Password. Ignored when `existingSecret` is set. |
+| externalDatabase.passwordKey | string | `"db-password"` | Key in the Secret holding the password. |
+| externalDatabase.port | string | `""` | Port. Defaults to the engine's standard port. |
+| externalDatabase.username | string | `"appwrite"` | User. |
+| externalRedis.existingSecret | string | `""` | Existing Secret holding the password. |
+| externalRedis.host | string | `""` | Hostname. |
+| externalRedis.password | string | `""` | Password. Ignored when `existingSecret` is set. |
+| externalRedis.passwordKey | string | `"redis-password"` | Key in the Secret holding the password. |
+| externalRedis.port | int | `6379` | Port. |
+| externalRedis.username | string | `""` | ACL user (`_APP_REDIS_USER`). The MQTT server ignores it, so leave it empty when MQTT is enabled. |
 | fullnameOverride | string | `""` | Override the fully qualified app name used in resource names. |
 | geo.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | geo.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |

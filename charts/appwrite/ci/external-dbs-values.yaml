@@ -1,0 +1,30 @@
+# PostgreSQL, Redis and ClickHouse outside the release
+# (hack/fixtures/external-dbs.yaml), with passwords from an existing Secret.
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  forceHttps: false
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+postgresql:
+  enabled: false
+redis:
+  enabled: false
+clickhouse:
+  enabled: false
+externalDatabase:
+  host: postgres.external-dbs.svc.cluster.local
+  database: appwrite_ext
+  username: appwrite_ext
+  existingSecret: external-datastores
+externalRedis:
+  host: redis.external-dbs.svc.cluster.local
+  existingSecret: external-datastores
+externalClickhouse:
+  url: http://clickhouse.external-dbs.svc.cluster.local:8123
+  database: usage
+  username: usage
+  existingSecret: external-datastores

@@ -228,15 +228,8 @@ schema exists. Appwrite's CLI tasks and workers exit if they start before it.
 host:port targets of the datastores Appwrite needs before it can start.
 */}}
 {{- define "appwrite.datastoreTargets" -}}
-{{- $targets := list }}
-{{- if .Values.postgresql.enabled }}
-{{- $targets = append $targets (printf "%s:5432" (include "appwrite.componentName" (dict "root" . "component" "postgresql"))) }}
-{{- end }}
-{{- if .Values.redis.enabled }}
-{{- $targets = append $targets (printf "%s:6379" (include "appwrite.componentName" (dict "root" . "component" "redis"))) }}
-{{- end }}
-{{- if .Values.clickhouse.enabled }}
-{{- $targets = append $targets (printf "%s:8123" (include "appwrite.componentName" (dict "root" . "component" "clickhouse"))) }}
-{{- end }}
-{{- join "," $targets }}
+{{- $db := include "appwrite.db" . | fromYaml }}
+{{- $redis := include "appwrite.redis" . | fromYaml }}
+{{- $ch := include "appwrite.clickhouse" . | fromYaml }}
+{{- join "," (list (printf "%s:%s" $db.host ($db.port | toString)) (printf "%s:%s" $redis.host ($redis.port | toString)) $ch.address) }}
 {{- end }}

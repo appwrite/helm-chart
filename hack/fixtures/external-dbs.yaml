@@ -1,0 +1,117 @@
+# "External" PostgreSQL, Redis and ClickHouse in their own namespace, plus the
+# Secrets Appwrite reads their passwords from. Used by the external-dbs CI
+# scenario; not meant for production.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-dbs
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: credentials
+  namespace: external-dbs
+stringData:
+  postgres: external-pg-password
+  redis: external-redis-password
+  clickhouse: externalClickhousePassword
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: external-dbs
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: {app: postgres}
+  template:
+    metadata:
+      labels: {app: postgres}
+    spec:
+      containers:
+        - name: postgres
+          image: appwrite/postgres:0.1.0
+          env:
+            - {name: POSTGRES_DB, value: appwrite_ext}
+            - {name: POSTGRES_USER, value: appwrite_ext}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: credentials, key: postgres}}
+          ports: [{containerPort: 5432}]
+          readinessProbe:
+            exec: {command: [pg_isready, -h, 127.0.0.1, -U, appwrite_ext]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: external-dbs
+spec:
+  selector: {app: postgres}
+  ports: [{port: 5432}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: external-dbs
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: redis}
+  template:
+    metadata:
+      labels: {app: redis}
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4.7-alpine
+          args: [--requirepass, $(REDIS_PASSWORD)]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom: {secretKeyRef: {name: credentials, key: redis}}
+          ports: [{containerPort: 6379}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: external-dbs
+spec:
+  selector: {app: redis}
+  ports: [{port: 6379}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickhouse
+  namespace: external-dbs
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: clickhouse}
+  template:
+    metadata:
+      labels: {app: clickhouse}
+    spec:
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:26.4.3-alpine
+          env:
+            - {name: CLICKHOUSE_DB, value: usage}
+            - {name: CLICKHOUSE_USER, value: usage}
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom: {secretKeyRef: {name: credentials, key: clickhouse}}
+          ports: [{containerPort: 8123}]
+          readinessProbe:
+            httpGet: {path: /ping, port: 8123}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+  namespace: external-dbs
+spec:
+  selector: {app: clickhouse}
+  ports: [{port: 8123}]

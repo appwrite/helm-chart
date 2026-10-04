@@ -189,6 +189,40 @@ appwrite:
     trackingSecret: ""
     # -- Explicit `_APP_GEO_SECRET`.
     geoSecret: ""
+  documentsDb:
+    # -- Enable DocumentsDB databases (`_APP_DOCUMENTSDB`), backed by a MongoDB replica set.
+    enabled: false
+    # -- MongoDB hostname.
+    host: ""
+    # -- MongoDB port.
+    port: 27017 # @schema type: [string, integer]
+    # -- Database name. Empty uses the main database name.
+    database: ""
+    # -- User. Empty uses the main database user.
+    username: ""
+    # -- Password. Ignored when `existingSecret` is set. Empty uses the main database password.
+    password: ""
+    # -- Existing Secret holding the password.
+    existingSecret: ""
+    # -- Key in the Secret holding the password.
+    passwordKey: documentsdb-password
+  vectorsDb:
+    # -- Enable VectorsDB databases (`_APP_VECTORSDB`), backed by PostgreSQL with pgvector.
+    enabled: false
+    # -- PostgreSQL hostname. Empty uses the main database, which must then be PostgreSQL.
+    host: ""
+    # -- PostgreSQL port.
+    port: 5432 # @schema type: [string, integer]
+    # -- Database name. Empty uses the main database name.
+    database: ""
+    # -- User. Empty uses the main database user.
+    username: ""
+    # -- Password. Ignored when `existingSecret` is set. Empty uses the main database password.
+    password: ""
+    # -- Existing Secret holding the password.
+    existingSecret: ""
+    # -- Key in the Secret holding the password.
+    passwordKey: vectorsdb-password
   # -- Extra `_APP_*` environment variables for every Appwrite pod. They
   # override the chart's defaults and computed values; see
   # https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.
@@ -1029,6 +1063,27 @@ postgresql:
   # -- Priority class. Empty inherits `defaults.priorityClassName`.
   priorityClassName: ""
 
+# External database, used when `postgresql.enabled` is false. PostgreSQL is
+# recommended; it needs the pgvector, PostGIS and pg_trgm extensions that
+# Appwrite's own image ships. MongoDB needs a replica set.
+externalDatabase:
+  # -- Database engine (`_APP_DB_ADAPTER`).
+  adapter: postgresql # @schema enum: [postgresql, mariadb, mysql, mongodb]
+  # -- Hostname.
+  host: ""
+  # -- Port. Defaults to the engine's standard port.
+  port: "" # @schema type: [string, integer]
+  # -- Database (schema) name.
+  database: appwrite
+  # -- User.
+  username: appwrite
+  # -- Password. Ignored when `existingSecret` is set.
+  password: ""
+  # -- Existing Secret holding the password.
+  existingSecret: ""
+  # -- Key in the Secret holding the password.
+  passwordKey: db-password
+
 # Built-in Redis, used for cache, queues, pub/sub and locks.
 redis:
   # -- Deploy the built-in Redis.
@@ -1104,6 +1159,23 @@ redis:
   # -- Priority class. Empty inherits `defaults.priorityClassName`.
   priorityClassName: ""
 
+# External Redis, used when `redis.enabled` is false. Appwrite 2.3.0 doesn't
+# support TLS, Sentinel or Cluster connections.
+externalRedis:
+  # -- Hostname.
+  host: ""
+  # -- Port.
+  port: 6379 # @schema type: [string, integer]
+  # -- ACL user (`_APP_REDIS_USER`). The MQTT server ignores it, so leave it
+  # empty when MQTT is enabled.
+  username: ""
+  # -- Password. Ignored when `existingSecret` is set.
+  password: ""
+  # -- Existing Secret holding the password.
+  existingSecret: ""
+  # -- Key in the Secret holding the password.
+  passwordKey: redis-password
+
 # Built-in ClickHouse, used for usage statistics and execution logs.
 clickhouse:
   # -- Deploy the built-in ClickHouse.
@@ -1176,6 +1248,23 @@ clickhouse:
   affinity: {} # @schema additionalProperties: true
   # -- Priority class. Empty inherits `defaults.priorityClassName`.
   priorityClassName: ""
+
+# External ClickHouse, used when `clickhouse.enabled` is false. Appwrite
+# talks to ClickHouse over HTTP(S).
+externalClickhouse:
+  # -- HTTP(S) endpoint, e.g. `https://abc.clickhouse.cloud:8443`.
+  url: ""
+  # -- Database name.
+  database: appwrite
+  # -- User.
+  username: appwrite
+  # -- Password. Ignored when `existingSecret` is set. Must be URL-safe, or
+  # URL-encoded, because Appwrite reads it from a connection URL.
+  password: ""
+  # -- Existing Secret holding the password.
+  existingSecret: ""
+  # -- Key in the Secret holding the password.
+  passwordKey: clickhouse-password
 
 # Storage for uploads, functions, sites, builds, certificates and imports
 # (`/storage/*`).

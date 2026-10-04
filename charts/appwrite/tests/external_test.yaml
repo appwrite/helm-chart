@@ -1,0 +1,168 @@
+suite: external datastores
+templates:
+  - templates/configmap-env.yaml
+  - templates/api/deployment.yaml
+  - templates/secret.yaml
+  - templates/postgresql/statefulset.yaml
+release:
+  name: aw
+values:
+  - values/required.yaml
+set:
+  postgresql.enabled: false
+  redis.enabled: false
+  clickhouse.enabled: false
+  externalDatabase.host: pg.example.com
+  externalDatabase.existingSecret: db
+  externalDatabase.passwordKey: password
+  externalRedis.host: redis.example.com
+  externalRedis.existingSecret: redis
+  externalClickhouse.url: https://ch.example.com
+  externalClickhouse.existingSecret: ch
+tests:
+  - it: points Appwrite at the external services
+    template: templates/configmap-env.yaml
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_DB_ADAPTER: postgresql
+            _APP_DB_HOST: pg.example.com
+            _APP_DB_PORT: "5432"
+            _APP_REDIS_HOST: redis.example.com
+            _APP_REDIS_PORT: "6379"
+
+  - it: uses the standard port of the engine
+    template: templates/configmap-env.yaml
+    set:
+      externalDatabase.adapter: mariadb
+    asserts:
+      - equal:
+          path: data._APP_DB_PORT
+          value: "3306"
+
+  - it: reads passwords from the existing Secrets
+    template: templates/api/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_DB_PASS
+            valueFrom:
+              secretKeyRef: {name: db, key: password}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_REDIS_PASS
+            valueFrom:
+              secretKeyRef: {name: redis, key: redis-password}
+
+  - it: builds an HTTPS ClickHouse DSN with the default port
+    template: templates/api/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_CONNECTIONS_DB_USAGE
+            value: https://appwrite:$(_APP_USAGE_PASS)@ch.example.com:8443/appwrite
+
+  - it: waits for the external services
+    template: templates/api/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: WAIT_FOR
+            value: pg.example.com:5432 redis.example.com:6379 ch.example.com:8443
+
+  - it: omits passwords that aren't configured
+    template: templates/api/deployment.yaml
+    set:
+      externalRedis.existingSecret: ""
+      externalClickhouse.existingSecret: ""
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          any: true
+          content: {name: _APP_REDIS_PASS}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_CONNECTIONS_DB_USAGE
+            value: https://appwrite@ch.example.com:8443/appwrite
+
+  - it: stores inline passwords in the chart Secret
+    template: templates/secret.yaml
+    set:
+      externalDatabase.existingSecret: ""
+      externalDatabase.password: s3cret
+    asserts:
+      - equal:
+          path: data.db-password
+          value: czNjcmV0
+      - notExists:
+          path: data.postgres-password
+
+  - it: doesn't render the built-in PostgreSQL
+    template: templates/postgresql/statefulset.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: requires a host
+    template: templates/configmap-env.yaml
+    set:
+      externalDatabase.host: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: externalDatabase.host is required
+
+  - it: requires a password
+    template: templates/configmap-env.yaml
+    set:
+      externalDatabase.existingSecret: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: externalDatabase needs a password
+
+  - it: rejects a ClickHouse URL with a path
+    template: templates/configmap-env.yaml
+    set:
+      externalClickhouse.url: https://ch.example.com/appwrite
+    asserts:
+      - failedTemplate:
+          errorPattern: externalClickhouse.url must be an http\(s\) URL
+
+  - it: rejects external settings next to a built-in service
+    template: templates/configmap-env.yaml
+    set:
+      postgresql.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: externalDatabase.host is set while postgresql.enabled is true
+
+  - it: enables VectorsDB on the main PostgreSQL
+    template: templates/configmap-env.yaml
+    set:
+      appwrite.vectorsDb.enabled: true
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_VECTORSDB: enabled
+            _APP_DB_HOST_VECTORSDB: pg.example.com
+            _APP_DB_PORT_VECTORSDB: "5432"
+
+  - it: enables DocumentsDB on an external MongoDB
+    template: templates/api/deployment.yaml
+    set:
+      appwrite.documentsDb.enabled: true
+      appwrite.documentsDb.host: mongo.example.com
+      appwrite.documentsDb.existingSecret: mongo
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_DB_PASS_DOCUMENTSDB
+            valueFrom:
+              secretKeyRef: {name: mongo, key: documentsdb-password}

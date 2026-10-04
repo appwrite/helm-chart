@@ -45,6 +45,10 @@ jobs:
             kubernetes: v1.37.0
           - scenario: grouped-workers
             kubernetes: v1.37.0
+          # PostgreSQL, Redis and ClickHouse outside the release.
+          - scenario: external-dbs
+            kubernetes: v1.37.0
+            external-dbs: true
           # Routing through Traefik, as an Ingress controller and as a Gateway.
           - scenario: ingress
             kubernetes: v1.37.0
@@ -72,6 +76,14 @@ jobs:
           kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
           helm upgrade --install traefik traefik --repo https://traefik.github.io/charts --version "${TRAEFIK_CHART_VERSION}" \
             -n traefik --create-namespace -f hack/fixtures/traefik-values.yaml --wait --timeout 5m
+      - name: Install external datastores
+        if: matrix.external-dbs
+        run: |
+          kubectl apply -f hack/fixtures/external-dbs.yaml
+          hack/fixtures/external-dbs-secrets.sh appwrite
+          kubectl -n external-dbs rollout status statefulset/postgres --timeout=5m
+          kubectl -n external-dbs rollout status deployment/redis --timeout=5m
+          kubectl -n external-dbs rollout status deployment/clickhouse --timeout=5m
       - name: Install
         run: make install VALUES=charts/appwrite/ci/${{ matrix.scenario }}-values.yaml
       - name: helm test

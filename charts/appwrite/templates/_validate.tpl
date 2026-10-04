@@ -11,14 +11,41 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- if not $v.appwrite.certificatesEmail }}
 {{- $errors = append $errors "appwrite.certificatesEmail is required: the certificates worker refuses to start without it." }}
 {{- end }}
-{{- if not $v.postgresql.enabled }}
-{{- $errors = append $errors "postgresql.enabled=false is not supported yet: an external database can't be configured in this chart version." }}
+{{- if $v.postgresql.enabled }}
+{{- if $v.externalDatabase.host }}
+{{- $errors = append $errors "externalDatabase.host is set while postgresql.enabled is true: disable the built-in PostgreSQL to use an external database." }}
 {{- end }}
-{{- if not $v.redis.enabled }}
-{{- $errors = append $errors "redis.enabled=false is not supported yet: an external Redis can't be configured in this chart version." }}
+{{- else }}
+{{- if not $v.externalDatabase.host }}
+{{- $errors = append $errors "externalDatabase.host is required when postgresql.enabled is false." }}
 {{- end }}
-{{- if not $v.clickhouse.enabled }}
-{{- $errors = append $errors "clickhouse.enabled=false is not supported yet: an external ClickHouse can't be configured in this chart version." }}
+{{- if not (or $v.externalDatabase.password $v.externalDatabase.existingSecret) }}
+{{- $errors = append $errors "externalDatabase needs a password or an existingSecret." }}
+{{- end }}
+{{- end }}
+{{- if $v.redis.enabled }}
+{{- if $v.externalRedis.host }}
+{{- $errors = append $errors "externalRedis.host is set while redis.enabled is true: disable the built-in Redis to use an external one." }}
+{{- end }}
+{{- else if not $v.externalRedis.host }}
+{{- $errors = append $errors "externalRedis.host is required when redis.enabled is false." }}
+{{- end }}
+{{- if $v.clickhouse.enabled }}
+{{- if $v.externalClickhouse.url }}
+{{- $errors = append $errors "externalClickhouse.url is set while clickhouse.enabled is true: disable the built-in ClickHouse to use an external one." }}
+{{- end }}
+{{- else if not (regexMatch "^https?://[^/]+/?$" ($v.externalClickhouse.url | default "")) }}
+{{- $errors = append $errors "externalClickhouse.url must be an http(s) URL without a path, e.g. https://clickhouse.example.com:8443, when clickhouse.enabled is false." }}
+{{- end }}
+{{- with $v.appwrite.documentsDb }}
+{{- if and .enabled (not .host) }}
+{{- $errors = append $errors "appwrite.documentsDb.host is required when DocumentsDB is enabled." }}
+{{- end }}
+{{- end }}
+{{- with $v.appwrite.vectorsDb }}
+{{- if and .enabled (not .host) (not $v.postgresql.enabled) (ne $v.externalDatabase.adapter "postgresql") }}
+{{- $errors = append $errors "appwrite.vectorsDb.host is required when the main database isn't PostgreSQL." }}
+{{- end }}
 {{- end }}
 {{- if eq $v.workers.mode "grouped" }}
 {{- $catalog := include "appwrite.workers.catalog" . | fromYaml }}
