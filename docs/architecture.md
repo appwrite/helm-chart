@@ -39,7 +39,7 @@ flowchart LR
 | `api` | `appwrite/appwrite` | `php app/http.php` | Horizontally (HPA) | REST and GraphQL API. Also proxies function, site and custom-domain traffic, and serves ACME challenges. |
 | `console` | `appwrite/new` | image default | Horizontally (HPA) | The web console, a separate Bun app. |
 | `realtime` | `appwrite/appwrite` | `php app/realtime.php` | Horizontally (HPA) | WebSocket server for `/v1/realtime`. One Swoole worker per pod by default. |
-| `worker` | `appwrite/appwrite` | `php app/worker.php all` | Horizontally | Consumes every queue: database changes, deletes, mails, webhooks, certificates, usage, builds and more. |
+| `worker` | `appwrite/appwrite` | `php app/worker.php all` | See [worker topologies](#worker-topologies) | Consumes every queue: database changes, deletes, mails, webhooks, certificates, usage, builds and more. |
 | `scheduler` | `appwrite/appwrite` | `php app/cli.php schedule` | **One replica** | Enqueues scheduled function executions and messages. |
 | `maintenance` | `appwrite/appwrite` | `php app/cli.php maintenance` | **One replica** | Periodic cleanup and certificate renewals. |
 | `interval` | `appwrite/appwrite` | `php app/cli.php interval` | **One replica** | Custom domain verification and stale execution cleanup. |
@@ -51,6 +51,52 @@ flowchart LR
 The scheduler, maintenance and interval tasks have no leader election in
 Appwrite, so a second copy would do the same work twice. The chart always runs
 exactly one of each and recreates (rather than rolls) them on updates.
+
+## Worker topologies
+
+Appwrite's work happens on 15 Redis queues. `workers.mode` decides how they're
+spread over Deployments:
+
+| Mode | Deployments | When to use |
+| --- | --- | --- |
+| `combined` (default) | `worker`, consuming every queue | Small installs. Uses the least memory. |
+| `separate` | `worker-<queue>`, one per queue in `workers.queues` | Scale or size each queue independently. Matches Appwrite's `docker-compose.separate.yml`. |
+| `grouped` | `worker-<group>`, one per entry in `workers.groups` | Isolate noisy queues (usage, builds) without running 15 pods. |
+
+```yaml
+workers:
+  mode: grouped
+  groups:
+    core:
+      queues: [databases, deletes, mails, messaging, notifications, certificates, migrations, webhooks]
+    usage:
+      queues: [stats-usage, stats-resources]
+      replicaCount: 2
+    compute:
+      queues: [builds, jobs, functions, executions, screenshots]
+```
+
+The `databases` queue applies schema changes in order and must have exactly
+one consumer, so whichever Deployment consumes it is capped at one replica
+and never autoscaled. In `combined` mode that is the only worker, which is why
+`workers.combined.replicaCount` can't exceed 1; switch to `separate` or
+`grouped` to scale the rest.
+
+`_APP_WORKER_MAX_COROUTINES` sizes each worker's connection pool. The chart
+sets it to the queue's own concurrency in `separate` mode (as Appwrite's
+compose file does) and to the sum of its queues' concurrency in `grouped` mode.
+
+Only workers whose queues touch files mount the `/storage` volume: deletes,
+builds, jobs, screenshots, certificates, messaging and migrations. That keeps
+the ReadWriteOnce co-location to the pods that need it.
+
+`tasks.scheduler.mode: separate` similarly splits the scheduler into
+`scheduler-functions`, `scheduler-executions`, `scheduler-messages` and
+`stats-resources`. Each still runs as a single replica.
+
+Queues no Deployment consumes (a disabled queue in `separate` mode, or a
+queue missing from every group) are listed as a warning after install or
+upgrade. Their jobs pile up in Redis until something consumes them.
 
 ## Startup order
 

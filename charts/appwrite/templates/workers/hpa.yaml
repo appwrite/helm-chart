@@ -1,0 +1,6 @@
+{{- range (include "appwrite.workers.deployments" . | fromYamlArray) }}
+{{- if and .values.autoscaling .values.autoscaling.enabled (not .singleton) }}
+---
+{{- include "appwrite.hpa" (dict "root" $ "component" .component "autoscaling" (merge (dict) .values.autoscaling (dict "targetMemoryUtilizationPercentage" "" "behavior" dict))) }}
+{{- end }}
+{{- end }}

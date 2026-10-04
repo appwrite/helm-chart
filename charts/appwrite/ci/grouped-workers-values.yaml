@@ -1,0 +1,19 @@
+# Queues grouped into three Deployments.
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  forceHttps: false
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+workers:
+  mode: grouped
+  groups:
+    core:
+      queues: [databases, deletes, mails, messaging, notifications, certificates, migrations, webhooks]
+    usage:
+      queues: [stats-usage, stats-resources]
+    compute:
+      queues: [builds, jobs, functions, executions, screenshots]

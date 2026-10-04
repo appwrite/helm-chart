@@ -2191,6 +2191,14 @@
               "description": "Run the scheduler for function, execution and message schedules.",
               "type": "boolean"
             },
+            "mode": {
+              "description": "`combined` runs one scheduler pod. `separate` runs the functions, executions and messages schedulers and the resource-usage task as separate pods, each with these resources.",
+              "type": "string",
+              "enum": [
+                "combined",
+                "separate"
+              ]
+            },
             "resources": {
               "type": "object",
               "properties": {
@@ -2277,8 +2285,9 @@
               "minimum": 1
             },
             "replicaCount": {
-              "description": "Number of combined worker replicas. Each replica consumes every queue.",
+              "description": "Replicas. Capped at 1, because the `databases` queue must have a single consumer; use `separate` or `grouped` to scale other queues.",
               "type": "integer",
+              "maximum": 1,
               "minimum": 0
             },
             "resources": {
@@ -2340,6 +2349,104 @@
           },
           "description": "Extra volumes for every worker."
         },
+        "groups": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "queues": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              },
+              "replicaCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "processes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxCoroutines": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "cpuNum": {
+                "type": [
+                  "string",
+                  "integer"
+                ]
+              },
+              "resources": {
+                "type": "object",
+                "properties": {
+                  "requests": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    }
+                  },
+                  "limits": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    }
+                  },
+                  "claims": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "autoscaling": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "minReplicas": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxReplicas": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "targetCPUUtilizationPercentage": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "queues"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Deployments used when `mode` is `grouped`: a map of group name to `queues` (list of queue names, e.g. `stats-usage`) plus optional `replicaCount`, `processes`, `maxCoroutines`, `cpuNum`, `resources` and `autoscaling`. Every queue should be in exactly one group."
+        },
+        "mode": {
+          "description": "How queues are spread over Deployments. `combined` runs one Deployment that consumes every queue. `separate` runs one Deployment per queue (configured under `queues`). `grouped` runs one Deployment per entry in `groups`, each consuming a list of queues.",
+          "type": "string",
+          "enum": [
+            "combined",
+            "separate",
+            "grouped"
+          ]
+        },
         "nodeSelector": {
           "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
           "type": "object",
@@ -2368,6 +2475,1118 @@
         "priorityClassName": {
           "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
           "type": "string"
+        },
+        "queues": {
+          "type": "object",
+          "properties": {
+            "builds": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `builds` queue. Function and site builds (needs an executor).",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "certificates": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `certificates` queue. Let's Encrypt certificates and custom domain verification.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "databases": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "description": "Consume the `databases` queue. Database, collection, attribute and index changes. Must have a single consumer: `replicaCount` is capped at 1.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "maximum": 1,
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas. Capped at 1.",
+                  "type": "integer",
+                  "maximum": 1,
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "deletes": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `deletes` queue. Deletes and cleanup.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "executions": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `executions` queue. Execution logs.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "functions": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `functions` queue. Function executions (needs an executor).",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "jobs": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `jobs` queue. Build job events from the orchestrator.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "mails": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `mails` queue. Emails.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "messaging": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `messaging` queue. Messaging (email, SMS, push providers).",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "migrations": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `migrations` queue. Imports from other Appwrite instances and providers.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "notifications": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `notifications` queue. Push notifications.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "screenshots": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `screenshots` queue. Site screenshots (needs the browser service).",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "statsResources": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `stats-resources` queue. Periodic resource counts per project.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "statsUsage": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `stats-usage` queue. Usage statistics written to ClickHouse after every request.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            },
+            "webhooks": {
+              "type": "object",
+              "properties": {
+                "autoscaling": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Create a HorizontalPodAutoscaler.",
+                      "type": "boolean"
+                    },
+                    "maxReplicas": {
+                      "description": "Maximum replicas.",
+                      "type": "integer"
+                    },
+                    "minReplicas": {
+                      "description": "Minimum replicas.",
+                      "type": "integer"
+                    },
+                    "targetCPUUtilizationPercentage": {
+                      "description": "Target average CPU utilisation, in percent.",
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "enabled": {
+                  "description": "Consume the `webhooks` queue. Webhook deliveries.",
+                  "type": "boolean"
+                },
+                "maxCoroutines": {
+                  "description": "Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "replicaCount": {
+                  "description": "Replicas.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "limits": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number"
+                        ]
+                      }
+                    },
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "Resource requests and limits. Empty inherits `workers.resources`."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits for `separate` and `grouped` Deployments that don't set their own."
         },
         "terminationGracePeriodSeconds": {
           "description": "Seconds to let workers finish in-flight jobs on shutdown. The queue drains for up to 30s.",

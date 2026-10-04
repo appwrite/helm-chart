@@ -1,15 +1,30 @@
 {{- $t := .Values.tasks }}
-{{- $tasks := list
-  (dict "name" "scheduler" "values" $t.scheduler "command" (list "php" "app/cli.php" "schedule") "extra" (dict "_APP_WORKER_MAX_COROUTINES" "8"))
-  (dict "name" "maintenance" "values" $t.maintenance "command" (list "php" "app/cli.php" "maintenance") "extra" dict)
-  (dict "name" "interval" "values" $t.interval "command" (list "php" "app/cli.php" "interval") "extra" dict) }}
+{{- $scheduler := $t.scheduler }}
+{{- $tasks := list }}
+{{- if $scheduler.enabled }}
+{{- if eq $scheduler.mode "separate" }}
+{{- range $name := list "functions" "executions" "messages" }}
+{{- $tasks = append $tasks (dict "name" (printf "scheduler-%s" $name) "values" $scheduler "command" (list "php" "app/cli.php" (printf "schedule-%s" $name)) "extra" (dict "_APP_WORKER_MAX_COROUTINES" "8")) }}
+{{- end }}
+{{- /* The combined scheduler also counts project resources; run that loop on its own. */}}
+{{- $tasks = append $tasks (dict "name" "stats-resources" "values" $scheduler "command" (list "php" "app/cli.php" "stats-resources") "extra" (dict "_APP_WORKER_MAX_COROUTINES" "8")) }}
+{{- else }}
+{{- $tasks = append $tasks (dict "name" "scheduler" "values" $scheduler "command" (list "php" "app/cli.php" "schedule") "extra" (dict "_APP_WORKER_MAX_COROUTINES" "8")) }}
+{{- end }}
+{{- end }}
+{{- if $t.maintenance.enabled }}
+{{- $tasks = append $tasks (dict "name" "maintenance" "values" $t.maintenance "command" (list "php" "app/cli.php" "maintenance") "extra" dict) }}
+{{- end }}
+{{- if $t.interval.enabled }}
+{{- $tasks = append $tasks (dict "name" "interval" "values" $t.interval "command" (list "php" "app/cli.php" "interval") "extra" dict) }}
+{{- end }}
 {{- range $tasks }}
-{{- if .values.enabled }}
 ---
 {{- $env := include "appwrite.env" (dict "root" $ "cpuNum" (include "appwrite.cpuNum" .values) "extra" .extra) }}
 {{- include "appwrite.deployment" (dict
   "root" $
   "component" .name
+  "role" "task"
   "values" .values
   "parent" $t
   "appwrite" true
@@ -18,5 +33,4 @@
   "singleton" true
   "initContainers" (include "appwrite.initContainer.waitForApi" $)
 ) }}
-{{- end }}
 {{- end }}

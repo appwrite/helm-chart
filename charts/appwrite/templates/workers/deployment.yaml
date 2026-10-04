@@ -1,19 +1,31 @@
 {{- $w := .Values.workers }}
-{{- $c := $w.combined }}
-{{- if gt (int $c.replicaCount) 0 }}
-{{- $env := include "appwrite.env" (dict "root" . "cpuNum" (include "appwrite.cpuNum" $c) "extra" (dict "_APP_WORKERS_NUM" $c.processes "_APP_WORKER_MAX_COROUTINES" $c.maxCoroutines)) }}
+{{- range (include "appwrite.workers.deployments" . | fromYamlArray) }}
+{{- $v := .values }}
+{{- if or (gt (int ($v.replicaCount | default 0)) 0) (and $v.autoscaling $v.autoscaling.enabled) }}
+---
+{{- $extra := dict "_APP_WORKERS_NUM" ($v.processes | default 1) }}
+{{- with $v.maxCoroutines }}
+{{- $_ := set $extra "_APP_WORKER_MAX_COROUTINES" . }}
+{{- end }}
+{{- $env := include "appwrite.env" (dict "root" $ "cpuNum" (include "appwrite.cpuNum" $v) "extra" $extra) }}
+{{- $autoscaling := false }}
+{{- if and $v.autoscaling (not .singleton) }}
+{{- $autoscaling = $v.autoscaling.enabled | default false }}
+{{- end }}
 {{- include "appwrite.deployment" (dict
-  "root" .
-  "component" "worker"
-  "values" $c
+  "root" $
+  "component" .component
+  "role" "worker"
+  "values" $v
   "parent" $w
   "appwrite" true
-  "command" (list "php" "app/worker.php" "all")
+  "command" (list "php" "app/worker.php" (join "," .queues))
   "env" $env
-  "replicas" $c.replicaCount
+  "replicas" (ternary nil ($v.replicaCount | default 0) $autoscaling)
   "spread" true
-  "storage" true
-  "certbot" true
-  "initContainers" (include "appwrite.initContainer.waitForApi" .)
+  "storage" .storage
+  "certbot" .certbot
+  "initContainers" (include "appwrite.initContainer.waitForApi" $)
 ) }}
+{{- end }}
 {{- end }}

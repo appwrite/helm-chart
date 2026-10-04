@@ -368,6 +368,7 @@ helm uninstall appwrite --namespace appwrite
 | tasks.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
 | tasks.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | tasks.scheduler.enabled | bool | `true` | Run the scheduler for function, execution and message schedules. |
+| tasks.scheduler.mode | string | `"combined"` | `combined` runs one scheduler pod. `separate` runs the functions, executions and messages schedulers and the resource-usage task as separate pods, each with these resources. |
 | tasks.scheduler.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests and limits. |
 | tasks.terminationGracePeriodSeconds | int | `30` | Seconds to wait on shutdown. |
 | tasks.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
@@ -376,17 +377,136 @@ helm uninstall appwrite --namespace appwrite
 | workers.combined.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |
 | workers.combined.maxCoroutines | int | `78` | Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default matches the sum of every queue's concurrency. |
 | workers.combined.processes | int | `1` | Worker processes per pod (`_APP_WORKERS_NUM`). |
-| workers.combined.replicaCount | int | `1` | Number of combined worker replicas. Each replica consumes every queue. |
+| workers.combined.replicaCount | int | `1` | Replicas. Capped at 1, because the `databases` queue must have a single consumer; use `separate` or `grouped` to scale other queues. |
 | workers.combined.resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"250m","memory":"512Mi"}}` | Resource requests and limits. |
 | workers.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
 | workers.extraEnv | list | `[]` | Extra environment variables for every worker. |
 | workers.extraVolumeMounts | list | `[]` | Extra volume mounts for every worker. |
 | workers.extraVolumes | list | `[]` | Extra volumes for every worker. |
+| workers.groups | object | `{}` | Deployments used when `mode` is `grouped`: a map of group name to `queues` (list of queue names, e.g. `stats-usage`) plus optional `replicaCount`, `processes`, `maxCoroutines`, `cpuNum`, `resources` and `autoscaling`. Every queue should be in exactly one group. |
+| workers.mode | string | `"combined"` | How queues are spread over Deployments. `combined` runs one Deployment that consumes every queue. `separate` runs one Deployment per queue (configured under `queues`). `grouped` runs one Deployment per entry in `groups`, each consuming a list of queues. |
 | workers.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | workers.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | workers.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
 | workers.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
 | workers.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| workers.queues.builds.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.builds.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.builds.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.builds.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.builds.enabled | bool | `true` | Consume the `builds` queue. Function and site builds (needs an executor). |
+| workers.queues.builds.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.builds.replicaCount | int | `1` | Replicas. |
+| workers.queues.builds.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.certificates.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.certificates.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.certificates.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.certificates.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.certificates.enabled | bool | `true` | Consume the `certificates` queue. Let's Encrypt certificates and custom domain verification. |
+| workers.queues.certificates.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.certificates.replicaCount | int | `1` | Replicas. |
+| workers.queues.certificates.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.databases.enabled | bool | `true` | Consume the `databases` queue. Database, collection, attribute and index changes. Must have a single consumer: `replicaCount` is capped at 1. |
+| workers.queues.databases.maxCoroutines | int | `1` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.databases.replicaCount | int | `1` | Replicas. Capped at 1. |
+| workers.queues.databases.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.deletes.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.deletes.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.deletes.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.deletes.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.deletes.enabled | bool | `true` | Consume the `deletes` queue. Deletes and cleanup. |
+| workers.queues.deletes.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.deletes.replicaCount | int | `1` | Replicas. |
+| workers.queues.deletes.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.executions.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.executions.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.executions.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.executions.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.executions.enabled | bool | `true` | Consume the `executions` queue. Execution logs. |
+| workers.queues.executions.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.executions.replicaCount | int | `1` | Replicas. |
+| workers.queues.executions.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.functions.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.functions.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.functions.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.functions.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.functions.enabled | bool | `true` | Consume the `functions` queue. Function executions (needs an executor). |
+| workers.queues.functions.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.functions.replicaCount | int | `1` | Replicas. |
+| workers.queues.functions.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.jobs.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.jobs.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.jobs.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.jobs.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.jobs.enabled | bool | `true` | Consume the `jobs` queue. Build job events from the orchestrator. |
+| workers.queues.jobs.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.jobs.replicaCount | int | `1` | Replicas. |
+| workers.queues.jobs.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.mails.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.mails.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.mails.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.mails.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.mails.enabled | bool | `true` | Consume the `mails` queue. Emails. |
+| workers.queues.mails.maxCoroutines | int | `6` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.mails.replicaCount | int | `1` | Replicas. |
+| workers.queues.mails.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.messaging.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.messaging.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.messaging.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.messaging.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.messaging.enabled | bool | `true` | Consume the `messaging` queue. Messaging (email, SMS, push providers). |
+| workers.queues.messaging.maxCoroutines | int | `1` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.messaging.replicaCount | int | `1` | Replicas. |
+| workers.queues.messaging.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.migrations.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.migrations.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.migrations.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.migrations.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.migrations.enabled | bool | `true` | Consume the `migrations` queue. Imports from other Appwrite instances and providers. |
+| workers.queues.migrations.maxCoroutines | int | `1` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.migrations.replicaCount | int | `1` | Replicas. |
+| workers.queues.migrations.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.notifications.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.notifications.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.notifications.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.notifications.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.notifications.enabled | bool | `true` | Consume the `notifications` queue. Push notifications. |
+| workers.queues.notifications.maxCoroutines | int | `1` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.notifications.replicaCount | int | `1` | Replicas. |
+| workers.queues.notifications.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.screenshots.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.screenshots.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.screenshots.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.screenshots.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.screenshots.enabled | bool | `true` | Consume the `screenshots` queue. Site screenshots (needs the browser service). |
+| workers.queues.screenshots.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.screenshots.replicaCount | int | `1` | Replicas. |
+| workers.queues.screenshots.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.statsResources.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.statsResources.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.statsResources.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.statsResources.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.statsResources.enabled | bool | `true` | Consume the `stats-resources` queue. Periodic resource counts per project. |
+| workers.queues.statsResources.maxCoroutines | int | `1` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.statsResources.replicaCount | int | `1` | Replicas. |
+| workers.queues.statsResources.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.statsUsage.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.statsUsage.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.statsUsage.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.statsUsage.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.statsUsage.enabled | bool | `true` | Consume the `stats-usage` queue. Usage statistics written to ClickHouse after every request. |
+| workers.queues.statsUsage.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.statsUsage.replicaCount | int | `1` | Replicas. |
+| workers.queues.statsUsage.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.queues.webhooks.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.webhooks.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.webhooks.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.webhooks.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.webhooks.enabled | bool | `true` | Consume the `webhooks` queue. Webhook deliveries. |
+| workers.queues.webhooks.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.webhooks.replicaCount | int | `1` | Replicas. |
+| workers.queues.webhooks.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
+| workers.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"50m","memory":"192Mi"}}` | Resource requests and limits for `separate` and `grouped` Deployments that don't set their own. |
 | workers.terminationGracePeriodSeconds | int | `45` | Seconds to let workers finish in-flight jobs on shutdown. The queue drains for up to 30s. |
 | workers.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | workers.topologySpreadConstraints | list | `[]` | Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`. |

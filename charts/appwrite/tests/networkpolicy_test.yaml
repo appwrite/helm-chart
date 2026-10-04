@@ -62,6 +62,12 @@ tests:
       networkPolicy.enabled: true
     asserts:
       - equal:
+          path: spec.podSelector.matchExpressions[0]
+          value:
+            key: appwrite/role
+            operator: In
+            values: [worker, task]
+      - equal:
           path: spec.policyTypes
           value: [Ingress]
       - notExists:

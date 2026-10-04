@@ -18,6 +18,30 @@ QUANTITY_MAP = {"type": "object", "additionalProperties": {"type": ["string", "n
 OBJECT = {"type": "object"}
 OBJECT_LIST = {"type": "array", "items": {"type": "object"}}
 
+WORKER_GROUP = {
+    "type": "object",
+    "properties": {
+        "queues": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "replicaCount": {"type": "integer", "minimum": 0},
+        "processes": {"type": "integer", "minimum": 1},
+        "maxCoroutines": {"type": "integer", "minimum": 1},
+        "cpuNum": {"type": ["string", "integer"]},
+        "resources": None,  # filled in below
+        "autoscaling": {
+            "type": "object",
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "minReplicas": {"type": "integer", "minimum": 1},
+                "maxReplicas": {"type": "integer", "minimum": 1},
+                "targetCPUUtilizationPercentage": {"type": "integer", "minimum": 1},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "required": ["queues"],
+    "additionalProperties": False,
+}
+
 PASSTHROUGH = {
     "resources": {
         "type": "object",
@@ -47,6 +71,8 @@ PASSTHROUGH = {
     "dns": OBJECT_LIST,
     "extraRules": OBJECT_LIST,
 }
+WORKER_GROUP["properties"]["resources"] = PASSTHROUGH["resources"]
+PASSTHROUGH["groups"] = {"type": "object", "additionalProperties": WORKER_GROUP}
 
 
 def relax(node):

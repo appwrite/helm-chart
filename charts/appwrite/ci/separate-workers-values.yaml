@@ -1,0 +1,22 @@
+# One Deployment per queue and separate schedulers, with small requests so
+# every pod fits on a CI runner.
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  forceHttps: false
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+workers:
+  mode: separate
+  resources:
+    requests:
+      cpu: 10m
+      memory: 96Mi
+    limits:
+      memory: 512Mi
+tasks:
+  scheduler:
+    mode: separate

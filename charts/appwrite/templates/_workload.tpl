@@ -4,6 +4,7 @@ Deployment for a chart component.
 Usage: include "appwrite.deployment" (dict
   "root" $                       root context
   "component" "api"              component name
+  "role" "worker"                optional appwrite/role pod label (worker or task)
   "values" .Values.api           component values (resources, scheduling, probes, ...)
   "parent" .Values.workers       optional group values consulted before `defaults`
   "appwrite" true                runs the Appwrite image with the shared env
@@ -43,6 +44,9 @@ Usage: include "appwrite.deployment" (dict
 {{- end }}
 {{- if .storage }}
 {{- $_ := set $podLabels "appwrite/storage" "shared" }}
+{{- end }}
+{{- with .role }}
+{{- $_ := set $podLabels "appwrite/role" . }}
 {{- end }}
 {{- $podAnnotations := dict }}
 {{- if .appwrite }}

@@ -36,6 +36,12 @@ Functions and Sites need an executor, which this chart doesn't run.
 Email is disabled until appwrite.smtp.host is set.
 {{- end }}
 
+{{- with include "appwrite.workers.unconsumed" . }}
+
+WARNING: no worker consumes these queues, so their jobs will pile up in Redis:
+  {{ . }}
+{{- end }}
+
 Check the installation with:
 
   helm test {{ .Release.Name }} -n {{ .Release.Namespace }}

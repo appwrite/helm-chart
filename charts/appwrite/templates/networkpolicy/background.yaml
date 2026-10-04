@@ -5,6 +5,11 @@ kind: NetworkPolicy
 {{ include "appwrite.networkPolicy.metadata" (dict "root" . "name" "background") }}
 spec:
   podSelector:
-    {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "worker" "scheduler" "maintenance" "interval")) | nindent 4 }}
+    matchLabels:
+      {{- include "appwrite.selectorLabels" . | nindent 6 }}
+    matchExpressions:
+      - key: appwrite/role
+        operator: In
+        values: [worker, task]
   policyTypes: [Ingress]
 {{- end }}

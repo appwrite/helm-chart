@@ -1,0 +1,50 @@
+suite: worker validation
+templates:
+  - templates/configmap-env.yaml
+values:
+  - values/required.yaml
+tests:
+  - it: requires groups in grouped mode
+    set:
+      workers.mode: grouped
+    asserts:
+      - failedTemplate:
+          errorPattern: needs at least one entry in workers.groups
+  - it: rejects unknown queues
+    set:
+      workers.mode: grouped
+      workers.groups:
+        a: {queues: [databases, bogus]}
+    asserts:
+      - failedTemplate:
+          errorPattern: unknown queue "bogus"
+  - it: rejects queues in two groups
+    set:
+      workers.mode: grouped
+      workers.groups:
+        a: {queues: [databases]}
+        b: {queues: [databases]}
+    asserts:
+      - failedTemplate:
+          errorPattern: queue "databases" is in both a and b
+  - it: keeps the databases queue on one consumer
+    set:
+      workers.mode: grouped
+      workers.groups:
+        a: {queues: [databases], replicaCount: 2}
+    asserts:
+      - failedTemplate:
+          errorPattern: must have a single consumer
+  - it: rejects invalid group names
+    set:
+      workers.mode: grouped
+      workers.groups:
+        Core_Queues: {queues: [databases]}
+    asserts:
+      - failedTemplate:
+          errorPattern: group names must be lowercase
+  - it: rejects scaling the combined worker
+    set:
+      workers.combined.replicaCount: 2
+    asserts:
+      - failedTemplate: {}

@@ -511,9 +511,15 @@ realtime:
 
 # Queue workers (`app/worker.php`).
 workers:
+  # -- How queues are spread over Deployments. `combined` runs one Deployment
+  # that consumes every queue. `separate` runs one Deployment per queue
+  # (configured under `queues`). `grouped` runs one Deployment per entry in
+  # `groups`, each consuming a list of queues.
+  mode: combined # @schema enum: [combined, separate, grouped]
   combined:
-    # -- Number of combined worker replicas. Each replica consumes every queue.
-    replicaCount: 1 # @schema minimum: 0
+    # -- Replicas. Capped at 1, because the `databases` queue must have a
+    # single consumer; use `separate` or `grouped` to scale other queues.
+    replicaCount: 1 # @schema minimum: 0; maximum: 1
     # -- Worker processes per pod (`_APP_WORKERS_NUM`).
     processes: 1 # @schema minimum: 1
     # -- Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`).
@@ -528,6 +534,282 @@ workers:
         memory: 512Mi
       limits:
         memory: 2Gi
+  # Per-queue Deployments, used when `mode` is `separate`. Scheduling,
+  # security and extra settings come from the `workers` keys below.
+  queues:
+    statsUsage:
+      # -- Consume the `stats-usage` queue. Usage statistics written to ClickHouse after every request.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    statsResources:
+      # -- Consume the `stats-resources` queue. Periodic resource counts per project.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 1 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    webhooks:
+      # -- Consume the `webhooks` queue. Webhook deliveries.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    deletes:
+      # -- Consume the `deletes` queue. Deletes and cleanup.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    databases:
+      # -- Consume the `databases` queue. Database, collection, attribute and index changes. Must have a single consumer: `replicaCount` is capped at 1.
+      enabled: true
+      # -- Replicas. Capped at 1.
+      replicaCount: 1 # @schema minimum: 0; maximum: 1
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 1 # @schema minimum: 1; maximum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+    builds:
+      # -- Consume the `builds` queue. Function and site builds (needs an executor).
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    jobs:
+      # -- Consume the `jobs` queue. Build job events from the orchestrator.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    screenshots:
+      # -- Consume the `screenshots` queue. Site screenshots (needs the browser service).
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    certificates:
+      # -- Consume the `certificates` queue. Let's Encrypt certificates and custom domain verification.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    executions:
+      # -- Consume the `executions` queue. Execution logs.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    functions:
+      # -- Consume the `functions` queue. Function executions (needs an executor).
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 8 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    mails:
+      # -- Consume the `mails` queue. Emails.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 6 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    notifications:
+      # -- Consume the `notifications` queue. Push notifications.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 1 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    messaging:
+      # -- Consume the `messaging` queue. Messaging (email, SMS, push providers).
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 1 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+    migrations:
+      # -- Consume the `migrations` queue. Imports from other Appwrite instances and providers.
+      enabled: true
+      # -- Replicas.
+      replicaCount: 1 # @schema minimum: 0
+      # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
+      maxCoroutines: 1 # @schema minimum: 1
+      # -- Resource requests and limits. Empty inherits `workers.resources`.
+      resources: {}
+      autoscaling:
+        # -- Create a HorizontalPodAutoscaler.
+        enabled: false
+        # -- Minimum replicas.
+        minReplicas: 1
+        # -- Maximum replicas.
+        maxReplicas: 5
+        # -- Target average CPU utilisation, in percent.
+        targetCPUUtilizationPercentage: 75
+  # -- Deployments used when `mode` is `grouped`: a map of group name to
+  # `queues` (list of queue names, e.g. `stats-usage`) plus optional
+  # `replicaCount`, `processes`, `maxCoroutines`, `cpuNum`, `resources` and
+  # `autoscaling`. Every queue should be in exactly one group.
+  groups: {} # @schema additionalProperties: {type: object}
+  # -- Resource requests and limits for `separate` and `grouped` Deployments that don't set their own.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      memory: 1Gi
   # -- Seconds to let workers finish in-flight jobs on shutdown. The queue drains for up to 30s.
   terminationGracePeriodSeconds: 45
   # -- Pod security context. Empty inherits `podSecurityContext`.
@@ -561,6 +843,10 @@ tasks:
   scheduler:
     # -- Run the scheduler for function, execution and message schedules.
     enabled: true
+    # -- `combined` runs one scheduler pod. `separate` runs the functions,
+    # executions and messages schedulers and the resource-usage task as
+    # separate pods, each with these resources.
+    mode: combined # @schema enum: [combined, separate]
     # -- Resource requests and limits.
     resources:
       requests:
