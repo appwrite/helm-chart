@@ -2278,6 +2278,66 @@
       },
       "additionalProperties": false
     },
+    "migrations": {
+      "type": "object",
+      "properties": {
+        "activeDeadlineSeconds": {
+          "description": "Seconds the migration may run before it's stopped.",
+          "type": "integer",
+          "minimum": 60
+        },
+        "allowDowngrade": {
+          "description": "Allow upgrading to an older Appwrite version than the one installed. Appwrite can't migrate data backwards; restore a backup instead.",
+          "type": "boolean"
+        },
+        "backoffLimit": {
+          "description": "Retries after a failure.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "mode": {
+          "description": "How to run it. `hook`: a Helm post-upgrade hook, only when the Appwrite version changes. `job`: a regular Job named after the version, for tools that don't run Helm hooks (Argo CD). `none`: run it yourself.",
+          "type": "string",
+          "enum": [
+            "hook",
+            "job",
+            "none"
+          ]
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        }
+      },
+      "additionalProperties": false
+    },
     "mqtt": {
       "type": "object",
       "properties": {

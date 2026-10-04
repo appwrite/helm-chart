@@ -1,0 +1,126 @@
+suite: migrations
+templates:
+  - templates/hooks/migrate-hook.yaml
+  - templates/hooks/migrate-job.yaml
+  - templates/api/deployment.yaml
+  - templates/configmap-env.yaml
+release:
+  name: aw
+  namespace: appwrite
+values:
+  - values/required.yaml
+set:
+  appwrite.secrets.opensslKey: test-key
+tests:
+  - it: records the Appwrite version on the API Deployment
+    template: templates/api/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["appwrite/version"]
+          value: "2.3.0"
+
+  - it: doesn't migrate on install
+    templates:
+      - templates/hooks/migrate-hook.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: migrates in a post-upgrade hook when the version can't be read
+    template: templates/hooks/migrate-hook.yaml
+    release:
+      upgrade: true
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: post-upgrade
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [php, app/cli.php, migrate]
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-api
+
+  - it: migrates when the installed version differs
+    template: templates/hooks/migrate-hook.yaml
+    release:
+      upgrade: true
+    kubernetesProvider:
+      scheme:
+        "apps/v1/Deployment":
+          gvr: {group: apps, version: v1, resource: deployments}
+          namespaced: true
+      objects:
+        - kind: Deployment
+          apiVersion: apps/v1
+          metadata:
+            name: aw-appwrite-api
+            namespace: appwrite
+            annotations:
+              appwrite/version: 2.2.0
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: skips the migration when the version is unchanged
+    template: templates/hooks/migrate-hook.yaml
+    release:
+      upgrade: true
+    kubernetesProvider:
+      scheme:
+        "apps/v1/Deployment":
+          gvr: {group: apps, version: v1, resource: deployments}
+          namespaced: true
+      objects:
+        - kind: Deployment
+          apiVersion: apps/v1
+          metadata:
+            name: aw-appwrite-api
+            namespace: appwrite
+            annotations:
+              appwrite/version: 2.3.0
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: refuses to downgrade
+    template: templates/configmap-env.yaml
+    kubernetesProvider:
+      scheme:
+        "apps/v1/Deployment":
+          gvr: {group: apps, version: v1, resource: deployments}
+          namespaced: true
+      objects:
+        - kind: Deployment
+          apiVersion: apps/v1
+          metadata:
+            name: aw-appwrite-api
+            namespace: appwrite
+            annotations:
+              appwrite/version: 2.4.0
+    asserts:
+      - failedTemplate:
+          errorPattern: Appwrite 2.4.0 is installed and this would downgrade it to 2.3.0
+
+  - it: renders a version-named Job in job mode
+    template: templates/hooks/migrate-job.yaml
+    set:
+      migrations.mode: job
+    asserts:
+      - equal:
+          path: metadata.name
+          value: aw-appwrite-migrate-2-3-0
+      - notExists:
+          path: metadata.annotations["helm.sh/hook"]
+
+  - it: renders nothing in none mode
+    templates:
+      - templates/hooks/migrate-hook.yaml
+      - templates/hooks/migrate-job.yaml
+    release:
+      upgrade: true
+    set:
+      migrations.mode: none
+    asserts:
+      - hasDocuments:
+          count: 0

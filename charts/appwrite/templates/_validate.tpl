@@ -110,6 +110,13 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- $errors = append $errors (printf "appwrite.config.%s: keys must be Appwrite variables matching ^_APP_[A-Z0-9_]+$." $k) }}
 {{- end }}
 {{- end }}
+{{- $installed := include "appwrite.installedVersion" . }}
+{{- $target := include "appwrite.version" . }}
+{{- if and $installed (not $v.migrations.allowDowngrade) (regexMatch "^v?[0-9]+\\.[0-9]+\\.[0-9]+" $installed) (regexMatch "^v?[0-9]+\\.[0-9]+\\.[0-9]+" $target) }}
+{{- if semverCompare (printf "<%s" $installed) $target }}
+{{- $errors = append $errors (printf "Appwrite %s is installed and this would downgrade it to %s. Appwrite can't migrate data backwards; restore a backup taken before the upgrade instead, or set migrations.allowDowngrade=true." $installed $target) }}
+{{- end }}
+{{- end }}
 {{- if $errors }}
 {{- fail (printf "\n\nInvalid values:\n  - %s\n" (join "\n  - " $errors)) }}
 {{- end }}

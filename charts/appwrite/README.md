@@ -386,6 +386,11 @@ helm uninstall appwrite --namespace appwrite
 | ingress.wildcard.enabled | bool | `true` | Route `*.<functionsDomain>` and `*.<sitesDomain>` (function and site preview URLs) to the API. |
 | ingress.wildcard.tls.enabled | bool | `false` | Terminate TLS for the wildcard hosts. Needs a wildcard certificate, which ACME issues through DNS-01. |
 | ingress.wildcard.tls.secretName | string | `""` | Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`. |
+| migrations.activeDeadlineSeconds | int | `7200` | Seconds the migration may run before it's stopped. |
+| migrations.allowDowngrade | bool | `false` | Allow upgrading to an older Appwrite version than the one installed. Appwrite can't migrate data backwards; restore a backup instead. |
+| migrations.backoffLimit | int | `1` | Retries after a failure. |
+| migrations.mode | string | `"hook"` | How to run it. `hook`: a Helm post-upgrade hook, only when the Appwrite version changes. `job`: a regular Job named after the version, for tools that don't run Helm hooks (Argo CD). `none`: run it yourself. |
+| migrations.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests and limits. |
 | mqtt.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | mqtt.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
 | mqtt.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |

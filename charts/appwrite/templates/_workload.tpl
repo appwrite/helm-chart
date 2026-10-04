@@ -21,6 +21,7 @@ Usage: include "appwrite.deployment" (dict
   "certbot" false                mount writable certbot directories
   "initContainers" "<yaml list>" init containers (rendered YAML)
   "preStopSleepSeconds" 0        sleep before shutdown
+  "annotations" (dict)           extra Deployment annotations
 )
 */}}
 {{- define "appwrite.deployment" -}}
@@ -59,7 +60,7 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "appwrite.componentLabels" (dict "root" $root "component" .component) | nindent 4 }}
-  {{- with include "appwrite.annotations" (dict "root" $root) | trim }}{{ . | nindent 2 }}{{ end }}
+  {{- with include "appwrite.annotations" (dict "root" $root "annotations" (.annotations | default dict)) | trim }}{{ . | nindent 2 }}{{ end }}
 spec:
   {{- if .singleton }}
   replicas: 1

@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   install:
-    name: ${{ matrix.scenario }} (k8s ${{ matrix.kubernetes }})
+    name: ${{ matrix.scenario }} (k8s ${{ matrix.kubernetes }})${{ matrix.upgrade-from && format(' upgrade from {0}', matrix.upgrade-from) || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -45,6 +45,10 @@ jobs:
             kubernetes: v1.37.0
           - scenario: grouped-workers
             kubernetes: v1.37.0
+          # Install the previous Appwrite release, then upgrade to the chart's.
+          - scenario: default
+            kubernetes: v1.37.0
+            upgrade-from: 2.2.0
           # PostgreSQL, Redis and ClickHouse outside the release.
           - scenario: external-dbs
             kubernetes: v1.37.0
@@ -84,8 +88,18 @@ jobs:
           kubectl -n external-dbs rollout status statefulset/postgres --timeout=5m
           kubectl -n external-dbs rollout status deployment/redis --timeout=5m
           kubectl -n external-dbs rollout status deployment/clickhouse --timeout=5m
+      - name: Install Appwrite ${{ matrix.upgrade-from }}
+        if: matrix.upgrade-from
+        run: |
+          helm upgrade --install appwrite charts/appwrite -n appwrite --create-namespace \
+            -f charts/appwrite/ci/${{ matrix.scenario }}-values.yaml --set image.tag=${{ matrix.upgrade-from }} --wait --timeout 15m
+          make smoke
       - name: Install
         run: make install VALUES=charts/appwrite/ci/${{ matrix.scenario }}-values.yaml
+      - name: Check the API runs the new version (the migration hook must succeed for the upgrade to pass)
+        if: matrix.upgrade-from
+        run: |
+          kubectl -n appwrite get deployment appwrite-api -o jsonpath='{.metadata.annotations.appwrite/version}' | grep -qx "$(awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}' charts/appwrite/Chart.yaml)"
       - name: helm test
         run: make helm-test
       - name: Smoke test

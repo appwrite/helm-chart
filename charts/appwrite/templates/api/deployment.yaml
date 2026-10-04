@@ -18,4 +18,5 @@
   "storage" true
   "initContainers" $init
   "preStopSleepSeconds" $v.preStopSleepSeconds
+  "annotations" (dict "appwrite/version" (include "appwrite.version" .))
 ) }}

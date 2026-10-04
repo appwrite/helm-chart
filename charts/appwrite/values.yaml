@@ -1696,6 +1696,28 @@ networkPolicy:
     # -- Extra egress rules (NetworkPolicyEgressRule) when egress is restricted.
     extraRules: [] # @schema item: object
 
+# Appwrite's data migration (`php app/cli.php migrate`), which must run after
+# Appwrite is upgraded to a new version. Fresh installs don't need it.
+migrations:
+  # -- How to run it. `hook`: a Helm post-upgrade hook, only when the Appwrite
+  # version changes. `job`: a regular Job named after the version, for tools
+  # that don't run Helm hooks (Argo CD). `none`: run it yourself.
+  mode: hook # @schema enum: [hook, job, none]
+  # -- Allow upgrading to an older Appwrite version than the one installed.
+  # Appwrite can't migrate data backwards; restore a backup instead.
+  allowDowngrade: false
+  # -- Seconds the migration may run before it's stopped.
+  activeDeadlineSeconds: 7200 # @schema minimum: 60
+  # -- Retries after a failure.
+  backoffLimit: 1 # @schema minimum: 0
+  # -- Resource requests and limits.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
 tests:
   # -- Render `helm test` pods.
   enabled: true

@@ -1,0 +1,8 @@
+{{- if eq .Values.migrations.mode "job" }}
+{{- /*
+One Job per Appwrite version. Jobs are immutable, so tools that sync
+continuously (Argo CD) run the migration once per version.
+*/}}
+{{- $name := printf "%s-migrate-%s" (include "appwrite.fullname" .) (include "appwrite.version" . | replace "." "-" | replace "+" "-" | lower) | trunc 63 | trimSuffix "-" }}
+{{- include "appwrite.migrateJob" (dict "root" . "name" $name "hook" false) }}
+{{- end }}
