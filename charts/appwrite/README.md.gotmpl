@@ -5,26 +5,106 @@
 {{ template "chart.description" . }}
 
 > [!WARNING]
-> This chart is under active development and not yet released. Values and
-> behaviour may change between pre-1.0 versions.
+> Pre-1.0: values and behaviour may still change between minor versions.
+> Read the [changelog](https://github.com/levivannoort/helm-chart/blob/main/CHANGELOG.md) before upgrading.
+
+- Runs Appwrite under the `restricted` Pod Security Standard: non-root,
+  read-only root filesystem, no capabilities, no ServiceAccount token.
+- Built-in PostgreSQL, Redis and ClickHouse for a one-command install, or
+  your own managed services.
+- Ingress or Gateway API routes for the API, console, realtime, function and
+  site previews and custom domains.
+- Worker topologies from one combined worker to one Deployment per queue.
+- Functions and Sites through an executor on a separate Docker host, so the
+  cluster never runs privileged pods.
+- Credentials generated once and kept, data migrations on upgrade, and guards
+  against changing the encryption key or downgrading.
 
 ## Requirements
 
 - Kubernetes {{ template "chart.kubeVersion" . }}
-- Helm 4.x, or Helm 3.18+
+- Helm 4, or Helm 3.18 or later
+- A default StorageClass, or `global.storageClass`
 
-## Installing
+## Quick start
 
 ```console
 helm install appwrite oci://ghcr.io/levivannoort/charts/appwrite \
-  --namespace appwrite --create-namespace
+  --namespace appwrite --create-namespace \
+  --set appwrite.domain=appwrite.example.com \
+  --set appwrite.certificatesEmail=ops@example.com \
+  --set ingress.enabled=true
 ```
+
+Open `https://appwrite.example.com` and sign up: the first account becomes the
+console administrator. Then **back up the encryption key**:
+
+```console
+kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}' | base64 -d
+```
+
+Without an ingress, port-forward instead:
+
+```console
+kubectl -n appwrite port-forward svc/appwrite-console 3000:80
+```
+
+Then, still without an ingress, install with `--set appwrite.forceHttps=false`.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  user([Browser / SDK]) --> edge{{ "{{" }}Ingress or Gateway{{ "}}" }}
+  edge -- "/v1/realtime" --> realtime[realtime]
+  edge -- "/v1, previews,\ncustom domains" --> api[api]
+  edge -- "/" --> console[console]
+  api --> pg[(PostgreSQL)]
+  api --> redis[(Redis)]
+  api --> ch[(ClickHouse)]
+  redis -- queues --> workers[workers]
+  tasks[scheduler, maintenance,\ninterval] --> redis
+  workers --> pg
+  api -. "optional" .-> compute[[executor and orchestrator\non a Docker host]]
+```
+
+See the [architecture guide](https://github.com/levivannoort/helm-chart/blob/main/docs/architecture.md).
+
+## Not included
+
+- **Functions and Sites runtime.** Appwrite's executor needs a Docker daemon;
+  run it next to the cluster ([guide](https://github.com/levivannoort/helm-chart/blob/main/docs/executor.md)).
+- **Highly available datastores.** The built-in ones are single replicas. Use
+  managed services or operators in production
+  ([guide](https://github.com/levivannoort/helm-chart/blob/main/docs/external-databases.md)).
+- **Metrics.** Appwrite 2.3.0 exposes no Prometheus metrics.
+
+## Documentation
+
+| Guide | |
+| --- | --- |
+| [Production checklist](https://github.com/levivannoort/helm-chart/blob/main/docs/production.md) | What to change before going live |
+| [Architecture](https://github.com/levivannoort/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
+| [Networking, TLS and domains](https://github.com/levivannoort/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
+| [External databases](https://github.com/levivannoort/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
+| [Storage](https://github.com/levivannoort/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
+| [Functions and Sites](https://github.com/levivannoort/helm-chart/blob/main/docs/executor.md) | External executor and orchestrator |
+| [Optional components](https://github.com/levivannoort/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
+| [Security](https://github.com/levivannoort/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
+| [Upgrading](https://github.com/levivannoort/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
+| [Backup and restore](https://github.com/levivannoort/helm-chart/blob/main/docs/backup-restore.md) | What to back up and how |
+| [Migrating from Docker](https://github.com/levivannoort/helm-chart/blob/main/docs/migrating-from-docker.md) | Moving an existing install |
+| [GitOps](https://github.com/levivannoort/helm-chart/blob/main/docs/gitops.md) | Argo CD and Flux |
+| [Troubleshooting](https://github.com/levivannoort/helm-chart/blob/main/docs/troubleshooting.md) | Common problems |
 
 ## Uninstalling
 
 ```console
 helm uninstall appwrite --namespace appwrite
 ```
+
+The chart's Secret and the `/storage` PersistentVolumeClaim are kept, as are
+the datastores' claims; delete them to remove all data.
 
 {{ template "chart.maintainersSection" . }}
 

@@ -119,3 +119,19 @@ jobs:
           helm plugin install https://github.com/losisin/helm-values-schema-json --version "${HELM_SCHEMA_VERSION}" --verify=false
       - name: Check values.schema.json and README.md
         run: make check-generated
+
+  metadata:
+    name: Chart metadata and links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: artifacthub.io/images matches values.yaml
+        run: hack/chart-images.sh --check
+      - name: Check links in the documentation
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: --config .lychee.toml --no-progress './**/*.md'
+          fail: true

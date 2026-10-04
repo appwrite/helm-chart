@@ -53,12 +53,16 @@ env-defaults: ## Regenerate files/env-defaults.yaml from Appwrite's variables.ph
 	php hack/gen-env-defaults.php .variables.php $(APP_VERSION) > $(CHART)/files/env-defaults.yaml
 	rm -f .variables.php
 
+.PHONY: images
+images: ## Sync the artifacthub.io/images annotation with values.yaml
+	hack/chart-images.sh
+
 .PHONY: generate
-generate: schema docs ## Regenerate all generated files
+generate: schema images docs ## Regenerate all generated files
 
 .PHONY: check-generated
 check-generated: generate ## Fail if generated files are out of date
-	@git diff --exit-code -- $(CHART)/values.schema.json $(CHART)/README.md \
+	@git diff --exit-code -- $(CHART)/values.schema.json $(CHART)/README.md $(CHART)/Chart.yaml \
 		|| (echo "Generated files are stale: run 'make generate' and commit the result." && exit 1)
 
 .PHONY: kubeconform

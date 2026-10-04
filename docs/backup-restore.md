@@ -50,9 +50,9 @@ operator (point-in-time recovery with CloudNativePG, managed snapshots).
 ## ClickHouse
 
 ```console
-kubectl -n appwrite exec appwrite-clickhouse-0 -- clickhouse-client \
-  --user "$USER" --password "$PASSWORD" \
-  --query "BACKUP DATABASE appwrite TO S3('https://s3.example.com/backups/appwrite', 'KEY', 'SECRET')"
+kubectl -n appwrite exec appwrite-clickhouse-0 -- sh -c \
+  "clickhouse-client --user \"\$CLICKHOUSE_USER\" --password \"\$CLICKHOUSE_PASSWORD\" \
+    --query \"BACKUP DATABASE appwrite TO S3('https://s3.example.com/backups/appwrite', 'KEY', 'SECRET')\""
 ```
 
 ## Restoring

@@ -3,32 +3,69 @@
 A Helm chart for running [Appwrite](https://appwrite.io), the open-source
 backend platform, on Kubernetes.
 
-> [!WARNING]
-> Work in progress. The chart hasn't been released yet.
+```console
+helm install appwrite oci://ghcr.io/levivannoort/charts/appwrite \
+  --namespace appwrite --create-namespace \
+  --set appwrite.domain=appwrite.example.com \
+  --set appwrite.certificatesEmail=ops@example.com \
+  --set ingress.enabled=true
+```
 
 | | |
 | --- | --- |
-| Chart | [`charts/appwrite`](charts/appwrite) |
-| Appwrite version | 2.3.0 |
+| Chart | [`charts/appwrite`](charts/appwrite) ([values and usage](charts/appwrite/README.md)) |
+| Appwrite | 2.3.0 |
 | Kubernetes | 1.29+ |
-| Helm | 4.x, or 3.18+ |
+| Helm | 4, or 3.18+ |
+| Documentation | [`docs/`](docs/README.md) |
 
-## What's in this repository
+## Highlights
+
+- Every pod passes the `restricted` Pod Security Standard.
+- Built-in PostgreSQL, Redis and ClickHouse, or your own managed services.
+- Ingress and Gateway API routes, including function and site previews and
+  custom domains.
+- Combined, per-queue or grouped workers.
+- Functions and Sites through an executor on a separate Docker host: no
+  privileged pods, no Docker socket in the cluster.
+- Credentials generated once and kept; data migrations on upgrade.
+
+## Repository layout
 
 ```text
-charts/appwrite/   the chart (values, templates, unit tests, CI scenarios)
+charts/appwrite/   the chart: templates, values, unit tests, CI scenarios
 docs/              operator guides
+examples/compute/  Docker Compose for the Functions and Sites host
 hack/              scripts used by CI and local development
 ```
 
+## Testing
+
+Every change is checked with chart-testing, `helm lint --strict` on Helm 3.18
+and 4, helm-unittest, kubeconform against several Kubernetes versions, and
+installs on kind in a namespace that enforces the `restricted` profile:
+
+| Scenario | What it exercises |
+| --- | --- |
+| `default` | Built-in datastores, combined workers; Kubernetes 1.29 and 1.37 |
+| `default`, upgrade from 2.2.0 | Data migration on upgrade |
+| `hardened` | NetworkPolicies with restricted egress |
+| `separate-workers`, `grouped-workers` | Worker topologies |
+| `external-dbs` | PostgreSQL, Redis and ClickHouse outside the release |
+| `ingress`, `gateway-api` | Routing through Traefik |
+| nightly | Every optional component, S3, and a function built and executed on an external executor |
+
+Each install runs `helm test` and an end-to-end smoke test
+([`hack/smoke.sh`](hack/smoke.sh)).
+
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Common tasks:
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```console
 make tools      # install helm-unittest and helm-values-schema-json
 make test       # lint, unit tests, kubeconform, generated-file check
-make generate   # regenerate values.schema.json and the chart README
+make kind-up install helm-test smoke   # full install on a local kind cluster
 ```
 
 ## License

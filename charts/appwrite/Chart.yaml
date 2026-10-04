@@ -24,7 +24,7 @@ maintainers:
 annotations:
   artifacthub.io/license: BSD-3-Clause
   artifacthub.io/prerelease: "true"
-  artifacthub.io/category: integration-delivery
+  artifacthub.io/category: database
   artifacthub.io/links: |
     - name: Chart source
       url: https://github.com/levivannoort/helm-chart
@@ -34,4 +34,39 @@ annotations:
       url: https://github.com/levivannoort/helm-chart/issues
   artifacthub.io/changes: |
     - kind: added
-      description: Initial chart skeleton
+      description: Appwrite 2.3.0 with the API, console, realtime, workers and tasks, passing the restricted Pod Security Standard
+    - kind: added
+      description: Built-in PostgreSQL, Redis and ClickHouse, or external services
+    - kind: added
+      description: Combined, separate and grouped worker topologies
+    - kind: added
+      description: Ingress and Gateway API routes, including function and site previews and custom domains
+    - kind: added
+      description: S3 storage and Functions and Sites through an external executor and orchestrator
+    - kind: added
+      description: Optional browser, assistant, autogravity, embedding and MQTT components
+    - kind: added
+      description: NetworkPolicies, PodDisruptionBudgets, autoscaling and topology spread
+    - kind: added
+      description: Data migrations on upgrade and a downgrade guard
+  artifacthub.io/images: |
+    - name: appwrite
+      image: docker.io/appwrite/appwrite:2.3.0
+    - name: assistant
+      image: docker.io/appwrite/assistant:0.8.4
+    - name: autogravity
+      image: ghcr.io/appwrite/autogravity:0.0.11
+    - name: browser
+      image: docker.io/appwrite/browser:0.3.4
+    - name: clickhouse
+      image: docker.io/clickhouse/clickhouse-server:26.4.3-alpine
+    - name: console
+      image: docker.io/appwrite/new:1.1.159-self-hosted
+    - name: embedding
+      image: docker.io/appwrite/embedding:0.3.1
+    - name: geo
+      image: docker.io/appwrite/geo:0.3.1
+    - name: postgresql
+      image: docker.io/appwrite/postgres:0.1.0
+    - name: redis
+      image: docker.io/redis:7.4.7-alpine
