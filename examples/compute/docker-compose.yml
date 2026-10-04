@@ -1,0 +1,97 @@
+# Appwrite's compute plane (Functions and Sites) for a Kubernetes install.
+#
+# Run this on a Docker host that the Appwrite pods can reach over a private
+# network. It runs:
+#   - the open-runtimes executor, which runs function and site runtimes;
+#   - the open-runtimes orchestrator, which runs builds.
+# Both create containers through the host's Docker socket, which is why they
+# don't run inside Kubernetes. Files move through the same S3 bucket Appwrite
+# uses (appwrite.storage.device: s3).
+#
+#   cp .env.example .env    # then fill it in
+#   docker compose up -d
+#
+# Then set in the chart:
+#   compute.enabled: true
+#   compute.executor.host: http://<this-host>:${EXECUTOR_PORT}/v1
+#   compute.orchestrator.host: http://<this-host>:${ORCHESTRATOR_PORT}
+# and use the same executor and orchestrator secrets (compute.secrets).
+
+name: appwrite-compute
+
+services:
+  executor:
+    image: openruntimes/executor:0.29.0
+    # The executor finds its own container by hostname.
+    hostname: appwrite-executor
+    container_name: appwrite-executor
+    restart: unless-stopped
+    stop_signal: SIGINT
+    ports:
+      - "${EXECUTOR_PORT:-9900}:80"
+    networks:
+      - runtimes
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Runtimes are started with bind mounts under /tmp, so the paths must be
+      # the same inside the executor and on the host.
+      - /tmp:/tmp:rw
+    environment:
+      OPR_EXECUTOR_ENV: production
+      OPR_EXECUTOR_SECRET: ${EXECUTOR_SECRET:?set EXECUTOR_SECRET to the chart's executor secret}
+      OPR_EXECUTOR_NETWORK: appwrite-runtimes
+      OPR_EXECUTOR_RUNTIMES: ${RUNTIMES:-node-22,static-1}
+      OPR_EXECUTOR_RUNTIME_VERSIONS: v5
+      # Images to pre-pull, e.g. openruntimes/node:v5-22,openruntimes/static:v5-1
+      OPR_EXECUTOR_IMAGES: ${RUNTIME_IMAGES:-}
+      OPR_EXECUTOR_INACTIVE_THRESHOLD: ${INACTIVE_THRESHOLD:-60}
+      OPR_EXECUTOR_MAINTENANCE_INTERVAL: "3600"
+      OPR_EXECUTOR_DOCKER_HUB_USERNAME: ${DOCKER_HUB_USERNAME:-}
+      OPR_EXECUTOR_DOCKER_HUB_PASSWORD: ${DOCKER_HUB_PASSWORD:-}
+      # Appwrite stores build paths with the bucket as their first segment when
+      # an S3 endpoint is set, so the DSN names the endpoint but not the bucket.
+      # AWS S3 (no endpoint configured in Appwrite) instead uses
+      # s3://KEY:SECRET@BUCKET.s3.REGION.amazonaws.com?region=REGION
+      OPR_EXECUTOR_CONNECTION_STORAGE: ${EXECUTOR_STORAGE_DSN:?set EXECUTOR_STORAGE_DSN, e.g. s3://KEY:SECRET@s3.example.com?region=us-east-1}
+    healthcheck:
+      test: ["CMD-SHELL", 'curl -fsS -H "Authorization: Bearer $$OPR_EXECUTOR_SECRET" http://localhost/v1/health >/dev/null']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  orchestrator:
+    image: ghcr.io/open-runtimes/orchestrator/orchestrator:2.2.2
+    container_name: appwrite-orchestrator
+    restart: unless-stopped
+    # Needs root to open the Docker socket.
+    user: "0"
+    stop_grace_period: 60s
+    ports:
+      - "${ORCHESTRATOR_PORT:-8080}:8080"
+    networks:
+      - runtimes
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./orchestrator-api-key:/run/secrets/api-key:ro
+    environment:
+      ORCHESTRATOR_BACKEND: docker
+      ORCHESTRATOR_NETWORK: appwrite-runtimes
+      DOCKER_NETWORK: appwrite-runtimes
+      ARTIFACT_ENDPOINT: http://appwrite-orchestrator:8080
+      # Requests must carry the chart's orchestrator secret as a bearer token.
+      API_KEY_FILE: /run/secrets/api-key
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "/ko-app/orchestrator", "-check-ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+networks:
+  runtimes:
+    # Fixed name: the executor and orchestrator attach the containers they
+    # create to it by this name.
+    name: appwrite-runtimes

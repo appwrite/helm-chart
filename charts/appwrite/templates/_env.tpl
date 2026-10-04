@@ -31,17 +31,17 @@ the env ConfigMap. Precedence, lowest first:
   "_APP_EMAIL_CERTIFICATES" $v.certificatesEmail
   "_APP_LOGGING_FORMAT" $v.logFormat
   "_APP_USAGE_STATS" (get $enabled ($v.usageStats | toString))
-  "_APP_WORKER_PER_CORE" ($v.workerPerCore | toString)
+  "_APP_WORKER_PER_CORE" $v.workerPerCore
   "_APP_CONSOLE_WHITELIST_ROOT" (get $enabled ($v.console.whitelistRoot | toString))
   "_APP_CONSOLE_WHITELIST_EMAILS" (join "," $v.console.whitelistEmails)
   "_APP_CONSOLE_WHITELIST_IPS" (join "," $v.console.whitelistIPs)
   "_APP_SYSTEM_EMAIL_NAME" $v.system.emailName
   "_APP_SYSTEM_EMAIL_ADDRESS" ($v.system.emailAddress | default (printf "noreply@%s" $domain))
   "_APP_EMAIL_SECURITY" $v.system.securityEmailAddress
-  "_APP_CONNECTIONS_MAX" ($v.database.connectionsMax | toString)
-  "_APP_POOL_CLIENTS" ($v.database.poolClients | toString)
+  "_APP_CONNECTIONS_MAX" $v.database.connectionsMax
+  "_APP_POOL_CLIENTS" $v.database.poolClients
   "_APP_SMTP_HOST" $v.smtp.host
-  "_APP_SMTP_PORT" ($v.smtp.port | toString)
+  "_APP_SMTP_PORT" $v.smtp.port
   "_APP_SMTP_SECURE" $v.smtp.secure
   "_APP_SMTP_USERNAME" $v.smtp.username
   "_APP_MIGRATION_HOST" $apiHost
@@ -84,11 +84,36 @@ the env ConfigMap. Precedence, lowest first:
 {{- $_ := set $computed "_APP_DB_USER_VECTORSDB" $vectors.username }}
 {{- end }}
 
+{{- /* Storage */}}
+{{- $storage := $v.storage }}
+{{- $_ := set $computed "_APP_STORAGE_DEVICE" $storage.device }}
+{{- $_ := set $computed "_APP_STORAGE_LIMIT" $storage.limit }}
+{{- $_ := set $computed "_APP_STORAGE_PREVIEW_LIMIT" $storage.previewLimit }}
+{{- if eq $storage.device "s3" }}
+{{- $_ := set $computed "_APP_STORAGE_S3_ENDPOINT" $storage.s3.endpoint }}
+{{- $_ := set $computed "_APP_STORAGE_S3_REGION" $storage.s3.region }}
+{{- $_ := set $computed "_APP_STORAGE_S3_BUCKET" $storage.s3.bucket }}
+{{- end }}
+
+{{- /* External compute plane (Functions and Sites) */}}
+{{- $compute := .Values.compute }}
+{{- if $compute.enabled }}
+{{- $_ := set $computed "_APP_EXECUTOR_HOST" $compute.executor.host }}
+{{- $_ := set $computed "_APP_JOBS_HOST" $compute.orchestrator.host }}
+{{- $_ := set $computed "_APP_JOBS_ENDPOINT" ($compute.appwriteEndpoint | default (printf "%s://%s" (ternary "https" "http" $v.forceHttps) $domain)) }}
+{{- end }}
+{{- with $compute.functionsRuntimes }}
+{{- $_ := set $computed "_APP_FUNCTIONS_RUNTIMES" (join "," .) }}
+{{- end }}
+{{- with $compute.sitesRuntimes }}
+{{- $_ := set $computed "_APP_SITES_RUNTIMES" (join "," .) }}
+{{- end }}
+
 {{- range $k, $val := $computed }}
-{{- $_ := set $env $k ($val | toString) }}
+{{- $_ := set $env $k (include "appwrite.envValue" $val) }}
 {{- end }}
 {{- range $k, $val := $v.config }}
-{{- $_ := set $env $k ($val | toString) }}
+{{- $_ := set $env $k (include "appwrite.envValue" $val) }}
 {{- end }}
 {{- toYaml $env }}
 {{- end }}
@@ -175,6 +200,24 @@ Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WO
 {{- end }}
 {{- end }}
 {{- end }}
+{{- $s3 := $v.appwrite.storage.s3 }}
+{{- if and (eq $v.appwrite.storage.device "s3") (or $s3.existingSecret $s3.accessKey) }}
+- name: _APP_STORAGE_S3_ACCESS_KEY
+  valueFrom:
+    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $s3.existingSecret "key" $s3.accessKeyKey "defaultKey" "s3-access-key") | nindent 4 }}
+- name: _APP_STORAGE_S3_SECRET
+  valueFrom:
+    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $s3.existingSecret "key" $s3.secretKeyKey "defaultKey" "s3-secret-key") | nindent 4 }}
+{{- end }}
+{{- $cs := $v.compute.secrets }}
+{{- if $v.compute.enabled }}
+- name: _APP_EXECUTOR_SECRET
+  valueFrom:
+    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $cs.existingSecret "key" $cs.executorSecretKey "defaultKey" "executor-secret") | nindent 4 }}
+- name: _APP_JOBS_SECRET
+  valueFrom:
+    {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $cs.existingSecret "key" $cs.orchestratorSecretKey "defaultKey" "orchestrator-secret") | nindent 4 }}
+{{- end }}
 {{- if or $v.appwrite.smtp.password $v.appwrite.smtp.existingSecret }}
 - name: _APP_SMTP_PASSWORD
   valueFrom:
@@ -184,7 +227,7 @@ Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WO
   value: {{ .cpuNum | quote }}
 {{- range $k, $val := .extra }}
 - name: {{ $k }}
-  value: {{ $val | toString | quote }}
+  value: {{ include "appwrite.envValue" $val | quote }}
 {{- end }}
 {{- with $v.appwrite.extraEnv }}
 {{ toYaml . }}

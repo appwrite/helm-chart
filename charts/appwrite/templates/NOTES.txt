@@ -30,7 +30,21 @@ First steps
        -o jsonpath='{.data._APP_OPENSSL_KEY_V1}' | base64 -d
 {{- end }}
 
-Functions and Sites need an executor, which this chart doesn't run.
+{{- if .Values.compute.enabled }}
+
+Functions and Sites run on the executor at {{ .Values.compute.executor.host }}
+and build on the orchestrator at {{ .Values.compute.orchestrator.host }}.
+{{- if not .Values.compute.secrets.existingSecret }}
+Configure them with the secrets the chart generated:
+
+  kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} -o jsonpath='{.data.executor-secret}' | base64 -d
+  kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} -o jsonpath='{.data.orchestrator-secret}' | base64 -d
+{{- end }}
+{{- else }}
+
+Functions and Sites are disabled: they need an executor and orchestrator on a
+Docker host (compute.enabled). See docs/executor.md.
+{{- end }}
 {{- if not .Values.appwrite.smtp.host }}
 
 Email is disabled until appwrite.smtp.host is set.

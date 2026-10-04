@@ -28,6 +28,17 @@ template`, Argo CD) lookup returns nothing, so set
 {{- $_ := set $data $key (include "appwrite.secret.value" (dict "root" $ "existing" $existing "key" $key "explicit" $auth.password)) }}
 {{- end }}
 {{- end }}
+{{- $cs := .Values.compute.secrets }}
+{{- if and .Values.compute.enabled (not $cs.existingSecret) }}
+{{- range $key, $explicit := dict "executor-secret" $cs.executorSecret "orchestrator-secret" $cs.orchestratorSecret }}
+{{- $_ := set $data $key (include "appwrite.secret.value" (dict "root" $ "existing" $existing "key" $key "explicit" $explicit)) }}
+{{- end }}
+{{- end }}
+{{- $s3 := .Values.appwrite.storage.s3 }}
+{{- if and (eq .Values.appwrite.storage.device "s3") (not $s3.existingSecret) $s3.accessKey }}
+{{- $_ := set $data "s3-access-key" ($s3.accessKey | toString | b64enc) }}
+{{- $_ := set $data "s3-secret-key" ($s3.secretKey | toString | b64enc) }}
+{{- end }}
 {{- /* Inline passwords of external services, stored so pods can reference them. */}}
 {{- $external := list
   (list (not .Values.postgresql.enabled) .Values.externalDatabase "db-password")

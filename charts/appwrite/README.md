@@ -133,6 +133,17 @@ helm uninstall appwrite --namespace appwrite
 | appwrite.smtp.port | int | `587` | SMTP port (`_APP_SMTP_PORT`). |
 | appwrite.smtp.secure | string | `"tls"` | SMTP encryption (`_APP_SMTP_SECURE`). |
 | appwrite.smtp.username | string | `""` | SMTP username (`_APP_SMTP_USERNAME`). |
+| appwrite.storage.device | string | `"local"` | Where Appwrite stores files (`_APP_STORAGE_DEVICE`): `local` uses the `/storage` volume (see `persistence`), `s3` any S3-compatible object store. S3 is required with an external compute plane. |
+| appwrite.storage.limit | int | `30000000` | Maximum file size in bytes (`_APP_STORAGE_LIMIT`). |
+| appwrite.storage.previewLimit | int | `20000000` | Maximum size in bytes of files Appwrite renders previews for (`_APP_STORAGE_PREVIEW_LIMIT`). |
+| appwrite.storage.s3.accessKey | string | `""` | Access key ID. Ignored when `existingSecret` is set. |
+| appwrite.storage.s3.accessKeyKey | string | `"s3-access-key"` | Key in `existingSecret` holding the access key ID. |
+| appwrite.storage.s3.bucket | string | `""` | Bucket. |
+| appwrite.storage.s3.endpoint | string | `""` | Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com`. Empty uses AWS S3. |
+| appwrite.storage.s3.existingSecret | string | `""` | Existing Secret holding the access key ID and secret access key. |
+| appwrite.storage.s3.region | string | `"us-east-1"` | Region. |
+| appwrite.storage.s3.secretKey | string | `""` | Secret access key. Ignored when `existingSecret` is set. |
+| appwrite.storage.s3.secretKeyKey | string | `"s3-secret-key"` | Key in `existingSecret` holding the secret access key. |
 | appwrite.system.emailAddress | string | `""` | Sender address for emails Appwrite sends (`_APP_SYSTEM_EMAIL_ADDRESS`). |
 | appwrite.system.emailName | string | `"Appwrite"` | Sender name for emails Appwrite sends (`_APP_SYSTEM_EMAIL_NAME`). |
 | appwrite.system.securityEmailAddress | string | `""` | Address shown to users for security issues (`_APP_EMAIL_SECURITY`). |
@@ -173,6 +184,17 @@ helm uninstall appwrite --namespace appwrite
 | clickhouse.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | commonAnnotations | object | `{}` | Annotations added to every resource rendered by the chart. |
 | commonLabels | object | `{}` | Labels added to every resource rendered by the chart. |
+| compute.appwriteEndpoint | string | `""` | URL build containers use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Its host must be `appwrite.domain`. Defaults to `https://<domain>` (`http` when `forceHttps` is off). |
+| compute.enabled | bool | `false` | Enable Functions and Sites through an external executor and orchestrator. |
+| compute.executor.host | string | `""` | URL of the open-runtimes executor API (`_APP_EXECUTOR_HOST`), e.g. `http://10.0.0.20:9900/v1`. |
+| compute.functionsRuntimes | list | `[]` | Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps Appwrite's default list. |
+| compute.orchestrator.host | string | `""` | URL of the open-runtimes orchestrator API that runs builds (`_APP_JOBS_HOST`), e.g. `http://10.0.0.20:8080`. |
+| compute.secrets.executorSecret | string | `""` | Explicit executor secret. |
+| compute.secrets.executorSecretKey | string | `"executor-secret"` | Key holding the executor secret (`_APP_EXECUTOR_SECRET`, `OPR_EXECUTOR_SECRET` on the executor). |
+| compute.secrets.existingSecret | string | `""` | Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the same values on the Docker host. |
+| compute.secrets.orchestratorSecret | string | `""` | Explicit orchestrator API key. |
+| compute.secrets.orchestratorSecretKey | string | `"orchestrator-secret"` | Key holding the orchestrator API key (`_APP_JOBS_SECRET`, the file in `API_KEY_FILE` on the orchestrator). |
+| compute.sitesRuntimes | list | `[]` | Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list. |
 | console.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | console.autoscaling.behavior | object | `{}` | HPA scaling behaviour. |
 | console.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |

@@ -6,7 +6,7 @@
 {{- end }}
 {{- $args := list "postgres" }}
 {{- range $k, $val := $settings }}
-{{- $args = concat $args (list "-c" (printf "%s=%v" $k $val)) }}
+{{- $args = concat $args (list "-c" (printf "%s=%s" $k (include "appwrite.envValue" $val))) }}
 {{- end }}
 {{- $env := list
   (dict "name" "POSTGRES_DB" "value" $v.auth.database)

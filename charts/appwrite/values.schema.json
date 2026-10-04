@@ -563,6 +563,68 @@
           },
           "additionalProperties": false
         },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "device": {
+              "description": "Where Appwrite stores files (`_APP_STORAGE_DEVICE`): `local` uses the `/storage` volume (see `persistence`), `s3` any S3-compatible object store. S3 is required with an external compute plane.",
+              "type": "string",
+              "enum": [
+                "local",
+                "s3"
+              ]
+            },
+            "limit": {
+              "description": "Maximum file size in bytes (`_APP_STORAGE_LIMIT`).",
+              "type": "integer",
+              "minimum": 0
+            },
+            "previewLimit": {
+              "description": "Maximum size in bytes of files Appwrite renders previews for (`_APP_STORAGE_PREVIEW_LIMIT`).",
+              "type": "integer",
+              "minimum": 0
+            },
+            "s3": {
+              "type": "object",
+              "properties": {
+                "accessKey": {
+                  "description": "Access key ID. Ignored when `existingSecret` is set.",
+                  "type": "string"
+                },
+                "accessKeyKey": {
+                  "description": "Key in `existingSecret` holding the access key ID.",
+                  "type": "string"
+                },
+                "bucket": {
+                  "description": "Bucket.",
+                  "type": "string"
+                },
+                "endpoint": {
+                  "description": "Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com`. Empty uses AWS S3.",
+                  "type": "string"
+                },
+                "existingSecret": {
+                  "description": "Existing Secret holding the access key ID and secret access key.",
+                  "type": "string"
+                },
+                "region": {
+                  "description": "Region.",
+                  "type": "string"
+                },
+                "secretKey": {
+                  "description": "Secret access key. Ignored when `existingSecret` is set.",
+                  "type": "string"
+                },
+                "secretKeyKey": {
+                  "description": "Key in `existingSecret` holding the secret access key.",
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
         "system": {
           "type": "object",
           "properties": {
@@ -821,6 +883,80 @@
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "compute": {
+      "type": "object",
+      "properties": {
+        "appwriteEndpoint": {
+          "description": "URL build containers use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Its host must be `appwrite.domain`. Defaults to `https://<domain>` (`http` when `forceHttps` is off).",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Enable Functions and Sites through an external executor and orchestrator.",
+          "type": "boolean"
+        },
+        "executor": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "description": "URL of the open-runtimes executor API (`_APP_EXECUTOR_HOST`), e.g. `http://10.0.0.20:9900/v1`.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "functionsRuntimes": {
+          "description": "Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps Appwrite's default list.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "orchestrator": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "description": "URL of the open-runtimes orchestrator API that runs builds (`_APP_JOBS_HOST`), e.g. `http://10.0.0.20:8080`.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "secrets": {
+          "type": "object",
+          "properties": {
+            "executorSecret": {
+              "description": "Explicit executor secret.",
+              "type": "string"
+            },
+            "executorSecretKey": {
+              "description": "Key holding the executor secret (`_APP_EXECUTOR_SECRET`, `OPR_EXECUTOR_SECRET` on the executor).",
+              "type": "string"
+            },
+            "existingSecret": {
+              "description": "Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the same values on the Docker host.",
+              "type": "string"
+            },
+            "orchestratorSecret": {
+              "description": "Explicit orchestrator API key.",
+              "type": "string"
+            },
+            "orchestratorSecretKey": {
+              "description": "Key holding the orchestrator API key (`_APP_JOBS_SECRET`, the file in `API_KEY_FILE` on the orchestrator).",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sitesRuntimes": {
+          "description": "Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "console": {
       "type": "object",

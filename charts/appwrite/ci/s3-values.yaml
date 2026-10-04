@@ -1,0 +1,19 @@
+# S3 storage, rendered and linted only: the kind scenarios with S3 run in the
+# nightly workflow, which starts an S3 server next to the cluster.
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  storage:
+    device: s3
+    s3:
+      endpoint: http://s3.example.com:8333
+      bucket: appwrite
+      accessKey: appwrite
+      secretKey: appwrite-s3-secret
+compute:
+  enabled: true
+  executor:
+    host: http://10.0.0.20:9900/v1
+  orchestrator:
+    host: http://10.0.0.20:8080
+  functionsRuntimes: [node-22]

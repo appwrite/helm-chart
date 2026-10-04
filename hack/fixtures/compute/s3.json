@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "appwrite",
+      "credentials": [{"accessKey": "appwrite", "secretKey": "appwrite-s3-secret"}],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

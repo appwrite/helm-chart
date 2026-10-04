@@ -164,6 +164,32 @@ appwrite:
     existingSecret: ""
     # -- Key in `existingSecret` holding the SMTP password.
     passwordKey: smtp-password
+  storage:
+    # -- Where Appwrite stores files (`_APP_STORAGE_DEVICE`): `local` uses the
+    # `/storage` volume (see `persistence`), `s3` any S3-compatible object
+    # store. S3 is required with an external compute plane.
+    device: local # @schema enum: [local, s3]
+    # -- Maximum file size in bytes (`_APP_STORAGE_LIMIT`).
+    limit: 30000000 # @schema minimum: 0
+    # -- Maximum size in bytes of files Appwrite renders previews for (`_APP_STORAGE_PREVIEW_LIMIT`).
+    previewLimit: 20000000 # @schema minimum: 0
+    s3:
+      # -- Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com`. Empty uses AWS S3.
+      endpoint: ""
+      # -- Region.
+      region: us-east-1
+      # -- Bucket.
+      bucket: ""
+      # -- Access key ID. Ignored when `existingSecret` is set.
+      accessKey: ""
+      # -- Secret access key. Ignored when `existingSecret` is set.
+      secretKey: ""
+      # -- Existing Secret holding the access key ID and secret access key.
+      existingSecret: ""
+      # -- Key in `existingSecret` holding the access key ID.
+      accessKeyKey: s3-access-key
+      # -- Key in `existingSecret` holding the secret access key.
+      secretKeyKey: s3-secret-key
   secrets:
     # -- Existing Secret holding the core secrets. When empty the chart
     # generates them once and keeps them across upgrades and uninstalls.
@@ -233,6 +259,39 @@ appwrite:
   extraEnv: [] # @schema item: object
   # -- Extra `envFrom` sources for every Appwrite container.
   extraEnvFrom: [] # @schema item: object
+
+# Functions and Sites run on Open Runtimes services that need a Docker
+# daemon, so the chart doesn't run them: run the executor and orchestrator on
+# a Docker host and point Appwrite at them. See docs/executor.md.
+compute:
+  # -- Enable Functions and Sites through an external executor and orchestrator.
+  enabled: false
+  executor:
+    # -- URL of the open-runtimes executor API (`_APP_EXECUTOR_HOST`), e.g. `http://10.0.0.20:9900/v1`.
+    host: ""
+  orchestrator:
+    # -- URL of the open-runtimes orchestrator API that runs builds (`_APP_JOBS_HOST`), e.g. `http://10.0.0.20:8080`.
+    host: ""
+  # -- URL build containers use to download sources from and report back to
+  # Appwrite (`_APP_JOBS_ENDPOINT`). Its host must be `appwrite.domain`.
+  # Defaults to `https://<domain>` (`http` when `forceHttps` is off).
+  appwriteEndpoint: ""
+  # -- Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps Appwrite's default list.
+  functionsRuntimes: [] # @schema item: string
+  # -- Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list.
+  sitesRuntimes: [] # @schema item: string
+  secrets:
+    # -- Existing Secret holding the executor and orchestrator secrets. When
+    # empty, the chart generates them; configure the same values on the Docker host.
+    existingSecret: ""
+    # -- Key holding the executor secret (`_APP_EXECUTOR_SECRET`, `OPR_EXECUTOR_SECRET` on the executor).
+    executorSecretKey: executor-secret
+    # -- Key holding the orchestrator API key (`_APP_JOBS_SECRET`, the file in `API_KEY_FILE` on the orchestrator).
+    orchestratorSecretKey: orchestrator-secret
+    # -- Explicit executor secret.
+    executorSecret: ""
+    # -- Explicit orchestrator API key.
+    orchestratorSecret: ""
 
 # The HTTP API (`php app/http.php`).
 api:

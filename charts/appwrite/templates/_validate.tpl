@@ -76,6 +76,26 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- end }}
 {{- end }}
 {{- end }}
+{{- $storage := $v.appwrite.storage }}
+{{- if eq $storage.device "s3" }}
+{{- if not $storage.s3.bucket }}
+{{- $errors = append $errors "appwrite.storage.s3.bucket is required when appwrite.storage.device is s3." }}
+{{- end }}
+{{- if not (or $storage.s3.existingSecret (and $storage.s3.accessKey $storage.s3.secretKey)) }}
+{{- $errors = append $errors "appwrite.storage.s3 needs accessKey and secretKey, or an existingSecret." }}
+{{- end }}
+{{- end }}
+{{- if $v.compute.enabled }}
+{{- if not $v.compute.executor.host }}
+{{- $errors = append $errors "compute.executor.host is required when compute.enabled is true." }}
+{{- end }}
+{{- if not $v.compute.orchestrator.host }}
+{{- $errors = append $errors "compute.orchestrator.host is required when compute.enabled is true." }}
+{{- end }}
+{{- if ne $storage.device "s3" }}
+{{- $errors = append $errors "compute.enabled needs appwrite.storage.device=s3: the executor and orchestrator run outside the cluster and can't reach the /storage volume." }}
+{{- end }}
+{{- end }}
 {{- if and $v.httpRoute.enabled (not $v.httpRoute.parentRefs) }}
 {{- $errors = append $errors "httpRoute.parentRefs is required when httpRoute.enabled is true: name the Gateway to attach to." }}
 {{- end }}

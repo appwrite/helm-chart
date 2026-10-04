@@ -180,3 +180,15 @@ must share a node. Returns "true" or "".
 {{- $p := .Values.persistence }}
 {{- if and $p.enabled $p.colocateReadWriteOnce (has "ReadWriteOnce" $p.accessModes) }}true{{ end }}
 {{- end }}
+
+{{/*
+Environment variable value as a string. Whole numbers from YAML (which Helm
+reads as floats) render as integers, so 30000000 doesn't become 3e+07.
+*/}}
+{{- define "appwrite.envValue" -}}
+{{- if and (kindIs "float64" .) (eq (floor .) .) }}
+{{- . | int64 | toString }}
+{{- else }}
+{{- . | toString }}
+{{- end }}
+{{- end }}

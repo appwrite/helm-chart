@@ -1,0 +1,117 @@
+suite: storage and compute
+templates:
+  - templates/configmap-env.yaml
+  - templates/api/deployment.yaml
+  - templates/secret.yaml
+release:
+  name: aw
+values:
+  - values/required.yaml
+set:
+  appwrite.storage.device: s3
+  appwrite.storage.s3.endpoint: https://s3.example.com
+  appwrite.storage.s3.bucket: files
+  appwrite.storage.s3.existingSecret: s3
+tests:
+  - it: configures S3 storage
+    template: templates/configmap-env.yaml
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_STORAGE_DEVICE: s3
+            _APP_STORAGE_S3_ENDPOINT: https://s3.example.com
+            _APP_STORAGE_S3_BUCKET: files
+            _APP_STORAGE_LIMIT: "30000000"
+
+  - it: reads S3 credentials from the existing Secret
+    template: templates/api/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_STORAGE_S3_SECRET
+            valueFrom:
+              secretKeyRef: {name: s3, key: s3-secret-key}
+
+  - it: stores inline S3 credentials in the chart Secret
+    template: templates/secret.yaml
+    set:
+      appwrite.storage.s3.existingSecret: ""
+      appwrite.storage.s3.accessKey: key
+      appwrite.storage.s3.secretKey: secret
+    asserts:
+      - equal:
+          path: data.s3-access-key
+          value: a2V5
+
+  - it: points Appwrite at the external compute plane
+    template: templates/configmap-env.yaml
+    set:
+      compute.enabled: true
+      compute.executor.host: http://10.0.0.20:9900/v1
+      compute.orchestrator.host: http://10.0.0.20:8080
+      compute.functionsRuntimes: [node-22, python-3.12]
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_EXECUTOR_HOST: http://10.0.0.20:9900/v1
+            _APP_JOBS_HOST: http://10.0.0.20:8080
+            _APP_JOBS_ENDPOINT: https://appwrite.example.com
+            _APP_FUNCTIONS_RUNTIMES: node-22,python-3.12
+
+  - it: generates executor and orchestrator secrets
+    template: templates/secret.yaml
+    set:
+      compute.enabled: true
+      compute.executor.host: http://e/v1
+      compute.orchestrator.host: http://o
+    asserts:
+      - exists:
+          path: data.executor-secret
+      - exists:
+          path: data.orchestrator-secret
+
+  - it: passes the compute secrets to Appwrite
+    template: templates/api/deployment.yaml
+    set:
+      compute.enabled: true
+      compute.executor.host: http://e/v1
+      compute.orchestrator.host: http://o
+      compute.secrets.existingSecret: compute
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_JOBS_SECRET
+            valueFrom:
+              secretKeyRef: {name: compute, key: orchestrator-secret}
+
+  - it: requires S3 for the external compute plane
+    template: templates/configmap-env.yaml
+    set:
+      appwrite.storage.device: local
+      compute.enabled: true
+      compute.executor.host: http://e/v1
+      compute.orchestrator.host: http://o
+    asserts:
+      - failedTemplate:
+          errorPattern: compute.enabled needs appwrite.storage.device=s3
+
+  - it: requires executor and orchestrator hosts
+    template: templates/configmap-env.yaml
+    set:
+      compute.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: compute.executor.host is required
+
+  - it: requires a bucket and credentials
+    template: templates/configmap-env.yaml
+    set:
+      appwrite.storage.s3.bucket: ""
+      appwrite.storage.s3.existingSecret: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: appwrite.storage.s3.bucket is required
