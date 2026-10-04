@@ -1,0 +1,28 @@
+{{- if .Values.postgresql.enabled }}
+{{- $v := .Values.postgresql }}
+{{- $settings := dict "max_connections" ($v.maxConnections | default (add .Values.appwrite.database.connectionsMax 20)) }}
+{{- range $k, $val := $v.extraConfig }}
+{{- $_ := set $settings $k $val }}
+{{- end }}
+{{- $args := list "postgres" }}
+{{- range $k, $val := $settings }}
+{{- $args = concat $args (list "-c" (printf "%s=%v" $k $val)) }}
+{{- end }}
+{{- $env := list
+  (dict "name" "POSTGRES_DB" "value" $v.auth.database)
+  (dict "name" "POSTGRES_USER" "value" $v.auth.username)
+  (dict "name" "POSTGRES_PASSWORD" "valueFrom" (include "appwrite.secretRef" (dict "root" . "existingSecret" $v.auth.existingSecret "key" $v.auth.passwordKey "defaultKey" "postgres-password") | fromYaml)) }}
+{{- $handler := dict "exec" (dict "command" (list "pg_isready" "-h" "127.0.0.1" "-U" $v.auth.username "-d" $v.auth.database)) }}
+{{- include "appwrite.datastore" (dict
+  "root" .
+  "component" "postgresql"
+  "values" $v
+  "args" $args
+  "env" (toYaml $env)
+  "ports" (list (dict "name" "postgresql" "containerPort" 5432 "protocol" "TCP"))
+  "probes" (include "appwrite.datastore.probes" (dict "handler" $handler))
+  "dataPath" "/var/lib/postgresql"
+  "volumeMounts" (toYaml (list (dict "name" "run" "mountPath" "/var/run/postgresql")))
+  "volumes" (toYaml (list (dict "name" "run" "emptyDir" dict)))
+) }}
+{{- end }}

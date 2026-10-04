@@ -1,0 +1,21 @@
+{{- $root := . }}
+{{- $v := .Values.api }}
+{{- $host := include "appwrite.api.host" . }}
+{{- $handler := dict "httpGet" (dict "path" "/v1/health/version" "port" "http" "httpHeaders" (list (dict "name" "Host" "value" $host))) }}
+{{- $env := include "appwrite.env" (dict "root" . "cpuNum" (include "appwrite.cpuNum" $v) "extra" (dict "PORT" "8080")) }}
+{{- $init := include "appwrite.initContainer.waitForTcp" (dict "root" . "name" "wait-for-datastores" "targets" (include "appwrite.datastoreTargets" . | splitList ",")) }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "api"
+  "values" $v
+  "appwrite" true
+  "command" (list "php" "app/http.php")
+  "env" $env
+  "ports" (list (dict "name" "http" "containerPort" 8080 "protocol" "TCP"))
+  "probes" (include "appwrite.probes" (dict "values" $v "handler" $handler))
+  "replicas" (ternary nil $v.replicaCount $v.autoscaling.enabled)
+  "spread" true
+  "storage" true
+  "initContainers" $init
+  "preStopSleepSeconds" $v.preStopSleepSeconds
+) }}

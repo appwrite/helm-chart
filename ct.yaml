@@ -5,5 +5,6 @@ target-branch: main
 remote: origin
 lint-conf: lintconf.yaml
 validate-maintainers: false
-check-version-increment: true
+# Disabled until 0.1.0 is released; until then every PR targets the same unreleased version.
+check-version-increment: false
 helm-extra-args: --timeout 900s

@@ -1,0 +1,19 @@
+{{- $w := .Values.workers }}
+{{- $c := $w.combined }}
+{{- if gt (int $c.replicaCount) 0 }}
+{{- $env := include "appwrite.env" (dict "root" . "cpuNum" (include "appwrite.cpuNum" $c) "extra" (dict "_APP_WORKERS_NUM" $c.processes "_APP_WORKER_MAX_COROUTINES" $c.maxCoroutines)) }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "worker"
+  "values" $c
+  "parent" $w
+  "appwrite" true
+  "command" (list "php" "app/worker.php" "all")
+  "env" $env
+  "replicas" $c.replicaCount
+  "spread" true
+  "storage" true
+  "certbot" true
+  "initContainers" (include "appwrite.initContainer.waitForApi" .)
+) }}
+{{- end }}

@@ -1,0 +1,11 @@
+{{- include "appwrite.validate" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "appwrite.fullname" . }}-env
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.labels" . | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+data:
+  {{- include "appwrite.env.config" . | nindent 2 }}

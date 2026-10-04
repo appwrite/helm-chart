@@ -1,0 +1,3 @@
+{{- if .Values.console.enabled }}
+{{- include "appwrite.service" (dict "root" . "component" "console" "service" .Values.console.service "ports" (list (dict "name" "http" "port" .Values.console.service.port "targetPort" "http" "appProtocol" "http"))) }}
+{{- end }}

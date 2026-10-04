@@ -1,0 +1,3 @@
+{{- if .Values.postgresql.enabled }}
+{{- include "appwrite.service" (dict "root" . "component" "postgresql" "service" (dict) "ports" (list (dict "name" "postgresql" "port" 5432 "targetPort" "postgresql" "appProtocol" "postgresql"))) }}
+{{- end }}

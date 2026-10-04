@@ -11,3 +11,4 @@ charts/*/tests/__snapshot__/*.tmp
 .DS_Store
 .idea/
 .vscode/
+.variables.php

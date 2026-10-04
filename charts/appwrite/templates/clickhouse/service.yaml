@@ -1,0 +1,3 @@
+{{- if .Values.clickhouse.enabled }}
+{{- include "appwrite.service" (dict "root" . "component" "clickhouse" "service" (dict) "ports" (list (dict "name" "http" "port" 8123 "targetPort" "http" "appProtocol" "http") (dict "name" "native" "port" 9000 "targetPort" "native"))) }}
+{{- end }}

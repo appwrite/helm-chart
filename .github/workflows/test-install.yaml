@@ -1,0 +1,73 @@
+name: Install
+
+on:
+  pull_request:
+    paths:
+      - charts/**
+      - hack/**
+      - .github/workflows/test-install.yaml
+  push:
+    branches: [main]
+    paths:
+      - charts/**
+      - hack/**
+      - .github/workflows/test-install.yaml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    name: ${{ matrix.scenario }} (k8s ${{ matrix.kubernetes }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Oldest and newest supported Kubernetes for the default install.
+          - scenario: default
+            kubernetes: v1.29.14
+          - scenario: default
+            kubernetes: v1.37.0
+    steps:
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+      - uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
+        with:
+          cluster_name: appwrite
+          node_image: kindest/node:${{ matrix.kubernetes }}
+          config: hack/kind-config.yaml
+      - name: Install
+        run: make install VALUES=charts/appwrite/ci/${{ matrix.scenario }}-values.yaml
+      - name: helm test
+        run: make helm-test
+      - name: Smoke test
+        run: make smoke
+      - name: Upgrade without changes keeps credentials and pods
+        run: |
+          before=$(kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}')
+          pods=$(kubectl -n appwrite get pods -o name | sort)
+          make install VALUES=charts/appwrite/ci/${{ matrix.scenario }}-values.yaml
+          after=$(kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}')
+          test "$before" = "$after"
+          test "$pods" = "$(kubectl -n appwrite get pods -o name | sort)"
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl -n appwrite get all,pvc,events -o wide || true
+          for pod in $(kubectl -n appwrite get pods -o name); do
+            echo "::group::$pod"
+            kubectl -n appwrite describe "$pod" || true
+            kubectl -n appwrite logs "$pod" --all-containers --tail=200 || true
+            echo "::endgroup::"
+          done

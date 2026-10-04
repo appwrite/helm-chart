@@ -1,0 +1,86 @@
+suite: workers and tasks
+templates:
+  - templates/workers/deployment.yaml
+  - templates/tasks/deployment.yaml
+release:
+  name: aw
+  namespace: appwrite
+values:
+  - values/required.yaml
+tests:
+  - it: runs one worker that consumes every queue
+    template: templates/workers/deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: aw-appwrite-worker
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [php, app/worker.php, all]
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_WORKER_MAX_COROUTINES, value: "78"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_WORKERS_NUM, value: "1"}
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-api
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: letsencrypt
+            mountPath: /etc/letsencrypt
+            subPath: etc
+
+  - it: inherits worker-wide settings
+    template: templates/workers/deployment.yaml
+    set:
+      workers.nodeSelector: {pool: workers}
+      workers.extraEnv: [{name: FOO, value: bar}]
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value: {pool: workers}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: FOO, value: bar}
+
+  - it: runs every task as a single recreated pod
+    template: templates/tasks/deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - notExists:
+          path: spec.template.spec.topologySpreadConstraints
+
+  - it: runs the scheduler, maintenance and interval commands
+    template: templates/tasks/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [php, app/cli.php, schedule]
+        documentIndex: 0
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [php, app/cli.php, maintenance]
+        documentIndex: 1
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [php, app/cli.php, interval]
+        documentIndex: 2
+
+  - it: can disable tasks
+    template: templates/tasks/deployment.yaml
+    set:
+      tasks.maintenance.enabled: false
+      tasks.interval.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 1

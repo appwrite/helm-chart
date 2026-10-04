@@ -1,0 +1,1 @@
+{{- include "appwrite.pdb" (dict "root" . "component" "api" "pdb" .Values.api.pdb "replicas" .Values.api.replicaCount "autoscaling" .Values.api.autoscaling) }}

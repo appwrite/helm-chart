@@ -1,0 +1,43 @@
+{{- if and .Values.tests.enabled .Values.realtime.enabled }}
+{{- $host := include "appwrite.componentName" (dict "root" . "component" "realtime") }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "appwrite.fullname" . }}-test-realtime
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "test") | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  {{- with include "appwrite.imagePullSecrets" . | trim }}{{ . | nindent 2 }}{{ end }}
+  securityContext:
+    {{- toYaml .Values.podSecurityContext | nindent 4 }}
+  containers:
+    - name: realtime
+      image: {{ include "appwrite.appwriteImage" . }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command:
+        - sh
+        - -c
+        - |
+          set -eu
+          # A WebSocket handshake for the console project must be upgraded (HTTP 101).
+          code=$(curl -sS --http1.1 --max-time 5 -o /dev/null -w "%{http_code}" \
+            -H "Connection: Upgrade" -H "Upgrade: websocket" \
+            -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
+            "http://{{ $host }}:{{ .Values.realtime.service.port }}/v1/realtime?project=console&channels%5B%5D=account" || true)
+          echo "realtime: HTTP $code"
+          test "$code" = "101"
+      securityContext:
+        {{- toYaml .Values.containerSecurityContext | nindent 8 }}
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+{{- end }}

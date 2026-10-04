@@ -1,0 +1,3 @@
+appwrite:
+  domain: appwrite.example.com
+  certificatesEmail: ops@example.com

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+    Appwrite's ClickHouse user. Replaces the image entrypoint's user setup,
+    which writes to the read-only root filesystem. The password is read from
+    the CLICKHOUSE_PASSWORD environment variable.
+-->
+<clickhouse>
+    <users>
+        <default remove="remove"/>
+        <{{USERNAME}}>
+            <profile>default</profile>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <password from_env="CLICKHOUSE_PASSWORD"/>
+            <quota>default</quota>
+            <access_management>1</access_management>
+        </{{USERNAME}}>
+    </users>
+</clickhouse>

@@ -1,0 +1,48 @@
+suite: _APP_CPU_NUM
+templates:
+  - templates/api/deployment.yaml
+values:
+  - values/required.yaml
+tests:
+  - it: rounds a millicore request up
+    set:
+      api.resources: {requests: {cpu: 250m}}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_CPU_NUM, value: "1"}
+  - it: prefers the limit over the request
+    set:
+      api.resources: {requests: {cpu: 500m}, limits: {cpu: 1500m}}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_CPU_NUM, value: "2"}
+  - it: accepts whole CPUs
+    set:
+      api.resources: {requests: {cpu: 3}}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_CPU_NUM, value: "3"}
+  - it: accepts fractional CPUs
+    set:
+      api.resources: {requests: {cpu: "2.5"}}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_CPU_NUM, value: "3"}
+  - it: uses an explicit value
+    set:
+      api.cpuNum: 4
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_CPU_NUM, value: "4"}
+  - it: defaults to one CPU without resources
+    set:
+      api.resources: null
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: _APP_CPU_NUM, value: "1"}

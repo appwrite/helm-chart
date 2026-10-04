@@ -1,0 +1,91 @@
+suite: built-in datastores
+templates:
+  - templates/postgresql/statefulset.yaml
+  - templates/redis/statefulset.yaml
+  - templates/clickhouse/statefulset.yaml
+release:
+  name: aw
+  namespace: appwrite
+values:
+  - values/required.yaml
+tests:
+  - it: sizes PostgreSQL connections for Appwrite
+    template: templates/postgresql/statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value: [postgres, -c, max_connections=171]
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value: {name: data, mountPath: /var/lib/postgresql}
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: 10Gi
+
+  - it: passes extra PostgreSQL settings
+    template: templates/postgresql/statefulset.yaml
+    set:
+      postgresql.maxConnections: 300
+      postgresql.extraConfig:
+        shared_buffers: 256MB
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value: [postgres, -c, max_connections=300, -c, shared_buffers=256MB]
+
+  - it: protects Redis with a password and probes without exposing it
+    template: templates/redis/statefulset.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: $(REDIS_PASSWORD)
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDISCLI_AUTH
+            valueFrom:
+              secretKeyRef: {name: aw-appwrite, key: redis-password}
+
+  - it: runs Redis without auth when disabled
+    template: templates/redis/statefulset.yaml
+    set:
+      redis.auth.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --requirepass
+      - notExists:
+          path: spec.template.spec.containers[0].env
+
+  - it: configures ClickHouse users from a mounted file
+    template: templates/clickhouse/statefulset.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: CLICKHOUSE_SKIP_USER_SETUP, value: "1"}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: config
+            mountPath: /etc/clickhouse-server/users.d/appwrite.xml
+            subPath: users.xml
+
+  - it: uses emptyDir without persistence
+    template: templates/redis/statefulset.yaml
+    set:
+      redis.persistence.enabled: false
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates
+      - contains:
+          path: spec.template.spec.volumes
+          content: {name: data, emptyDir: {}}
+
+  - it: can be turned off
+    set:
+      postgresql.enabled: false
+      redis.enabled: false
+      clickhouse.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

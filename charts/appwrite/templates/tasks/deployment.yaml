@@ -1,0 +1,22 @@
+{{- $t := .Values.tasks }}
+{{- $tasks := list
+  (dict "name" "scheduler" "values" $t.scheduler "command" (list "php" "app/cli.php" "schedule") "extra" (dict "_APP_WORKER_MAX_COROUTINES" "8"))
+  (dict "name" "maintenance" "values" $t.maintenance "command" (list "php" "app/cli.php" "maintenance") "extra" dict)
+  (dict "name" "interval" "values" $t.interval "command" (list "php" "app/cli.php" "interval") "extra" dict) }}
+{{- range $tasks }}
+{{- if .values.enabled }}
+---
+{{- $env := include "appwrite.env" (dict "root" $ "cpuNum" (include "appwrite.cpuNum" .values) "extra" .extra) }}
+{{- include "appwrite.deployment" (dict
+  "root" $
+  "component" .name
+  "values" .values
+  "parent" $t
+  "appwrite" true
+  "command" .command
+  "env" $env
+  "singleton" true
+  "initContainers" (include "appwrite.initContainer.waitForApi" $)
+) }}
+{{- end }}
+{{- end }}

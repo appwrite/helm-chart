@@ -1,0 +1,1 @@
+{{- include "appwrite.service" (dict "root" . "component" "api" "service" .Values.api.service "ports" (list (dict "name" "http" "port" .Values.api.service.port "targetPort" "http" "appProtocol" "http"))) }}

@@ -1,0 +1,3 @@
+{{- if .Values.geo.enabled }}
+{{- include "appwrite.service" (dict "root" . "component" "geo" "service" (dict) "ports" (list (dict "name" "http" "port" 80 "targetPort" "http" "appProtocol" "http"))) }}
+{{- end }}

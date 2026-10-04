@@ -1,0 +1,125 @@
+suite: env ConfigMap
+templates:
+  - templates/configmap-env.yaml
+release:
+  name: aw
+  namespace: appwrite
+values:
+  - values/required.yaml
+tests:
+  - it: computes domains from appwrite.domain
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_DOMAIN: appwrite.example.com
+            _APP_CONSOLE_DOMAIN: appwrite.example.com
+            _APP_DOMAIN_FUNCTIONS: functions.appwrite.example.com
+            _APP_DOMAIN_SITES: sites.appwrite.example.com
+            _APP_DOMAIN_TARGET_CNAME: appwrite.example.com
+            _APP_EMAIL_CERTIFICATES: ops@example.com
+            _APP_SYSTEM_EMAIL_ADDRESS: noreply@appwrite.example.com
+
+  - it: points Appwrite at the in-cluster services
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_DB_ADAPTER: postgresql
+            _APP_DB_HOST: aw-appwrite-postgresql
+            _APP_DB_PORT: "5432"
+            _APP_DB_SCHEMA: appwrite
+            _APP_DB_USER: appwrite
+            _APP_REDIS_HOST: aw-appwrite-redis
+            _APP_REDIS_PORT: "6379"
+            _APP_GEO_ENDPOINT: http://aw-appwrite-geo/v1
+            _APP_MIGRATION_HOST: aw-appwrite-api
+            _APP_WORKER_SCREENSHOTS_ROUTER: http://aw-appwrite-api
+
+  - it: turns booleans into enabled/disabled
+    set:
+      appwrite.forceHttps: false
+      appwrite.routerProtection: true
+      appwrite.usageStats: false
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_OPTIONS_FORCE_HTTPS: disabled
+            _APP_OPTIONS_ROUTER_FORCE_HTTPS: disabled
+            _APP_OPTIONS_ROUTER_PROTECTION: enabled
+            _APP_USAGE_STATS: disabled
+
+  - it: ships the installer defaults for everything else
+    asserts:
+      - equal:
+          path: data._APP_GRAPHQL_MAX_DEPTH
+          value: "3"
+      - equal:
+          path: data._APP_MAINTENANCE_RETENTION_EXECUTION
+          value: "1209600"
+
+  - it: never puts secrets in the ConfigMap
+    asserts:
+      - notExists:
+          path: data._APP_OPENSSL_KEY_V1
+      - notExists:
+          path: data._APP_DB_PASS
+      - notExists:
+          path: data._APP_SMTP_PASSWORD
+      - notExists:
+          path: data._APP_EXECUTOR_SECRET
+      - notExists:
+          path: data._APP_CONNECTIONS_DB_USAGE
+
+  - it: lets appwrite.config override defaults and computed values
+    set:
+      appwrite.config:
+        _APP_GRAPHQL_MAX_DEPTH: 5
+        _APP_DOMAIN_FUNCTIONS: fn.example.com
+        _APP_LOCALE: nl
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_GRAPHQL_MAX_DEPTH: "5"
+            _APP_DOMAIN_FUNCTIONS: fn.example.com
+            _APP_LOCALE: nl
+
+  - it: disables geolocation with the geo service
+    set:
+      geo.enabled: false
+    asserts:
+      - equal:
+          path: data._APP_GEO_ENDPOINT
+          value: ""
+
+  - it: joins console allow-lists
+    set:
+      appwrite.console.whitelistEmails: [a@example.com, b@example.com]
+    asserts:
+      - equal:
+          path: data._APP_CONSOLE_WHITELIST_EMAILS
+          value: a@example.com,b@example.com
+
+  - it: requires a domain
+    set:
+      appwrite.domain: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: appwrite.domain is required
+
+  - it: requires a certificates email
+    set:
+      appwrite.certificatesEmail: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: appwrite.certificatesEmail is required
+
+  - it: rejects non-Appwrite keys in appwrite.config
+    set:
+      appwrite.config:
+        PATH: /bin
+    asserts:
+      - failedTemplate:
+          errorPattern: "appwrite.config.PATH: keys must be Appwrite variables"

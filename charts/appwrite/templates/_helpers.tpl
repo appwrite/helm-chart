@@ -23,6 +23,14 @@ already contains the chart name it is used as-is.
 {{- end }}
 
 {{/*
+Name of a component's resources: <fullname>-<component>.
+Usage: include "appwrite.componentName" (dict "root" $ "component" "api")
+*/}}
+{{- define "appwrite.componentName" -}}
+{{- printf "%s-%s" (include "appwrite.fullname" .root) .component | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
 Chart label value: name-version, with "+" replaced for label safety.
 */}}
 {{- define "appwrite.chart" -}}
@@ -52,6 +60,37 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Labels for a component.
+Usage: include "appwrite.componentLabels" (dict "root" $ "component" "api")
+*/}}
+{{- define "appwrite.componentLabels" -}}
+{{ include "appwrite.labels" .root }}
+app.kubernetes.io/component: {{ .component }}
+{{- end }}
+
+{{/*
+Selector labels for a component.
+Usage: include "appwrite.componentSelectorLabels" (dict "root" $ "component" "api")
+*/}}
+{{- define "appwrite.componentSelectorLabels" -}}
+{{ include "appwrite.selectorLabels" .root }}
+app.kubernetes.io/component: {{ .component }}
+{{- end }}
+
+{{/*
+Resource metadata annotations: commonAnnotations merged with extra annotations.
+Usage: include "appwrite.annotations" (dict "root" $ "annotations" .Values.x.annotations)
+Renders nothing when there are no annotations.
+*/}}
+{{- define "appwrite.annotations" -}}
+{{- $annotations := merge (dict) (.annotations | default dict) (.root.Values.commonAnnotations | default dict) }}
+{{- with $annotations }}
+annotations:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{/*
 Name of the ServiceAccount to use.
 */}}
 {{- define "appwrite.serviceAccountName" -}}
@@ -60,4 +99,84 @@ Name of the ServiceAccount to use.
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
+{{- end }}
+
+{{/*
+Full image reference. global.imageRegistry replaces the image's registry.
+The tag defaults to the chart appVersion only for the Appwrite image.
+Usage: include "appwrite.image" (dict "root" $ "image" .Values.image "defaultTag" $.Chart.AppVersion)
+*/}}
+{{- define "appwrite.image" -}}
+{{- $registry := .root.Values.global.imageRegistry | default .image.registry }}
+{{- $tag := .image.tag | default .defaultTag | toString }}
+{{- $ref := .image.repository }}
+{{- if $registry }}
+{{- $ref = printf "%s/%s" $registry $ref }}
+{{- end }}
+{{- if $tag }}
+{{- $ref = printf "%s:%s" $ref $tag }}
+{{- end }}
+{{- if .image.digest }}
+{{- $ref = printf "%s@%s" $ref .image.digest }}
+{{- end }}
+{{- $ref }}
+{{- end }}
+
+{{/*
+Appwrite image reference.
+*/}}
+{{- define "appwrite.appwriteImage" -}}
+{{- include "appwrite.image" (dict "root" . "image" .Values.image "defaultTag" .Chart.AppVersion) }}
+{{- end }}
+
+{{/*
+imagePullSecrets block for a pod spec.
+*/}}
+{{- define "appwrite.imagePullSecrets" -}}
+{{- with .Values.global.imagePullSecrets }}
+imagePullSecrets:
+  {{- range . }}
+  - name: {{ . }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Value of _APP_CPU_NUM for a component: the explicit cpuNum, else the CPU
+limit, else the CPU request, rounded up; at least 1. Appwrite would otherwise
+size worker and connection pools for every CPU on the node.
+Usage: include "appwrite.cpuNum" (dict "cpuNum" .cpuNum "resources" .resources)
+*/}}
+{{- define "appwrite.cpuNum" -}}
+{{- $cpu := "" }}
+{{- if not (empty .cpuNum) }}
+{{- $cpu = .cpuNum | toString }}
+{{- else if and .resources .resources.limits .resources.limits.cpu }}
+{{- $cpu = .resources.limits.cpu | toString }}
+{{- else if and .resources .resources.requests .resources.requests.cpu }}
+{{- $cpu = .resources.requests.cpu | toString }}
+{{- end }}
+{{- $n := 1 }}
+{{- if hasSuffix "m" $cpu }}
+{{- $n = divf (trimSuffix "m" $cpu | float64) 1000 | ceil | int }}
+{{- else if $cpu }}
+{{- $n = $cpu | float64 | ceil | int }}
+{{- end }}
+{{- max $n 1 }}
+{{- end }}
+
+{{/*
+Name of a Service for a component (also its DNS name inside the namespace).
+*/}}
+{{- define "appwrite.api.host" -}}
+{{- include "appwrite.componentName" (dict "root" . "component" "api") }}
+{{- end }}
+
+{{/*
+Whether the Appwrite /storage volume is a ReadWriteOnce claim whose pods
+must share a node. Returns "true" or "".
+*/}}
+{{- define "appwrite.storage.colocate" -}}
+{{- $p := .Values.persistence }}
+{{- if and $p.enabled $p.colocateReadWriteOnce (has "ReadWriteOnce" $p.accessModes) }}true{{ end }}
 {{- end }}

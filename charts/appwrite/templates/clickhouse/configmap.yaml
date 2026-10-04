@@ -1,0 +1,12 @@
+{{- if .Values.clickhouse.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "appwrite.componentName" (dict "root" . "component" "clickhouse") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "clickhouse") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+data:
+  {{- include "appwrite.clickhouse.config" . | nindent 2 }}
+{{- end }}

@@ -10,7 +10,7 @@
 *.orig
 *~
 # Development-only files
-ci/
-tests/
+/ci/
+/tests/
 README.md.gotmpl
 .schema.yaml

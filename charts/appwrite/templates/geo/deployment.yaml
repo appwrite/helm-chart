@@ -1,0 +1,19 @@
+{{- if .Values.geo.enabled }}
+{{- $v := .Values.geo }}
+{{- $env := list (dict "name" "GEO_SECRET" "valueFrom" (include "appwrite.secretRef" (dict "root" . "existingSecret" .Values.appwrite.secrets.existingSecret "key" .Values.appwrite.secrets.keys.geoSecret "defaultKey" "_APP_GEO_SECRET") | fromYaml)) }}
+{{- $handler := dict "httpGet" (dict "path" "/v1/health" "port" "http") }}
+{{- $probes := dict "startupProbe" (dict "enabled" true "periodSeconds" 5 "failureThreshold" 30 "timeoutSeconds" 5) "readinessProbe" (dict "enabled" true "periodSeconds" 10 "timeoutSeconds" 5) "livenessProbe" (dict "enabled" true "periodSeconds" 20 "timeoutSeconds" 5 "failureThreshold" 3) }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "geo"
+  "values" $v
+  "image" (include "appwrite.image" (dict "root" . "image" $v.image))
+  "pullPolicy" $v.image.pullPolicy
+  "env" (toYaml $env)
+  "ports" (list (dict "name" "http" "containerPort" 80 "protocol" "TCP"))
+  "probes" (include "appwrite.probes" (dict "values" $probes "handler" $handler))
+  "replicas" $v.replicaCount
+  "volumeMounts" (toYaml (list (dict "name" "tmp" "mountPath" "/tmp")))
+  "volumes" (toYaml (list (dict "name" "tmp" "emptyDir" dict)))
+) }}
+{{- end }}

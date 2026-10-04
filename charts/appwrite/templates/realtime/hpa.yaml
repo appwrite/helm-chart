@@ -1,0 +1,3 @@
+{{- if and .Values.realtime.enabled .Values.realtime.autoscaling.enabled }}
+{{- include "appwrite.hpa" (dict "root" . "component" "realtime" "autoscaling" .Values.realtime.autoscaling) }}
+{{- end }}

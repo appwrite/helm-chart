@@ -1,3 +1,41 @@
-Appwrite {{ .Chart.AppVersion }} (chart {{ .Chart.Version }}) has been installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+{{- $fullname := include "appwrite.fullname" . }}
+{{- $scheme := ternary "https" "http" .Values.appwrite.forceHttps }}
+{{- $consoleDomain := .Values.appwrite.consoleDomain | default .Values.appwrite.domain }}
+Appwrite {{ .Chart.AppVersion }} is {{ if .Release.IsUpgrade }}upgraded{{ else }}installed{{ end }} as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
 
-This is an early skeleton of the chart; Appwrite components are not deployed yet.
+Endpoints
+  Console:  {{ $scheme }}://{{ $consoleDomain }}
+  API:      {{ $scheme }}://{{ .Values.appwrite.domain }}/v1
+{{- if .Values.realtime.enabled }}
+  Realtime: {{ ternary "wss" "ws" .Values.appwrite.forceHttps }}://{{ .Values.appwrite.domain }}/v1/realtime
+{{- end }}
+
+Route these through your ingress controller or Gateway: /v1/realtime to
+service/{{ $fullname }}-realtime, /v1 and /.well-known to service/{{ $fullname }}-api,
+and everything else to service/{{ $fullname }}-console.
+
+To try it without an ingress:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $fullname }}-console 3000:80 &
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $fullname }}-api 8080:80 &
+
+First steps
+  1. Open the console and sign up.{{ if .Values.appwrite.console.whitelistRoot }} Only the first account can sign up
+     on its own; everyone else needs an invitation from it.{{ end }}
+{{- if not .Values.appwrite.secrets.existingSecret }}
+  2. Back up the encryption key now. Without it, encrypted data can't be read
+     after a restore:
+
+     kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} \
+       -o jsonpath='{.data._APP_OPENSSL_KEY_V1}' | base64 -d
+{{- end }}
+
+Functions and Sites need an executor, which this chart doesn't run.
+{{- if not .Values.appwrite.smtp.host }}
+
+Email is disabled until appwrite.smtp.host is set.
+{{- end }}
+
+Check the installation with:
+
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}

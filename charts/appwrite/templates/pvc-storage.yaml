@@ -1,0 +1,24 @@
+{{- $p := .Values.persistence }}
+{{- if and $p.enabled (not $p.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "appwrite.fullname" . }}-storage
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.labels" . | nindent 4 }}
+  {{- $annotations := deepCopy ($p.annotations | default dict) }}
+  {{- if $p.keep }}
+  {{- $_ := set $annotations "helm.sh/resource-policy" "keep" }}
+  {{- end }}
+  {{- with include "appwrite.annotations" (dict "root" . "annotations" $annotations) | trim }}{{ . | nindent 2 }}{{ end }}
+spec:
+  accessModes:
+    {{- toYaml $p.accessModes | nindent 4 }}
+  {{- with ($p.storageClass | default .Values.global.storageClass) }}
+  storageClassName: {{ if eq . "-" }}""{{ else }}{{ . }}{{ end }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $p.size }}
+{{- end }}

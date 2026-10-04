@@ -1,0 +1,3 @@
+{{- if .Values.console.enabled }}
+{{- include "appwrite.pdb" (dict "root" . "component" "console" "pdb" .Values.console.pdb "replicas" .Values.console.replicaCount "autoscaling" .Values.console.autoscaling) }}
+{{- end }}

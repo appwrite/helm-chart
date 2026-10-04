@@ -1,0 +1,26 @@
+{{- if .Values.clickhouse.enabled }}
+{{- $v := .Values.clickhouse }}
+{{- $env := list
+  (dict "name" "CLICKHOUSE_DB" "value" $v.auth.database)
+  (dict "name" "CLICKHOUSE_USER" "value" $v.auth.username)
+  (dict "name" "CLICKHOUSE_PASSWORD" "valueFrom" (include "appwrite.secretRef" (dict "root" . "existingSecret" $v.auth.existingSecret "key" $v.auth.passwordKey "defaultKey" "clickhouse-password") | fromYaml))
+  (dict "name" "CLICKHOUSE_SKIP_USER_SETUP" "value" "1") }}
+{{- $handler := dict "httpGet" (dict "path" "/ping" "port" "http") }}
+{{- $mounts := list
+  (dict "name" "config" "mountPath" "/etc/clickhouse-server/config.d/appwrite-system-log-ttl.xml" "subPath" "system-log-ttl.xml")
+  (dict "name" "config" "mountPath" "/etc/clickhouse-server/config.d/appwrite-logging.xml" "subPath" "logging.xml")
+  (dict "name" "config" "mountPath" "/etc/clickhouse-server/users.d/appwrite.xml" "subPath" "users.xml") }}
+{{- $volumes := list (dict "name" "config" "configMap" (dict "name" (include "appwrite.componentName" (dict "root" . "component" "clickhouse")))) }}
+{{- include "appwrite.datastore" (dict
+  "root" .
+  "component" "clickhouse"
+  "values" $v
+  "env" (toYaml $env)
+  "ports" (list (dict "name" "http" "containerPort" 8123 "protocol" "TCP") (dict "name" "native" "containerPort" 9000 "protocol" "TCP"))
+  "probes" (include "appwrite.datastore.probes" (dict "handler" $handler))
+  "dataPath" "/var/lib/clickhouse"
+  "volumeMounts" (toYaml $mounts)
+  "volumes" (toYaml $volumes)
+  "annotations" (dict "checksum/config" (include "appwrite.clickhouse.config" . | sha256sum))
+) }}
+{{- end }}

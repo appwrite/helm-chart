@@ -1,0 +1,20 @@
+{{- if .Values.realtime.enabled }}
+{{- $v := .Values.realtime }}
+{{- $env := include "appwrite.env" (dict "root" . "cpuNum" (include "appwrite.cpuNum" $v) "extra" (dict "PORT" "8080" "_APP_WORKERS_NUM" $v.processes)) }}
+{{- /* The realtime server only speaks WebSocket, so plain HTTP probes would fail. */}}
+{{- $handler := dict "tcpSocket" (dict "port" "http") }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "realtime"
+  "values" $v
+  "appwrite" true
+  "command" (list "php" "app/realtime.php")
+  "env" $env
+  "ports" (list (dict "name" "http" "containerPort" 8080 "protocol" "TCP"))
+  "probes" (include "appwrite.probes" (dict "values" $v "handler" $handler))
+  "replicas" (ternary nil $v.replicaCount $v.autoscaling.enabled)
+  "spread" true
+  "initContainers" (include "appwrite.initContainer.waitForApi" .)
+  "preStopSleepSeconds" $v.preStopSleepSeconds
+) }}
+{{- end }}

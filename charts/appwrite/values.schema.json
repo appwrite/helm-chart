@@ -4,6 +4,728 @@
   "description": "Values for the Appwrite Helm chart.",
   "type": "object",
   "properties": {
+    "api": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "autoscaling": {
+          "type": "object",
+          "properties": {
+            "behavior": {
+              "type": "object",
+              "description": "HPA scaling behaviour."
+            },
+            "enabled": {
+              "description": "Create a HorizontalPodAutoscaler.",
+              "type": "boolean"
+            },
+            "maxReplicas": {
+              "description": "Maximum replicas.",
+              "type": "integer"
+            },
+            "minReplicas": {
+              "description": "Minimum replicas.",
+              "type": "integer"
+            },
+            "targetCPUUtilizationPercentage": {
+              "description": "Target average CPU utilisation, in percent.",
+              "type": "integer"
+            },
+            "targetMemoryUtilizationPercentage": {
+              "description": "Target average memory utilisation, in percent. Empty disables the metric.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context. Empty inherits `containerSecurityContext`."
+        },
+        "cpuNum": {
+          "description": "CPUs Appwrite sizes its worker and connection pools for (`_APP_CPU_NUM`). Derived from the CPU limit, then the CPU request, when empty.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "extraContainers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra sidecar containers."
+        },
+        "extraEnv": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra environment variables for this component."
+        },
+        "extraInitContainers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra init containers."
+        },
+        "extraVolumeMounts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volume mounts for the main container."
+        },
+        "extraVolumes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volumes for this component."
+        },
+        "livenessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the liveness probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "pdb": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Create a PodDisruptionBudget when more than one replica can run.",
+              "type": "boolean"
+            },
+            "maxUnavailable": {
+              "description": "Maximum unavailable pods.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            "minAvailable": {
+              "description": "Minimum available pods. Takes precedence over `maxUnavailable`.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. Empty inherits `podSecurityContext`."
+        },
+        "preStopSleepSeconds": {
+          "description": "Seconds to sleep before shutdown so endpoints are removed first.",
+          "type": "integer"
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "readinessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the readiness probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "successThreshold": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "replicaCount": {
+          "description": "Number of API replicas. Ignored when autoscaling is enabled.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "description": "Service annotations.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "port": {
+              "description": "Service port.",
+              "type": "integer"
+            },
+            "type": {
+              "description": "Service type.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "startupProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the startup probe. The first start creates database schemas and can take minutes.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "initialDelaySeconds": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "terminationGracePeriodSeconds": {
+          "description": "Seconds to wait for in-flight requests on shutdown. Swoole drains for up to 30s.",
+          "type": "integer"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        },
+        "topologySpreadConstraints": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`."
+        },
+        "updateStrategy": {
+          "type": "object",
+          "description": "Deployment update strategy."
+        }
+      },
+      "additionalProperties": false
+    },
+    "appwrite": {
+      "type": "object",
+      "properties": {
+        "autoCertificates": {
+          "description": "Have Appwrite issue Let's Encrypt certificates for function and site subdomains (`_APP_ROUTER_AUTO_CERTIFICATES`). Off by default: TLS for wildcard domains is expected to terminate at the ingress or Gateway.",
+          "type": "boolean"
+        },
+        "certificatesEmail": {
+          "description": "Email used to register Let's Encrypt certificates (`_APP_EMAIL_CERTIFICATES`). Required.",
+          "type": "string"
+        },
+        "config": {
+          "description": "Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values; see https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.",
+          "type": "object",
+          "patternProperties": {
+            "^_APP_[A-Z0-9_]+$": {}
+          },
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "console": {
+          "type": "object",
+          "properties": {
+            "whitelistEmails": {
+              "description": "Emails allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_EMAILS`).",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "whitelistIPs": {
+              "description": "IPs allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_IPS`).",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "whitelistRoot": {
+              "description": "Only the first user can sign up to the console; everyone else needs an invite (`_APP_CONSOLE_WHITELIST_ROOT`).",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "consoleDomain": {
+          "description": "Hostname of the console (`_APP_CONSOLE_DOMAIN`). Defaults to `domain`.",
+          "type": "string"
+        },
+        "database": {
+          "type": "object",
+          "properties": {
+            "connectionsMax": {
+              "description": "Total connections Appwrite may open to the database, shared by all pods (`_APP_CONNECTIONS_MAX`). Keep it below the database's `max_connections`.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "poolClients": {
+              "description": "Number of Appwrite processes sharing `connectionsMax` (`_APP_POOL_CLIENTS`). Must be at least the number of Appwrite pods.",
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "domain": {
+          "description": "Hostname of the Appwrite API and console (`_APP_DOMAIN`). Required.",
+          "type": "string"
+        },
+        "domainTargets": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "description": "IPv4 addresses custom domains may point an A record to, comma-separated (`_APP_DOMAIN_TARGET_A`).",
+              "type": "string"
+            },
+            "aaaa": {
+              "description": "IPv6 addresses custom domains may point an AAAA record to, comma-separated (`_APP_DOMAIN_TARGET_AAAA`).",
+              "type": "string"
+            },
+            "caa": {
+              "description": "CAA record value custom domains must allow (`_APP_DOMAIN_TARGET_CAA`).",
+              "type": "string"
+            },
+            "cname": {
+              "description": "Hostname custom domains must CNAME to (`_APP_DOMAIN_TARGET_CNAME`). Defaults to `domain`.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extraEnv": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra environment variables for every Appwrite container, as a list of EnvVar objects."
+        },
+        "extraEnvFrom": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra `envFrom` sources for every Appwrite container."
+        },
+        "forceHttps": {
+          "description": "Redirect HTTP to HTTPS and generate HTTPS URLs (`_APP_OPTIONS_FORCE_HTTPS` and `_APP_OPTIONS_ROUTER_FORCE_HTTPS`). Turn it off only when TLS isn't terminated in front of Appwrite.",
+          "type": "boolean"
+        },
+        "functionsDomain": {
+          "description": "Parent domain for function preview URLs (`_APP_DOMAIN_FUNCTIONS`). Defaults to `functions.<domain>`.",
+          "type": "string"
+        },
+        "logFormat": {
+          "description": "Log format (`_APP_LOGGING_FORMAT`).",
+          "type": "string",
+          "enum": [
+            "json",
+            "pretty"
+          ]
+        },
+        "routerProtection": {
+          "description": "Reject requests for hostnames Appwrite doesn't know (`_APP_OPTIONS_ROUTER_PROTECTION`).",
+          "type": "boolean"
+        },
+        "secretConfig": {
+          "description": "Extra sensitive `_APP_*` environment variables, stored in a Secret.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "secrets": {
+          "type": "object",
+          "properties": {
+            "allowKeyRotation": {
+              "description": "Allow `opensslKey` to differ from the key already stored in the cluster. Appwrite can't re-encrypt data, so changing the key makes encrypted data unreadable.",
+              "type": "boolean"
+            },
+            "existingSecret": {
+              "description": "Existing Secret holding the core secrets. When empty the chart generates them once and keeps them across upgrades and uninstalls.",
+              "type": "string"
+            },
+            "generate": {
+              "description": "Generate missing credentials (core secrets and built-in datastore passwords). Set to false with GitOps tools that render templates without cluster access (Argo CD, `helm template`), where generated values would change on every render.",
+              "type": "boolean"
+            },
+            "geoSecret": {
+              "description": "Explicit `_APP_GEO_SECRET`.",
+              "type": "string"
+            },
+            "keys": {
+              "type": "object",
+              "properties": {
+                "geoSecret": {
+                  "description": "Key holding `_APP_GEO_SECRET`, shared with the geo service.",
+                  "type": "string"
+                },
+                "opensslKey": {
+                  "description": "Key holding `_APP_OPENSSL_KEY_V1`, which encrypts data at rest and signs JWTs.",
+                  "type": "string"
+                },
+                "trackingSecret": {
+                  "description": "Key holding `_APP_NOTIFICATIONS_TRACKING_SECRET`.",
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "opensslKey": {
+              "description": "Explicit `_APP_OPENSSL_KEY_V1`, e.g. when migrating from Docker. Never change it after install.",
+              "type": "string"
+            },
+            "trackingSecret": {
+              "description": "Explicit `_APP_NOTIFICATIONS_TRACKING_SECRET`.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sitesDomain": {
+          "description": "Parent domain for site preview URLs (`_APP_DOMAIN_SITES`). Defaults to `sites.<domain>`.",
+          "type": "string"
+        },
+        "smtp": {
+          "type": "object",
+          "properties": {
+            "existingSecret": {
+              "description": "Existing Secret holding the SMTP password.",
+              "type": "string"
+            },
+            "host": {
+              "description": "SMTP server (`_APP_SMTP_HOST`). Empty disables email.",
+              "type": "string"
+            },
+            "password": {
+              "description": "SMTP password (`_APP_SMTP_PASSWORD`). Ignored when `existingSecret` is set.",
+              "type": "string"
+            },
+            "passwordKey": {
+              "description": "Key in `existingSecret` holding the SMTP password.",
+              "type": "string"
+            },
+            "port": {
+              "description": "SMTP port (`_APP_SMTP_PORT`).",
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "secure": {
+              "description": "SMTP encryption (`_APP_SMTP_SECURE`).",
+              "type": "string",
+              "enum": [
+                "",
+                "tls",
+                "ssl"
+              ]
+            },
+            "username": {
+              "description": "SMTP username (`_APP_SMTP_USERNAME`).",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "system": {
+          "type": "object",
+          "properties": {
+            "emailAddress": {
+              "description": "Sender address for emails Appwrite sends (`_APP_SYSTEM_EMAIL_ADDRESS`).",
+              "type": "string"
+            },
+            "emailName": {
+              "description": "Sender name for emails Appwrite sends (`_APP_SYSTEM_EMAIL_NAME`).",
+              "type": "string"
+            },
+            "securityEmailAddress": {
+              "description": "Address shown to users for security issues (`_APP_EMAIL_SECURITY`).",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "usageStats": {
+          "description": "Collect usage statistics in ClickHouse (`_APP_USAGE_STATS`).",
+          "type": "boolean"
+        },
+        "workerPerCore": {
+          "description": "Swoole workers per CPU in the API (`_APP_WORKER_PER_CORE`).",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "clickhouse": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "database": {
+              "description": "Database name.",
+              "type": "string"
+            },
+            "existingSecret": {
+              "description": "Existing Secret holding the password.",
+              "type": "string"
+            },
+            "password": {
+              "description": "Password. Generated and kept across upgrades when empty.",
+              "type": "string"
+            },
+            "passwordKey": {
+              "description": "Key in the Secret holding the password.",
+              "type": "string"
+            },
+            "username": {
+              "description": "User.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the built-in ClickHouse.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "accessModes": {
+              "description": "Access modes.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotations": {
+              "description": "Annotations for the PersistentVolumeClaim.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "enabled": {
+              "description": "Persist data in a PersistentVolumeClaim.",
+              "type": "boolean"
+            },
+            "size": {
+              "description": "Volume size.",
+              "type": "string"
+            },
+            "storageClass": {
+              "description": "Storage class. Empty uses the cluster default.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. The image's `clickhouse` user is UID 101."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
     "commonAnnotations": {
       "description": "Annotations added to every resource rendered by the chart.",
       "type": "object",
@@ -18,21 +740,1248 @@
         "type": "string"
       }
     },
+    "console": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "autoscaling": {
+          "type": "object",
+          "properties": {
+            "behavior": {
+              "type": "object",
+              "description": "HPA scaling behaviour."
+            },
+            "enabled": {
+              "description": "Create a HorizontalPodAutoscaler.",
+              "type": "boolean"
+            },
+            "maxReplicas": {
+              "description": "Maximum replicas.",
+              "type": "integer"
+            },
+            "minReplicas": {
+              "description": "Minimum replicas.",
+              "type": "integer"
+            },
+            "targetCPUUtilizationPercentage": {
+              "description": "Target average CPU utilisation, in percent.",
+              "type": "integer"
+            },
+            "targetMemoryUtilizationPercentage": {
+              "description": "Target average memory utilisation, in percent. Empty disables the metric.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the console.",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "Environment variables for the console, as a map.",
+          "type": "object",
+          "properties": {
+            "APPWRITE_ENDPOINT_SAME_ORIGIN": {
+              "type": "string"
+            },
+            "VITE_CONSOLE_PROFILE": {
+              "type": "string"
+            },
+            "VITE_GROWTH_ENDPOINT": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extraEnv": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra environment variables, as a list of EnvVar objects."
+        },
+        "extraVolumeMounts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volume mounts for the main container."
+        },
+        "extraVolumes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volumes."
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag. Pinned to the console that ships with the chart's appVersion.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "livenessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the liveness probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "pdb": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Create a PodDisruptionBudget when more than one replica can run.",
+              "type": "boolean"
+            },
+            "maxUnavailable": {
+              "description": "Maximum unavailable pods.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            "minAvailable": {
+              "description": "Minimum available pods. Takes precedence over `maxUnavailable`.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. The console image's `bun` user is UID 1000."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "readinessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the readiness probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "successThreshold": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "replicaCount": {
+          "description": "Number of console replicas. Ignored when autoscaling is enabled.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "description": "Service annotations.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "port": {
+              "description": "Service port.",
+              "type": "integer"
+            },
+            "type": {
+              "description": "Service type.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "startupProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the startup probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "terminationGracePeriodSeconds": {
+          "description": "Seconds to wait for in-flight requests on shutdown.",
+          "type": "integer"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        },
+        "topologySpreadConstraints": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`."
+        },
+        "updateStrategy": {
+          "type": "object",
+          "description": "Deployment update strategy."
+        }
+      },
+      "additionalProperties": false
+    },
+    "containerSecurityContext": {
+      "type": "object",
+      "description": "Container security context for every container running the Appwrite image."
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity for every pod."
+        },
+        "nodeSelector": {
+          "description": "Node selector for every pod.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podAnnotations": {
+          "description": "Annotations added to every pod.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Labels added to every pod.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "priorityClassName": {
+          "description": "Priority class for every pod.",
+          "type": "string"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations for every pod."
+        },
+        "topologySpreadConstraints": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Topology spread constraints for every pod. The component's selector labels are filled in when `labelSelector` is omitted. Leave empty for a soft spread across nodes on scalable components."
+        }
+      },
+      "additionalProperties": false
+    },
     "fullnameOverride": {
       "description": "Override the fully qualified app name used in resource names.",
       "type": "string"
     },
+    "geo": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the geo service. When disabled, Appwrite skips geolocation.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. The geo server listens on port 80, so the unprivileged port range is lowered for the pod instead of running as root."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "replicaCount": {
+          "description": "Number of replicas.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
     "global": {
-      "description": "Global values shared between all subcharts",
-      "$comment": "Added automatically by 'helm schema' to allow this chart to be used as a Helm dependency, as this schema would otherwise not allow Helm's special 'global' values key.",
-      "type": [
-        "object",
-        "null"
-      ]
+      "type": "object",
+      "properties": {
+        "imagePullSecrets": {
+          "description": "Image pull secrets added to every pod, as a list of Secret names.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "imageRegistry": {
+          "description": "Registry that replaces the registry of every image, e.g. a pull-through cache.",
+          "type": "string"
+        },
+        "storageClass": {
+          "description": "Storage class for every PersistentVolumeClaim that doesn't set one. `-` means no class.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "description": "Image digest (`sha256:...`). When set it pins the image and the tag is informational.",
+          "type": "string"
+        },
+        "pullPolicy": {
+          "description": "Image pull policy.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "registry": {
+          "description": "Image registry.",
+          "type": "string"
+        },
+        "repository": {
+          "description": "Image repository.",
+          "type": "string"
+        },
+        "tag": {
+          "description": "Image tag. Defaults to the chart appVersion.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "nameOverride": {
       "description": "Override the chart name used in resource names.",
       "type": "string"
+    },
+    "persistence": {
+      "type": "object",
+      "properties": {
+        "accessModes": {
+          "description": "Access modes. Use ReadWriteMany (or S3 storage) to spread API and worker pods across nodes.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "description": "Annotations for the PersistentVolumeClaim.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "colocateReadWriteOnce": {
+          "description": "With a ReadWriteOnce volume, schedule every pod that mounts it on the same node so the volume can be attached.",
+          "type": "boolean"
+        },
+        "enabled": {
+          "description": "Persist `/storage` in a PersistentVolumeClaim. When disabled every pod gets its own emptyDir, which only works with a single API and worker pod.",
+          "type": "boolean"
+        },
+        "existingClaim": {
+          "description": "Use an existing PersistentVolumeClaim instead of creating one.",
+          "type": "string"
+        },
+        "keep": {
+          "description": "Keep the PersistentVolumeClaim when the release is uninstalled.",
+          "type": "boolean"
+        },
+        "size": {
+          "description": "Volume size.",
+          "type": "string"
+        },
+        "storageClass": {
+          "description": "Storage class. Empty uses the cluster default.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "podSecurityContext": {
+      "type": "object",
+      "description": "Pod security context for every pod running the Appwrite image. UID/GID 82 is `www-data`, which owns `/storage` in the image."
+    },
+    "postgresql": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "database": {
+              "description": "Database name.",
+              "type": "string"
+            },
+            "existingSecret": {
+              "description": "Existing Secret holding the password.",
+              "type": "string"
+            },
+            "password": {
+              "description": "Password. Generated and kept across upgrades when empty.",
+              "type": "string"
+            },
+            "passwordKey": {
+              "description": "Key in the Secret holding the password.",
+              "type": "string"
+            },
+            "username": {
+              "description": "Database user.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the built-in PostgreSQL.",
+          "type": "boolean"
+        },
+        "extraConfig": {
+          "description": "Extra PostgreSQL settings passed as `-c name=value`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository. Appwrite's image is PostgreSQL 18 with the extensions Appwrite needs.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "maxConnections": {
+          "description": "`max_connections`. Defaults to `appwrite.database.connectionsMax` + 20.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "accessModes": {
+              "description": "Access modes.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotations": {
+              "description": "Annotations for the PersistentVolumeClaim.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "enabled": {
+              "description": "Persist data in a PersistentVolumeClaim. Data is lost on restart when disabled.",
+              "type": "boolean"
+            },
+            "size": {
+              "description": "Volume size.",
+              "type": "string"
+            },
+            "storageClass": {
+              "description": "Storage class. Empty uses the cluster default.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. The image's `postgres` user is UID 999."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "realtime": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "autoscaling": {
+          "type": "object",
+          "properties": {
+            "behavior": {
+              "type": "object",
+              "description": "HPA scaling behaviour."
+            },
+            "enabled": {
+              "description": "Create a HorizontalPodAutoscaler.",
+              "type": "boolean"
+            },
+            "maxReplicas": {
+              "description": "Maximum replicas.",
+              "type": "integer"
+            },
+            "minReplicas": {
+              "description": "Minimum replicas.",
+              "type": "integer"
+            },
+            "targetCPUUtilizationPercentage": {
+              "description": "Target average CPU utilisation, in percent.",
+              "type": "integer"
+            },
+            "targetMemoryUtilizationPercentage": {
+              "description": "Target average memory utilisation, in percent. Empty disables the metric.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context. Empty inherits `containerSecurityContext`."
+        },
+        "cpuNum": {
+          "description": "CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "enabled": {
+          "description": "Deploy the realtime server.",
+          "type": "boolean"
+        },
+        "extraEnv": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra environment variables for this component."
+        },
+        "extraVolumeMounts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volume mounts for the main container."
+        },
+        "extraVolumes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volumes for this component."
+        },
+        "livenessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the liveness probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "pdb": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Create a PodDisruptionBudget when more than one replica can run.",
+              "type": "boolean"
+            },
+            "maxUnavailable": {
+              "description": "Maximum unavailable pods.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            "minAvailable": {
+              "description": "Minimum available pods. Takes precedence over `maxUnavailable`.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. Empty inherits `podSecurityContext`."
+        },
+        "preStopSleepSeconds": {
+          "description": "Seconds to sleep before shutdown so endpoints are removed first.",
+          "type": "integer"
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "processes": {
+          "description": "Swoole worker processes per pod (`_APP_WORKERS_NUM`). Prefer more replicas over more processes.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "readinessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the readiness probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "successThreshold": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "replicaCount": {
+          "description": "Number of realtime replicas. Ignored when autoscaling is enabled.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "description": "Service annotations.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "port": {
+              "description": "Service port.",
+              "type": "integer"
+            },
+            "type": {
+              "description": "Service type.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "startupProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable the startup probe.",
+              "type": "boolean"
+            },
+            "failureThreshold": {
+              "type": "integer"
+            },
+            "periodSeconds": {
+              "type": "integer"
+            },
+            "timeoutSeconds": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "terminationGracePeriodSeconds": {
+          "description": "Seconds to wait on shutdown. Realtime drains for up to 15s before closing sockets.",
+          "type": "integer"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        },
+        "topologySpreadConstraints": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`."
+        },
+        "updateStrategy": {
+          "type": "object",
+          "description": "Deployment update strategy."
+        }
+      },
+      "additionalProperties": false
+    },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Require a password.",
+              "type": "boolean"
+            },
+            "existingSecret": {
+              "description": "Existing Secret holding the password.",
+              "type": "string"
+            },
+            "password": {
+              "description": "Password. Generated and kept across upgrades when empty.",
+              "type": "string"
+            },
+            "passwordKey": {
+              "description": "Key in the Secret holding the password.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context."
+        },
+        "enabled": {
+          "description": "Deploy the built-in Redis.",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "digest": {
+              "description": "Image digest.",
+              "type": "string"
+            },
+            "pullPolicy": {
+              "description": "Image pull policy.",
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "registry": {
+              "description": "Image registry.",
+              "type": "string"
+            },
+            "repository": {
+              "description": "Image repository. `valkey/valkey` works as a drop-in replacement.",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Image tag.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "maxmemory": {
+          "description": "`maxmemory`. Keep it below the memory limit.",
+          "type": "string"
+        },
+        "maxmemoryPolicy": {
+          "description": "`maxmemory-policy`. Appwrite's Docker install uses `allkeys-lru`.",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "accessModes": {
+              "description": "Access modes.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotations": {
+              "description": "Annotations for the PersistentVolumeClaim.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "enabled": {
+              "description": "Persist data in a PersistentVolumeClaim.",
+              "type": "boolean"
+            },
+            "size": {
+              "description": "Volume size.",
+              "type": "string"
+            },
+            "storageClass": {
+              "description": "Storage class. Empty uses the cluster default.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. The image's `redis` user is UID 999."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "claims": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Resource requests and limits."
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
     },
     "serviceAccount": {
       "type": "object",
@@ -45,7 +1994,7 @@
           }
         },
         "automountServiceAccountToken": {
-          "description": "Mount the ServiceAccount token. Appwrite does not talk to the Kubernetes API.",
+          "description": "Mount the ServiceAccount token. Appwrite doesn't talk to the Kubernetes API.",
           "type": "boolean"
         },
         "create": {
@@ -55,6 +2004,341 @@
         "name": {
           "description": "Name of the ServiceAccount. Defaults to the fullname when `create` is true, `default` otherwise.",
           "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "tasks": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context. Empty inherits `containerSecurityContext`."
+        },
+        "extraEnv": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra environment variables for every task."
+        },
+        "interval": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Run the interval task (domain verification, stale execution cleanup).",
+              "type": "boolean"
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "claims": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "additionalProperties": false,
+              "description": "Resource requests and limits."
+            }
+          },
+          "additionalProperties": false
+        },
+        "maintenance": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Run the maintenance task (cleanup, certificate renewal).",
+              "type": "boolean"
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "claims": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "additionalProperties": false,
+              "description": "Resource requests and limits."
+            }
+          },
+          "additionalProperties": false
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. Empty inherits `podSecurityContext`."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "scheduler": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Run the scheduler for function, execution and message schedules.",
+              "type": "boolean"
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "claims": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "additionalProperties": false,
+              "description": "Resource requests and limits."
+            }
+          },
+          "additionalProperties": false
+        },
+        "terminationGracePeriodSeconds": {
+          "description": "Seconds to wait on shutdown.",
+          "type": "integer"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "tests": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Render `helm test` pods.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workers": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object",
+          "description": "Affinity. Empty inherits `defaults.affinity`."
+        },
+        "combined": {
+          "type": "object",
+          "properties": {
+            "cpuNum": {
+              "description": "CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty.",
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            "maxCoroutines": {
+              "description": "Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default matches the sum of every queue's concurrency.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "processes": {
+              "description": "Worker processes per pod (`_APP_WORKERS_NUM`).",
+              "type": "integer",
+              "minimum": 1
+            },
+            "replicaCount": {
+              "description": "Number of combined worker replicas. Each replica consumes every queue.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "claims": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "additionalProperties": false,
+              "description": "Resource requests and limits."
+            }
+          },
+          "additionalProperties": false
+        },
+        "containerSecurityContext": {
+          "type": "object",
+          "description": "Container security context. Empty inherits `containerSecurityContext`."
+        },
+        "extraEnv": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra environment variables for every worker."
+        },
+        "extraVolumeMounts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volume mounts for every worker."
+        },
+        "extraVolumes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volumes for every worker."
+        },
+        "nodeSelector": {
+          "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podAnnotations": {
+          "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "description": "Pod labels, merged over `defaults.podLabels`.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "description": "Pod security context. Empty inherits `podSecurityContext`."
+        },
+        "priorityClassName": {
+          "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+          "type": "string"
+        },
+        "terminationGracePeriodSeconds": {
+          "description": "Seconds to let workers finish in-flight jobs on shutdown. The queue drains for up to 30s.",
+          "type": "integer"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Tolerations. Empty inherits `defaults.tolerations`."
+        },
+        "topologySpreadConstraints": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`."
         }
       },
       "additionalProperties": false

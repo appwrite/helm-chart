@@ -1,0 +1,255 @@
+suite: api
+templates:
+  - templates/api/deployment.yaml
+release:
+  name: aw
+  namespace: appwrite
+values:
+  - values/required.yaml
+tests:
+  - it: runs the HTTP server on port 8080 as www-data
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: aw-appwrite-api
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [php, app/http.php]
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PORT
+            value: "8080"
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 82
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: uses the chart appVersion as the default image tag
+    chart:
+      appVersion: 9.9.9
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/appwrite/appwrite:9.9.9
+
+  - it: honours digest and global registry
+    set:
+      image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      global.imageRegistry: mirror.example.com
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: ^mirror\.example\.com/appwrite/appwrite:.+@sha256:0123
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].image
+          pattern: ^mirror\.example\.com/
+
+  - it: probes /v1/health/version with the internal Host header
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet
+          value:
+            path: /v1/health/version
+            port: http
+            httpHeaders:
+              - name: Host
+                value: aw-appwrite-api
+
+  - it: can disable individual probes
+    set:
+      api.livenessProbe.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: reads credentials from the chart Secret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_OPENSSL_KEY_V1
+            valueFrom:
+              secretKeyRef:
+                name: aw-appwrite
+                key: _APP_OPENSSL_KEY_V1
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_CONNECTIONS_DB_USAGE
+            value: http://appwrite:$(_APP_USAGE_PASS)@aw-appwrite-clickhouse:8123/appwrite
+
+  - it: reads credentials from existing Secrets
+    set:
+      appwrite.secrets.existingSecret: my-core
+      appwrite.secrets.keys.opensslKey: openssl
+      postgresql.auth.existingSecret: my-pg
+      postgresql.auth.passwordKey: pw
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_OPENSSL_KEY_V1
+            valueFrom:
+              secretKeyRef:
+                name: my-core
+                key: openssl
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: _APP_DB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: my-pg
+                key: pw
+
+  - it: omits the Redis password when auth is disabled
+    set:
+      redis.auth.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          any: true
+          content:
+            name: _APP_REDIS_PASS
+
+  - it: waits for the datastores before starting
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-datastores
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: WAIT_FOR
+            value: aw-appwrite-postgresql:5432 aw-appwrite-redis:6379 aw-appwrite-clickhouse:8123
+
+  - it: mounts shared storage and a per-pod cache
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: storage
+            mountPath: /storage/uploads
+            subPath: uploads
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: cache
+            mountPath: /storage/cache
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            persistentVolumeClaim:
+              claimName: aw-appwrite-storage
+
+  - it: keeps ReadWriteOnce storage users on one node
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.appwrite-storage
+          value: shared
+      - equal:
+          path: spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[0]
+          value:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: aw
+                appwrite-storage: shared
+            topologyKey: kubernetes.io/hostname
+
+  - it: doesn't constrain ReadWriteMany storage users
+    set:
+      persistence.accessModes: [ReadWriteMany]
+    asserts:
+      - notExists:
+          path: spec.template.spec.affinity
+
+  - it: keeps user affinity alongside the storage affinity
+    set:
+      api.affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values: [app]
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity
+      - exists:
+          path: spec.template.spec.affinity.podAffinity
+
+  - it: falls back to defaults for scheduling and lets components override
+    set:
+      defaults.nodeSelector:
+        pool: default
+      defaults.priorityClassName: low
+      api.priorityClassName: high
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            pool: default
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high
+
+  - it: spreads replicas across nodes by default
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].whenUnsatisfiable
+          value: ScheduleAnyway
+
+  - it: fills in the label selector of custom spread constraints
+    set:
+      api.topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].labelSelector.matchLabels
+          value:
+            app.kubernetes.io/name: appwrite
+            app.kubernetes.io/instance: aw
+            app.kubernetes.io/component: api
+
+  - it: drops replicas when autoscaling
+    set:
+      api.autoscaling.enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  - it: rolls pods when configuration changes
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+      - exists:
+          path: spec.template.metadata.annotations["checksum/secret"]
+
+  - it: merges pod labels and annotations from defaults and the component
+    set:
+      defaults.podLabels:
+        team: platform
+      api.podLabels:
+        tier: frontend
+      api.podAnnotations:
+        example.com/scrape: "false"
+    asserts:
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            team: platform
+            tier: frontend
+      - equal:
+          path: spec.template.metadata.annotations["example.com/scrape"]
+          value: "false"

@@ -1,0 +1,41 @@
+{{- if .Values.tests.enabled }}
+{{- $host := include "appwrite.api.host" . }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "appwrite.fullname" . }}-test-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "test") | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  {{- with include "appwrite.imagePullSecrets" . | trim }}{{ . | nindent 2 }}{{ end }}
+  securityContext:
+    {{- toYaml .Values.podSecurityContext | nindent 4 }}
+  containers:
+    - name: api
+      image: {{ include "appwrite.appwriteImage" . }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command:
+        - sh
+        - -c
+        - |
+          set -eu
+          url="http://{{ $host }}:{{ .Values.api.service.port }}/v1/health/version"
+          echo "GET $url"
+          body=$(curl -fsS --max-time 10 -H "Host: {{ $host }}" "$url")
+          echo "$body"
+          echo "$body" | grep -q '"version":"{{ .Chart.AppVersion }}"'
+      securityContext:
+        {{- toYaml .Values.containerSecurityContext | nindent 8 }}
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+{{- end }}

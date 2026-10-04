@@ -1,0 +1,23 @@
+{{- if .Values.redis.enabled }}
+{{- $v := .Values.redis }}
+{{- $args := list "--maxmemory" $v.maxmemory "--maxmemory-policy" $v.maxmemoryPolicy "--maxmemory-samples" "5" "--dir" "/data" }}
+{{- $env := list }}
+{{- if $v.auth.enabled }}
+{{- $args = concat $args (list "--requirepass" "$(REDIS_PASSWORD)") }}
+{{- $ref := include "appwrite.secretRef" (dict "root" . "existingSecret" $v.auth.existingSecret "key" $v.auth.passwordKey "defaultKey" "redis-password") | fromYaml }}
+{{- /* REDISCLI_AUTH lets the probes authenticate without a password on the command line. */}}
+{{- $env = list (dict "name" "REDIS_PASSWORD" "valueFrom" $ref) (dict "name" "REDISCLI_AUTH" "valueFrom" $ref) }}
+{{- end }}
+{{- $handler := dict "exec" (dict "command" (list "redis-cli" "-h" "127.0.0.1" "ping")) }}
+{{- include "appwrite.datastore" (dict
+  "root" .
+  "component" "redis"
+  "values" $v
+  "command" (list "redis-server")
+  "args" $args
+  "env" (ternary (toYaml $env) "" (gt (len $env) 0))
+  "ports" (list (dict "name" "redis" "containerPort" 6379 "protocol" "TCP"))
+  "probes" (include "appwrite.datastore.probes" (dict "handler" $handler))
+  "dataPath" "/data"
+) }}
+{{- end }}

@@ -1,0 +1,22 @@
+{{- if .Values.console.enabled }}
+{{- $v := .Values.console }}
+{{- $env := list (dict "name" "PORT" "value" "3000") }}
+{{- range $k, $val := $v.env }}
+{{- $env = append $env (dict "name" $k "value" ($val | toString)) }}
+{{- end }}
+{{- $handler := dict "httpGet" (dict "path" "/health" "port" "http") }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "console"
+  "values" $v
+  "image" (include "appwrite.image" (dict "root" . "image" $v.image))
+  "pullPolicy" $v.image.pullPolicy
+  "env" (toYaml $env)
+  "ports" (list (dict "name" "http" "containerPort" 3000 "protocol" "TCP"))
+  "probes" (include "appwrite.probes" (dict "values" $v "handler" $handler))
+  "replicas" (ternary nil $v.replicaCount $v.autoscaling.enabled)
+  "spread" true
+  "volumeMounts" (toYaml (list (dict "name" "tmp" "mountPath" "/tmp")))
+  "volumes" (toYaml (list (dict "name" "tmp" "emptyDir" dict)))
+) }}
+{{- end }}

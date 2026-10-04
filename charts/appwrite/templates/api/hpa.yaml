@@ -1,0 +1,3 @@
+{{- if .Values.api.autoscaling.enabled }}
+{{- include "appwrite.hpa" (dict "root" . "component" "api" "autoscaling" .Values.api.autoscaling) }}
+{{- end }}

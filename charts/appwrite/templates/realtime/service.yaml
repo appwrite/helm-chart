@@ -1,0 +1,3 @@
+{{- if .Values.realtime.enabled }}
+{{- include "appwrite.service" (dict "root" . "component" "realtime" "service" .Values.realtime.service "ports" (list (dict "name" "http" "port" .Values.realtime.service.port "targetPort" "http" "appProtocol" "kubernetes.io/ws"))) }}
+{{- end }}
