@@ -31,7 +31,9 @@ Versions that are already in the registry are skipped.
 
 ## Before the first release (0.1.0)
 
-- [ ] Make the repository public. Build provenance attestations on private
+- [ ] Make the repository public, then run the release workflow manually
+      (Actions → Release → Run workflow); it skips itself while the repository
+      is private. Build provenance attestations on private
       repositories need GitHub Enterprise Cloud, and keyless signatures record
       the repository in the public Rekor transparency log anyway.
 - [ ] After the first push, make the `charts/appwrite` package public in the

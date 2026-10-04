@@ -26,6 +26,9 @@ env:
 
 jobs:
   release:
+    # Publishing signs the chart in the public Rekor log and needs public
+    # packages for attestations: only release once the repository is public.
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     permissions:
       contents: write       # GitHub release
