@@ -1,0 +1,37 @@
+apiVersion: v2
+name: appwrite
+description: Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
+type: application
+version: 0.1.0
+appVersion: "2.3.0"
+kubeVersion: ">=1.29.0-0"
+home: https://github.com/levivannoort/helm-chart
+icon: https://raw.githubusercontent.com/appwrite/appwrite/2.3.0/public/images/logos/appwrite-icon.svg
+sources:
+  - https://github.com/levivannoort/helm-chart
+  - https://github.com/appwrite/appwrite
+keywords:
+  - appwrite
+  - backend
+  - baas
+  - database
+  - authentication
+  - storage
+  - realtime
+maintainers:
+  - name: levivannoort
+    url: https://github.com/levivannoort
+annotations:
+  artifacthub.io/license: BSD-3-Clause
+  artifacthub.io/prerelease: "true"
+  artifacthub.io/category: integration-delivery
+  artifacthub.io/links: |
+    - name: Chart source
+      url: https://github.com/levivannoort/helm-chart
+    - name: Appwrite
+      url: https://appwrite.io
+    - name: support
+      url: https://github.com/levivannoort/helm-chart/issues
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial chart skeleton

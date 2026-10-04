@@ -1,0 +1,3 @@
+Appwrite {{ .Chart.AppVersion }} (chart {{ .Chart.Version }}) has been installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+This is an early skeleton of the chart; Appwrite components are not deployed yet.

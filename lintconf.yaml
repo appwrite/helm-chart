@@ -1,0 +1,18 @@
+# yamllint configuration used by `ct lint` for Chart.yaml and values files.
+extends: default
+rules:
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+  comments:
+    min-spaces-from-content: 1
+  document-start: disable
+  indentation:
+    spaces: 2
+    indent-sequences: whatever
+  line-length: disable
+  truthy:
+    check-keys: false

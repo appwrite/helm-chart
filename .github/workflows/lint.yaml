@@ -1,0 +1,121 @@
+name: Lint and test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HELM_UNITTEST_VERSION: v1.2.1
+  HELM_SCHEMA_VERSION: v2.6.0
+  HELM_DOCS_VERSION: 1.14.2
+  KUBECONFORM_VERSION: v0.8.0
+
+jobs:
+  lint:
+    name: Lint (Helm ${{ matrix.helm }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported Helm 3 release and the current Helm 4 release.
+        helm: [v3.18.6, v4.3.0]
+    steps:
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ matrix.helm }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+      - name: ct lint
+        run: ct lint --config ct.yaml --target-branch ${{ github.event.repository.default_branch }}
+      - name: helm lint --strict (every ci/ scenario)
+        run: |
+          for f in charts/appwrite/ci/*-values.yaml; do
+            echo "::group::$f"
+            helm lint --strict charts/appwrite -f "$f"
+            echo "::endgroup::"
+          done
+
+  unittest:
+    name: Unit tests (Helm ${{ matrix.helm }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        helm: [v3.18.6, v4.3.0]
+    steps:
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ matrix.helm }}
+      - name: Install helm-unittest
+        run: |
+          v="${HELM_UNITTEST_VERSION#v}"
+          url="https://github.com/helm-unittest/helm-unittest/releases/download/${HELM_UNITTEST_VERSION}/unittest-${v}.tgz"
+          if helm version --short | grep -q '^v4'; then
+            helm plugin install "$url" --verify=false
+          else
+            helm plugin install "$url"
+          fi
+      - name: helm unittest
+        run: helm unittest --strict --output-type JUnit --output-file test-results/unittest.xml charts/appwrite
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: unittest-results-${{ matrix.helm }}
+          path: test-results/
+
+  kubeconform:
+    name: kubeconform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+      - name: Install kubeconform
+        run: |
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+      - name: Validate rendered manifests
+        run: make kubeconform
+
+  generated:
+    name: Generated files are up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+      - name: Install helm-docs and helm-values-schema-json
+        run: |
+          curl -fsSL "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin helm-docs
+          helm plugin install https://github.com/losisin/helm-values-schema-json --version "${HELM_SCHEMA_VERSION}" --verify=false
+      - name: Check values.schema.json and README.md
+        run: make check-generated

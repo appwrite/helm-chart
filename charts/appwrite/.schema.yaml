@@ -1,0 +1,13 @@
+# Configuration for helm-values-schema-json (`helm schema`).
+# https://github.com/losisin/helm-values-schema-json
+values:
+  - values.yaml
+output: values.schema.json
+draft: 2020
+indent: 2
+useHelmDocs: true
+noAdditionalProperties: true
+schemaRoot:
+  title: Appwrite Helm chart values
+  description: Values for the Appwrite Helm chart.
+  additionalProperties: false

@@ -1,0 +1,37 @@
+# Appwrite Helm chart
+
+{{ template "chart.badgesSection" . }}
+
+{{ template "chart.description" . }}
+
+> [!WARNING]
+> This chart is under active development and not yet released. Values and
+> behaviour may change between pre-1.0 versions.
+
+## Requirements
+
+- Kubernetes {{ template "chart.kubeVersion" . }}
+- Helm 4.x, or Helm 3.18+
+
+## Installing
+
+```console
+helm install appwrite oci://ghcr.io/levivannoort/charts/appwrite \
+  --namespace appwrite --create-namespace
+```
+
+## Uninstalling
+
+```console
+helm uninstall appwrite --namespace appwrite
+```
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## License
+
+BSD 3-Clause. See [LICENSE](https://github.com/levivannoort/helm-chart/blob/main/LICENSE).

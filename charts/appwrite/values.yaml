@@ -1,0 +1,24 @@
+# Default values for the Appwrite chart.
+# Every key is documented with a `# --` comment so helm-docs can render the
+# README table, and annotated with `# @schema` where the generated
+# values.schema.json needs more than the inferred type.
+
+# -- Override the chart name used in resource names.
+nameOverride: ""
+# -- Override the fully qualified app name used in resource names.
+fullnameOverride: ""
+
+# -- Labels added to every resource rendered by the chart.
+commonLabels: {} # @schema additionalProperties: {type: string}
+# -- Annotations added to every resource rendered by the chart.
+commonAnnotations: {} # @schema additionalProperties: {type: string}
+
+serviceAccount:
+  # -- Create a ServiceAccount for Appwrite pods.
+  create: true
+  # -- Name of the ServiceAccount. Defaults to the fullname when `create` is true, `default` otherwise.
+  name: ""
+  # -- Annotations for the ServiceAccount (e.g. workload identity bindings).
+  annotations: {} # @schema additionalProperties: {type: string}
+  # -- Mount the ServiceAccount token. Appwrite does not talk to the Kubernetes API.
+  automountServiceAccountToken: false

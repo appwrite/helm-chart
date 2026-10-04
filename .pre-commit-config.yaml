@@ -1,0 +1,21 @@
+# Optional local hooks: `pre-commit install`. CI runs the same checks via `make test`.
+repos:
+  - repo: https://github.com/norwoodj/helm-docs
+    rev: v1.14.2
+    hooks:
+      - id: helm-docs-built
+        args: [--chart-search-root=charts, --template-files=README.md.gotmpl]
+  - repo: local
+    hooks:
+      - id: helm-schema
+        name: values.schema.json (helm schema)
+        entry: make schema
+        language: system
+        files: ^charts/appwrite/(values\.yaml|\.schema\.yaml)$
+        pass_filenames: false
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [-c, lintconf.yaml]
+        files: ^(charts/[^/]+/(Chart|values)\.yaml|charts/[^/]+/ci/.*\.yaml|\.github/.*\.ya?ml)$

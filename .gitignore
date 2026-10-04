@@ -1,0 +1,13 @@
+# Packaged charts and local build output
+*.tgz
+/dist/
+/.cr-release-packages/
+
+# helm-unittest
+charts/*/tests/__snapshot__/*.tmp
+/test-results/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Appwrite Helm chart values",
+  "description": "Values for the Appwrite Helm chart.",
+  "type": "object",
+  "properties": {
+    "commonAnnotations": {
+      "description": "Annotations added to every resource rendered by the chart.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "commonLabels": {
+      "description": "Labels added to every resource rendered by the chart.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "fullnameOverride": {
+      "description": "Override the fully qualified app name used in resource names.",
+      "type": "string"
+    },
+    "global": {
+      "description": "Global values shared between all subcharts",
+      "$comment": "Added automatically by 'helm schema' to allow this chart to be used as a Helm dependency, as this schema would otherwise not allow Helm's special 'global' values key.",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "nameOverride": {
+      "description": "Override the chart name used in resource names.",
+      "type": "string"
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations for the ServiceAccount (e.g. workload identity bindings).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "automountServiceAccountToken": {
+          "description": "Mount the ServiceAccount token. Appwrite does not talk to the Kubernetes API.",
+          "type": "boolean"
+        },
+        "create": {
+          "description": "Create a ServiceAccount for Appwrite pods.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Name of the ServiceAccount. Defaults to the fullname when `create` is true, `default` otherwise.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
