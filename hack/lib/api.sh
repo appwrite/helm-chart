@@ -15,7 +15,8 @@ api_connect() {
   local release=$1 namespace=$2
   API_PORT="${API_PORT:-18080}"
   API_SERVICE=$(kubectl -n "$namespace" get svc -l "app.kubernetes.io/instance=$release,app.kubernetes.io/component=api" -o jsonpath='{.items[0].metadata.name}')
-  API_HOST="$API_SERVICE"
+  # _APP_MIGRATION_HOST: the one internal host exempt from force-HTTPS.
+  API_HOST="$API_SERVICE.$namespace.svc"
   API_TMP=$(mktemp -d)
   kubectl -n "$namespace" port-forward "svc/$API_SERVICE" "$API_PORT:80" >/dev/null 2>&1 &
   API_PF_PID=$!

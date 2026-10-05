@@ -1,0 +1,74 @@
+suite: security contexts, disruption budgets and subcharts
+templates:
+  - templates/api/deployment.yaml
+  - templates/api/pdb.yaml
+release:
+  name: aw
+  namespace: appwrite
+values:
+  - values/required.yaml
+tests:
+  - it: merges a component's pod security context over the global one
+    template: templates/api/deployment.yaml
+    set:
+      api.podSecurityContext.fsGroup: 1000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: keeps a component's explicit false over the global value
+    template: templates/api/deployment.yaml
+    set:
+      api.containerSecurityContext.readOnlyRootFilesystem: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+
+  - it: leaves chart and version labels off pod templates
+    template: templates/api/deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+      - notExists:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: appwrite-0.1.0
+
+  - it: skips the API PodDisruptionBudget while a ReadWriteOnce volume pins it to one node
+    template: templates/api/pdb.yaml
+    set:
+      api.replicaCount: 3
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders the API PodDisruptionBudget with a ReadWriteMany volume
+    template: templates/api/pdb.yaml
+    set:
+      api.replicaCount: 3
+      persistence.accessModes: [ReadWriteMany]
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+
+  - it: accepts a parent chart's global values
+    template: templates/api/deployment.yaml
+    set:
+      global.company: acme
+      global.imagePullSecrets: [{name: registry}]
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content: {name: registry}

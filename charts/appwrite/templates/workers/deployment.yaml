@@ -22,6 +22,7 @@
   "command" (list "php" "app/worker.php" (join "," .queues))
   "env" $env
   "replicas" (ternary nil ($v.replicaCount | default 0) $autoscaling)
+  "singleton" .singleton
   "spread" true
   "storage" .storage
   "certbot" .certbot

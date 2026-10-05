@@ -70,7 +70,7 @@ namespace {
         $lines = [];
         foreach ($category['variables'] as $variable) {
             $name = $variable['name'];
-            if (stripos($variable['description'] ?? '', 'deprecated') !== false) {
+            if (preg_match('/^\W*deprecated/i', $variable['description'] ?? '')) {
                 continue;
             }
             if (in_array($name, $skipNames, true) || in_array($name, $secretNames, true)) {

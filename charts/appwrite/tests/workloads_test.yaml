@@ -106,7 +106,7 @@ tests:
           value: aw-appwrite-worker-databases
       - contains:
           path: spec.template.spec.containers[0].env
-          content: {name: _APP_WORKER_MAX_COROUTINES, value: "6"}
+          content: {name: _APP_WORKER_MAX_COROUTINES, value: "1"}
         documentSelector:
           path: metadata.name
           value: aw-appwrite-worker-mails
@@ -191,7 +191,7 @@ tests:
         documentIndex: 0
       - contains:
           path: spec.template.spec.containers[0].env
-          content: {name: _APP_WORKER_MAX_COROUTINES, value: "23"}
+          content: {name: _APP_WORKER_MAX_COROUTINES, value: "18"}
         documentIndex: 0
       - contains:
           path: spec.template.spec.containers[0].env

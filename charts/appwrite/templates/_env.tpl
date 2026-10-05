@@ -4,6 +4,8 @@ the env ConfigMap. Precedence, lowest first:
   1. files/env-defaults.yaml (what the Docker installer writes to .env)
   2. values computed by the chart (domains, internal service URLs, ...)
   3. appwrite.config
+appwrite.config and secretConfig also replace the variables the chart sets
+on each container (see appwrite.env).
 */}}
 {{- define "appwrite.env.config" -}}
 {{- $root := . }}
@@ -12,7 +14,7 @@ the env ConfigMap. Precedence, lowest first:
 {{- $domain := $v.domain | default "localhost" }}
 {{- $enabled := dict "true" "enabled" "false" "disabled" }}
 {{- $env := .Files.Get "files/env-defaults.yaml" | fromYaml | default dict }}
-{{- $apiHost := include "appwrite.api.host" . }}
+{{- $apiHost := include "appwrite.api.internalHost" . }}
 
 {{- $computed := dict
   "_APP_ENV" "production"
@@ -160,6 +162,8 @@ Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WO
 {{- define "appwrite.env" -}}
 {{- $root := .root }}
 {{- $v := $root.Values }}
+{{- /* Container env wins over envFrom: leave out what appwrite.config or secretConfig sets. */}}
+{{- $overrides := merge (dict) ($v.appwrite.config | default dict) ($v.appwrite.secretConfig | default dict) }}
 {{- $secrets := $v.appwrite.secrets }}
 - name: _APP_OPENSSL_KEY_V1
   valueFrom:
@@ -196,10 +200,16 @@ Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WO
 {{- $credentials = printf "%s:$(_APP_USAGE_PASS)" $ch.username }}
 {{- end }}
 {{- $dsn := printf "%s://%s@%s/%s" $ch.scheme $credentials $ch.address $ch.database }}
-- name: _APP_CONNECTIONS_DB_USAGE
+{{- /* Appwrite ignores the scheme and only uses TLS with secure=true. */}}
+{{- if eq $ch.scheme "https" }}
+{{- $dsn = printf "%s?secure=true" $dsn }}
+{{- end }}
+{{- range $name := list "_APP_CONNECTIONS_DB_USAGE" "_APP_CONNECTIONS_DB_EXECUTIONS" }}
+{{- if not (hasKey $overrides $name) }}
+- name: {{ $name }}
   value: {{ $dsn | quote }}
-- name: _APP_CONNECTIONS_DB_EXECUTIONS
-  value: {{ $dsn | quote }}
+{{- end }}
+{{- end }}
 {{- range $name, $c := dict "DOCUMENTSDB" $v.appwrite.documentsDb "VECTORSDB" $v.appwrite.vectorsDb }}
 {{- if $c.enabled }}
 {{- with (include "appwrite.datastore.secret" (dict "root" $root "config" $c "chartKey" (printf "%s-password" (lower $name))) | fromYaml).secret }}
@@ -240,11 +250,11 @@ Usage: include "appwrite.env" (dict "root" $ "cpuNum" "1" "extra" (dict "_APP_WO
   valueFrom:
     {{- include "appwrite.secretRef" (dict "root" $root "existingSecret" $v.appwrite.smtp.existingSecret "key" $v.appwrite.smtp.passwordKey "defaultKey" "smtp-password") | nindent 4 }}
 {{- end }}
-- name: _APP_CPU_NUM
-  value: {{ .cpuNum | quote }}
-{{- range $k, $val := .extra }}
+{{- range $k, $val := merge (dict "_APP_CPU_NUM" .cpuNum) .extra }}
+{{- if not (hasKey $overrides $k) }}
 - name: {{ $k }}
   value: {{ include "appwrite.envValue" $val | quote }}
+{{- end }}
 {{- end }}
 {{- with $v.appwrite.extraEnv }}
 {{ toYaml . }}

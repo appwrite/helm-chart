@@ -69,6 +69,21 @@ app.kubernetes.io/component: {{ .component }}
 {{- end }}
 
 {{/*
+Labels for a component's pod template. Leaves out helm.sh/chart and
+app.kubernetes.io/version, so a chart bump doesn't restart pods (the
+datastores) or change an immutable Job template.
+Usage: include "appwrite.podLabels" (dict "root" $ "component" "api")
+*/}}
+{{- define "appwrite.podLabels" -}}
+{{ include "appwrite.componentSelectorLabels" . }}
+app.kubernetes.io/managed-by: {{ .root.Release.Service }}
+app.kubernetes.io/part-of: appwrite
+{{- with .root.Values.commonLabels }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/*
 Selector labels for a component.
 Usage: include "appwrite.componentSelectorLabels" (dict "root" $ "component" "api")
 */}}
@@ -136,7 +151,11 @@ imagePullSecrets block for a pod spec.
 {{- with .Values.global.imagePullSecrets }}
 imagePullSecrets:
   {{- range . }}
+  {{- if kindIs "map" . }}
+  - name: {{ .name }}
+  {{- else }}
   - name: {{ . }}
+  {{- end }}
   {{- end }}
 {{- end }}
 {{- end }}
@@ -209,9 +228,85 @@ Namespace build Jobs run in.
 {{- end }}
 
 {{/*
+Internal hostname of the API Service, resolvable from any namespace. It is
+_APP_MIGRATION_HOST, which Appwrite treats like localhost (exempt from
+force-HTTPS and router protection), so it is also the Host header of probes
+and of in-cluster callers such as build Jobs.
+*/}}
+{{- define "appwrite.api.internalHost" -}}
+{{- printf "%s.%s.svc" (include "appwrite.api.host" .) .Release.Namespace }}
+{{- end }}
+
+{{/*
 In-cluster URL of the API Service, reachable from other namespaces.
 */}}
 {{- define "appwrite.api.url" -}}
 {{- $port := int .Values.api.service.port }}
-{{- printf "http://%s.%s.svc%s" (include "appwrite.api.host" .) .Release.Namespace (ternary "" (printf ":%d" $port) (eq $port 80)) }}
+{{- printf "http://%s%s" (include "appwrite.api.internalHost" .) (ternary "" (printf ":%d" $port) (eq $port 80)) }}
+{{- end }}
+
+{{/*
+Most Appwrite pods that can run at once (autoscalers at maxReplicas). Each
+opens its own database pool, sized _APP_CONNECTIONS_MAX / _APP_POOL_CLIENTS.
+*/}}
+{{- define "appwrite.pods.max" -}}
+{{- $n := 0 }}
+{{- $scaled := list .Values.api }}
+{{- if .Values.realtime.enabled }}{{ $scaled = append $scaled .Values.realtime }}{{ end }}
+{{- range (include "appwrite.workers.deployments" . | fromYamlArray) }}
+{{- $scaled = append $scaled .values }}
+{{- end }}
+{{- range $scaled }}
+{{- if and .autoscaling .autoscaling.enabled }}
+{{- $n = add $n (.autoscaling.maxReplicas | int) }}
+{{- else }}
+{{- $n = add $n (.replicaCount | default 0 | int) }}
+{{- end }}
+{{- end }}
+{{- if .Values.mqtt.enabled }}{{ $n = add $n (.Values.mqtt.replicaCount | int) }}{{ end }}
+{{- $t := .Values.tasks }}
+{{- if $t.scheduler.enabled }}{{ $n = add $n (ternary 4 1 (eq $t.scheduler.mode "separate")) }}{{ end }}
+{{- if $t.maintenance.enabled }}{{ $n = add $n 1 }}{{ end }}
+{{- if $t.interval.enabled }}{{ $n = add $n 1 }}{{ end }}
+{{- $n }}
+{{- end }}
+
+{{/*
+First value in a list that is set (not null or missing); unlike `default`,
+0 and false count as set.
+Usage: include "appwrite.firstSet" (list $v.x $parent.x 30)
+*/}}
+{{- define "appwrite.firstSet" -}}
+{{- $out := "" }}
+{{- $found := false }}
+{{- range . }}
+{{- if and (not $found) (not (kindIs "invalid" .)) }}
+{{- $out = . }}
+{{- $found = true }}
+{{- end }}
+{{- end }}
+{{- $out }}
+{{- end }}
+
+{{/*
+Name of a datastore's headless Service, kept within 63 characters.
+Usage: include "appwrite.headlessName" (dict "root" $ "component" "postgresql")
+*/}}
+{{- define "appwrite.headlessName" -}}
+{{- printf "%s-headless" (include "appwrite.componentName" . | trunc 54 | trimSuffix "-") }}
+{{- end }}
+
+{{/*
+Maps layered key by key, first layer winning; a key set in an earlier layer
+(even to false or 0) is kept. Returns YAML.
+Usage: include "appwrite.overlay" (list $component $group $global) | fromYaml
+*/}}
+{{- define "appwrite.overlay" -}}
+{{- $out := dict }}
+{{- range . }}
+{{- range $k, $val := . | default dict }}
+{{- if not (hasKey $out $k) }}{{ $_ := set $out $k $val }}{{ end }}
+{{- end }}
+{{- end }}
+{{- toYaml $out }}
 {{- end }}

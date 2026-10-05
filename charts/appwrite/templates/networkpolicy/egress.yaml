@@ -17,7 +17,14 @@ spec:
         - port: 53
           protocol: TCP
     - to:
-        - {{- include "appwrite.networkPolicy.releasePeer" . | nindent 10 }}
+        {{- /* Not the browser: it loads user-supplied URLs, so browser-egress limits it to the API and public addresses. */}}
+        - podSelector:
+            matchLabels:
+              {{- include "appwrite.selectorLabels" . | nindent 14 }}
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: NotIn
+                values: [browser]
     {{- with $np.egress.extraRules }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

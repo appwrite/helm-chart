@@ -28,7 +28,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "appwrite.componentLabels" (dict "root" $root "component" "migrate") | nindent 8 }}
+        {{- include "appwrite.podLabels" (dict "root" $root "component" "migrate") | nindent 8 }}
         appwrite/datastore-client: "true"
     spec:
       restartPolicy: Never

@@ -71,10 +71,19 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- $_ := set $seen . $group }}
 {{- end }}
 {{- end }}
-{{- if and (has "databases" ($g.queues | default list)) (or (gt (int ($g.replicaCount | default 1)) 1) (and $g.autoscaling $g.autoscaling.enabled)) }}
-{{- $errors = append $errors (printf "workers.groups.%s consumes the databases queue, which must have a single consumer: set replicaCount to 1 and disable autoscaling, or move databases to its own group." $group) }}
+{{- if and (has "databases" ($g.queues | default list)) (or (gt (int ($g.replicaCount | default 1)) 1) (gt (int ($g.processes | default 1)) 1) (and $g.autoscaling $g.autoscaling.enabled)) }}
+{{- $errors = append $errors (printf "workers.groups.%s consumes the databases queue, which must have a single consumer: set replicaCount and processes to 1 and disable autoscaling, or move databases to its own group." $group) }}
 {{- end }}
 {{- end }}
+{{- $missing := list }}
+{{- range $known }}
+{{- if not (hasKey $seen .) }}{{ $missing = append $missing . }}{{ end }}
+{{- end }}
+{{- if and $v.workers.groups $missing }}
+{{- $errors = append $errors (printf "workers.groups: no group consumes %s; every queue needs exactly one group, or its jobs pile up in Redis." (join ", " (sortAlpha $missing))) }}
+{{- end }}
+{{- else if and (eq $v.workers.mode "combined") (gt (int $v.workers.combined.processes) 1) }}
+{{- $errors = append $errors "workers.combined.processes must be 1: the combined worker consumes the databases queue, which must have a single consumer. Use workers.mode=grouped or separate to scale other queues." }}
 {{- end }}
 {{- $storage := $v.appwrite.storage }}
 {{- if eq $storage.device "s3" }}
@@ -93,7 +102,7 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- if not $v.compute.orchestrator.host }}
 {{- $errors = append $errors "compute.orchestrator.host is required when compute.orchestrator.mode is external." }}
 {{- end }}
-{{- else if and $v.compute.builds.createNamespace (eq (include "appwrite.builds.namespace" .) .Release.Namespace) }}
+{{- else if eq (include "appwrite.builds.namespace" .) .Release.Namespace }}
 {{- $errors = append $errors "compute.builds.namespace must differ from the release namespace: build pods need the baseline Pod Security Standard, so they get a namespace of their own." }}
 {{- end }}
 {{- if ne $storage.device "s3" }}
@@ -109,9 +118,20 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- if and $v.httpRoute.enabled (not $v.httpRoute.parentRefs) }}
 {{- $errors = append $errors "httpRoute.parentRefs is required when httpRoute.enabled is true: name the Gateway to attach to." }}
 {{- end }}
-{{- range $k, $_ := $v.appwrite.config }}
+{{- range $field := list "config" "secretConfig" }}
+{{- range $k, $_ := get $v.appwrite $field | default dict }}
 {{- if not (regexMatch "^_APP_[A-Z0-9_]+$" $k) }}
-{{- $errors = append $errors (printf "appwrite.config.%s: keys must be Appwrite variables matching ^_APP_[A-Z0-9_]+$." $k) }}
+{{- $errors = append $errors (printf "appwrite.%s.%s: keys must be Appwrite variables matching ^_APP_[A-Z0-9_]+$." $field $k) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if and $v.postgresql.enabled $v.postgresql.maxConnections (lt (int $v.postgresql.maxConnections) (int $v.appwrite.database.connectionsMax)) }}
+{{- $errors = append $errors (printf "postgresql.maxConnections (%v) is below appwrite.database.connectionsMax (%v): Appwrite would open more connections than PostgreSQL accepts." $v.postgresql.maxConnections $v.appwrite.database.connectionsMax) }}
+{{- end }}
+{{- range $store := list "postgresql" "redis" "clickhouse" }}
+{{- $name := include "appwrite.componentName" (dict "root" $ "component" $store) }}
+{{- if and (get $v $store).enabled (gt (len $name) 52) }}
+{{- $errors = append $errors (printf "StatefulSet name %q is longer than 52 characters, which breaks its pods' controller-revision-hash label: use a shorter release name or fullnameOverride." $name) }}
 {{- end }}
 {{- end }}
 {{- $installed := include "appwrite.installedVersion" . }}

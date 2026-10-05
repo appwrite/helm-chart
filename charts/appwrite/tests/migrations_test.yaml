@@ -11,6 +11,8 @@ values:
   - values/required.yaml
 set:
   appwrite.secrets.opensslKey: test-key
+  postgresql.auth.password: test-postgres
+  clickhouse.auth.password: test-clickhouse
 tests:
   - it: records the Appwrite version on the API Deployment
     template: templates/api/deployment.yaml
@@ -102,16 +104,67 @@ tests:
       - failedTemplate:
           errorPattern: Appwrite 2.4.0 is installed and this would downgrade it to 2.3.0
 
-  - it: renders a version-named Job in job mode
+  - it: retries a hook migration that failed
+    template: templates/hooks/migrate-hook.yaml
+    release:
+      upgrade: true
+    kubernetesProvider:
+      scheme:
+        "apps/v1/Deployment":
+          gvr: {group: apps, version: v1, resource: deployments}
+          namespaced: true
+        "batch/v1/Job":
+          gvr: {group: batch, version: v1, resource: jobs}
+          namespaced: true
+      objects:
+        - kind: Deployment
+          apiVersion: apps/v1
+          metadata:
+            name: aw-appwrite-api
+            namespace: appwrite
+            annotations:
+              appwrite/version: 2.3.0
+        - kind: Job
+          apiVersion: batch/v1
+          metadata:
+            name: aw-appwrite-migrate
+            namespace: appwrite
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: renders a Job named after the version and its spec in job mode
     template: templates/hooks/migrate-job.yaml
     set:
       migrations.mode: job
     asserts:
-      - equal:
+      - matchRegex:
           path: metadata.name
-          value: aw-appwrite-migrate-2-3-0
+          pattern: ^aw-appwrite-migrate-2-3-0-[0-9a-f]{8}$
       - notExists:
           path: metadata.annotations["helm.sh/hook"]
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+
+  - it: renames the Job when its spec changes
+    template: templates/hooks/migrate-job.yaml
+    set:
+      migrations.mode: job
+      migrations.resources.limits.memory: 2Gi
+    asserts:
+      - notEqual:
+          path: metadata.name
+          value: aw-appwrite-migrate-2-3-0-4d9a8998
+
+  - it: refuses to regenerate datastore passwords when the Secret is gone
+    template: templates/api/deployment.yaml
+    release:
+      upgrade: true
+    set:
+      postgresql.auth.password: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: Refusing to generate a new postgres-password during an upgrade
 
   - it: renders nothing in none mode
     templates:

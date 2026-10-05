@@ -1,6 +1,6 @@
 {{- $root := . }}
 {{- $v := .Values.api }}
-{{- $host := include "appwrite.api.host" . }}
+{{- $host := include "appwrite.api.internalHost" . }}
 {{- $handler := dict "httpGet" (dict "path" "/v1/health/version" "port" "http" "httpHeaders" (list (dict "name" "Host" "value" $host))) }}
 {{- $env := include "appwrite.env" (dict "root" . "cpuNum" (include "appwrite.cpuNum" $v) "extra" (dict "PORT" "8080")) }}
 {{- $init := include "appwrite.initContainer.waitForTcp" (dict "root" . "name" "wait-for-datastores" "targets" (include "appwrite.datastoreTargets" . | splitList ",")) }}

@@ -93,10 +93,3 @@ secret:
   key: {{ .chartKey }}
 {{- end }}
 {{- end }}
-
-{{/*
-Optional secondary database (documentsDb or vectorsDb) password secret.
-*/}}
-{{- define "appwrite.secondaryDb.secret" -}}
-{{- include "appwrite.datastore.secret" . }}
-{{- end }}

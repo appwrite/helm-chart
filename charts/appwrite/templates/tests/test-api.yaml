@@ -1,5 +1,5 @@
 {{- if .Values.tests.enabled }}
-{{- $host := include "appwrite.api.host" . }}
+{{- $host := include "appwrite.api.internalHost" . }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -13,6 +13,7 @@ metadata:
 spec:
   restartPolicy: Never
   automountServiceAccountToken: false
+  {{- with include "appwrite.pod.scheduling" (dict "root" . "values" dict "component" "test") | trim }}{{ . | nindent 2 }}{{ end }}
   {{- with include "appwrite.imagePullSecrets" . | trim }}{{ . | nindent 2 }}{{ end }}
   securityContext:
     {{- toYaml .Values.podSecurityContext | nindent 4 }}
@@ -29,7 +30,7 @@ spec:
           echo "GET $url"
           body=$(curl -fsS --max-time 10 -H "Host: {{ $host }}" "$url")
           echo "$body"
-          echo "$body" | grep -q '"version":"{{ .Chart.AppVersion }}"'
+          echo "$body" | grep -q '"version":"{{ include "appwrite.version" . }}"'
       securityContext:
         {{- toYaml .Values.containerSecurityContext | nindent 8 }}
       resources:

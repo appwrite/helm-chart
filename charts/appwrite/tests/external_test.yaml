@@ -64,7 +64,7 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: _APP_CONNECTIONS_DB_USAGE
-            value: https://appwrite:$(_APP_USAGE_PASS)@ch.example.com:8443/appwrite
+            value: https://appwrite:$(_APP_USAGE_PASS)@ch.example.com:8443/appwrite?secure=true
 
   - it: waits for the external services
     template: templates/api/deployment.yaml
@@ -89,7 +89,7 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: _APP_CONNECTIONS_DB_USAGE
-            value: https://appwrite@ch.example.com:8443/appwrite
+            value: https://appwrite@ch.example.com:8443/appwrite?secure=true
 
   - it: stores inline passwords in the chart Secret
     template: templates/secret.yaml
