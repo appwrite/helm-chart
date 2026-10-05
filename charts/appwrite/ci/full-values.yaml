@@ -81,6 +81,11 @@ redis:
   resources:
     requests:
       cpu: 20m
+compute:
+  builds:
+    # Builds get an 8-CPU limit; the default overcommit requests 1 CPU,
+    # which doesn't fit on the runner next to everything else.
+    cpuOvercommit: 40
 migrations:
   mode: job
 networkPolicy:
