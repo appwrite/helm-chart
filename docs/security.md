@@ -211,10 +211,10 @@ Released charts are signed with [cosign](https://github.com/sigstore/cosign)
 keyless signing from GitHub Actions, and carry a build provenance attestation:
 
 ```console
-cosign verify ghcr.io/appwrite-labs/charts/appwrite:<version> \
-  --certificate-identity https://github.com/appwrite-labs/helm-chart/.github/workflows/release.yaml@refs/heads/main \
+cosign verify ghcr.io/appwrite/charts/appwrite:<version> \
+  --certificate-identity https://github.com/appwrite/helm-chart/.github/workflows/release.yaml@refs/heads/main \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
-gh attestation verify oci://ghcr.io/appwrite-labs/charts/appwrite:<version> \
-  --repo appwrite-labs/helm-chart
+gh attestation verify oci://ghcr.io/appwrite/charts/appwrite:<version> \
+  --repo appwrite/helm-chart
 ```

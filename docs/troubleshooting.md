@@ -90,6 +90,6 @@ kubectl -n appwrite get pods,events
 kubectl -n appwrite logs deploy/appwrite-api --tail=200
 ```
 
-and open an issue at <https://github.com/appwrite-labs/helm-chart/issues>
+and open an issue at <https://github.com/appwrite/helm-chart/issues>
 (remove secrets first). Problems in Appwrite itself belong at
 <https://github.com/appwrite/appwrite/issues>.

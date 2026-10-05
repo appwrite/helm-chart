@@ -34,7 +34,7 @@ skip the migration.
    doesn't replay those of the versions in between.
 
 ```console
-helm upgrade appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
+helm upgrade appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --version <new chart version> -n appwrite -f values.yaml --wait --timeout 30m
 ```
 

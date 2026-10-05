@@ -1,5 +1,5 @@
 # Artifact Hub repository metadata, pushed to the OCI registry as
-# ghcr.io/appwrite-labs/charts/appwrite:artifacthub.io by the release workflow.
+# ghcr.io/appwrite/charts/appwrite:artifacthub.io by the release workflow.
 # Add repositoryID once the repository is registered on Artifact Hub, and an
 # owners entry (name and the email of your Artifact Hub account) to claim it.
 owners: []

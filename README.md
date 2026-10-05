@@ -4,7 +4,7 @@ A Helm chart for running [Appwrite](https://appwrite.io), the open-source
 backend platform, on Kubernetes.
 
 ```console
-helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
+helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --namespace appwrite --create-namespace \
   --set appwrite.domain=appwrite.example.com \
   --set appwrite.certificatesEmail=ops@example.com \
@@ -42,7 +42,7 @@ local install you can try in ten minutes, and a real one step by step.
 ```text
 charts/appwrite/   the chart: templates, values, unit tests, CI scenarios
 docs/              operator guides
-examples/compute/  Docker Compose for the Functions and Sites host
+examples/executor/ Docker Compose for the executor host (Functions and Sites)
 hack/              scripts used by CI and local development
 ```
 

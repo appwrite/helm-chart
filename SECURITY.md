@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Report vulnerabilities in this chart privately through
-[GitHub security advisories](https://github.com/appwrite-labs/helm-chart/security/advisories/new).
+[GitHub security advisories](https://github.com/appwrite/helm-chart/security/advisories/new).
 Please don't open a public issue.
 
 Include the chart version, the values you used (with secrets removed), and

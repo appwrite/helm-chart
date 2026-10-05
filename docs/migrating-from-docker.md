@@ -65,7 +65,7 @@ Install with the API scaled to zero so nothing writes to the new database
 before the restore:
 
 ```console
-helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite -n appwrite --create-namespace \
+helm install appwrite oci://ghcr.io/appwrite/charts/appwrite -n appwrite --create-namespace \
   -f values.yaml --set api.replicaCount=0 --set workers.combined.replicaCount=0 \
   --set realtime.replicaCount=0 --set tasks.scheduler.enabled=false \
   --set tasks.maintenance.enabled=false --set tasks.interval.enabled=false
@@ -111,7 +111,7 @@ into the chart's ([backup-restore.md](backup-restore.md#clickhouse)).
 ## 5. Start Appwrite
 
 ```console
-helm upgrade appwrite oci://ghcr.io/appwrite-labs/charts/appwrite -n appwrite -f values.yaml --wait
+helm upgrade appwrite oci://ghcr.io/appwrite/charts/appwrite -n appwrite -f values.yaml --wait
 ```
 
 Sign in to the console with an existing account and check that projects,
