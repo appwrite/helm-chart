@@ -74,6 +74,8 @@ jobs:
           cluster_name: appwrite
           node_image: kindest/node:${{ matrix.kubernetes }}
           config: hack/kind-config.yaml
+      - name: Answer the runner's search domains in CoreDNS
+        run: hack/ci-dns.sh appwrite
       - name: Install Traefik and the Gateway API CRDs
         if: matrix.traefik
         run: |

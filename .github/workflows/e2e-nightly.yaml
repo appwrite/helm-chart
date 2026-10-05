@@ -33,6 +33,8 @@ jobs:
           cluster_name: appwrite
           node_image: kindest/node:v1.37.0
           config: hack/kind-config.yaml
+      - name: Answer the runner's search domains in CoreDNS
+        run: hack/ci-dns.sh appwrite
       - name: Install Traefik
         run: |
           kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
