@@ -48,9 +48,10 @@ functions and sites stay in `waiting` and executions fail.
   (default `https://<appwrite.domain>`). Build containers download their source
   from Appwrite and report progress back to it. The URL's hostname must be
   `appwrite.domain`, because Appwrite routes by hostname.
-- **Runtime images.** Pre-pull the images of the runtimes you enable
-  (`RUNTIME_IMAGES` below), or the first execution of each runtime waits for
-  the pull.
+- **Runtime images.** List the images of the runtimes you enable in
+  `RUNTIME_IMAGES` in the Docker host's `.env`, so the executor pulls them
+  when it starts. Otherwise the first execution of each runtime waits for the
+  pull.
 
 ## 1. Configure the chart
 
@@ -74,6 +75,10 @@ compute:
   functionsRuntimes: [node-22, python-3.12, php-8.3]
   sitesRuntimes: [static-1, node-22]
 ```
+
+Keep `node-22` in `sitesRuntimes` even if you only host static sites: sites
+are built with a Node.js runtime, and without it creating a site fails with
+`Runtime "node-22" is not supported`.
 
 The chart generates the executor and orchestrator secrets and keeps them in
 its Secret. To bring your own, set `compute.secrets.existingSecret` (keys
@@ -131,12 +136,35 @@ runtime": the executor can't find the build output.
 
 ## 3. Check it
 
+In the console, create a function from a template (Functions → Create
+function), wait for its deployment to become ready, and execute it. Then
+create a site from a template.
+
+From a clone of this repository, a script does the same for a function:
+
 ```console
-hack/functions-smoke.sh appwrite appwrite node-22
+SMOKE_EMAIL=<admin email> SMOKE_PASSWORD=<password> \
+  hack/functions-smoke.sh appwrite appwrite node-22
 ```
 
-The script creates a project and a Node.js function, uploads code, waits for
-the build and executes it.
+It creates a project named `functions` with a Node.js function, uploads code,
+waits for the build and executes it. Delete the project afterwards. Without
+`SMOKE_EMAIL` and `SMOKE_PASSWORD` it signs in as `smoke@example.com`, and on
+an install where nobody has signed up yet, that account becomes the console
+administrator.
+
+## Domains
+
+Functions and sites are reached on their own hostnames, which go to the API
+through the wildcard and custom-domain routes
+([networking.md](networking.md#routes)):
+
+- **Sites** get a preview domain under `*.<appwrite.sitesDomain>` for each
+  deployment. Previews ask for a console login, so only project members see
+  them. Add a domain to the site (Sites → Domains) to publish it.
+- **Functions** deployed from your own code get no domain automatically; add
+  one under `*.<appwrite.functionsDomain>` or a custom domain (Functions →
+  Domains). Functions created from a template get one.
 
 ## Troubleshooting
 
@@ -146,6 +174,8 @@ the build and executes it.
 | Builds fail downloading the source | The Docker host can't reach `compute.appwriteEndpoint`, or its hostname isn't `appwrite.domain`. |
 | Executions fail with "Timed out waiting for runtime" | The executor's storage DSN doesn't point at the build output (see above), or the runtime image can't be pulled. |
 | Executions fail with 401 | `EXECUTOR_SECRET` differs from the chart's executor secret. |
+| Creating a site fails with `Runtime "node-22" is not supported` | Add `node-22` to `compute.sitesRuntimes` (and to `RUNTIMES` on the Docker host). |
+| A site's preview URL redirects to `/auth/preview` | Expected: previews need a console login. Add a domain to publish the site. |
 
 ## Kubernetes-native alternatives
 

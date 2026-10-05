@@ -1,33 +1,52 @@
 {{- $fullname := include "appwrite.fullname" . }}
-{{- $scheme := ternary "https" "http" .Values.appwrite.forceHttps }}
-{{- $consoleDomain := .Values.appwrite.consoleDomain | default .Values.appwrite.domain }}
-Appwrite {{ .Chart.AppVersion }} is {{ if .Release.IsUpgrade }}upgraded{{ else }}installed{{ end }} as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+{{- $v := .Values.appwrite }}
+{{- $scheme := ternary "https" "http" $v.forceHttps }}
+{{- $consoleDomain := $v.consoleDomain | default $v.domain }}
+{{- $routed := or .Values.ingress.enabled .Values.httpRoute.enabled }}
+{{- $docs := "https://github.com/appwrite-labs/helm-chart/blob/main/docs" }}
+Appwrite {{ include "appwrite.version" . }} has been {{ if .Release.IsUpgrade }}upgraded{{ else }}installed{{ end }} as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
 
-Endpoints
+{{- if $routed }}
+
   Console:  {{ $scheme }}://{{ $consoleDomain }}
-  API:      {{ $scheme }}://{{ .Values.appwrite.domain }}/v1
+  API:      {{ $scheme }}://{{ $v.domain }}/v1
 {{- if .Values.realtime.enabled }}
-  Realtime: {{ ternary "wss" "ws" .Values.appwrite.forceHttps }}://{{ .Values.appwrite.domain }}/v1/realtime
+  Realtime: {{ ternary "wss" "ws" $v.forceHttps }}://{{ $v.domain }}/v1/realtime
 {{- end }}
+{{- if and $v.forceHttps .Values.ingress.enabled (not .Values.ingress.tls.enabled) }}
 
-Route these through your ingress controller or Gateway: /v1/realtime to
-service/{{ $fullname }}-realtime, /v1 and /.well-known to service/{{ $fullname }}-api,
-and everything else to service/{{ $fullname }}-console.
+NOTE: appwrite.forceHttps is on, so Appwrite redirects HTTP to HTTPS, but
+ingress.tls.enabled is off. HTTPS has to work at your ingress controller
+(for example with a default certificate), or set ingress.tls.enabled=true.
+{{- end }}
+{{- else }}
 
-To try it without an ingress:
+No Ingress or HTTPRoute was created. Appwrite serves the console and the API
+on one hostname, {{ $v.domain }}, and needs these routes:
 
-  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $fullname }}-console 3000:80 &
-  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $fullname }}-api 8080:80 &
+  /v1/realtime  ->  service/{{ $fullname }}-realtime
+  /v1           ->  service/{{ $fullname }}-api
+  /             ->  service/{{ $fullname }}-{{ ternary "console" "api" .Values.console.enabled }}
+
+Set ingress.enabled=true or httpRoute.enabled=true, or route them yourself.
+A port-forward to the console alone won't work: the console sends its API
+calls to its own address. To check that the API is up:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $fullname }}-api 8080:{{ .Values.api.service.port }}
+  curl -H "Host: {{ $fullname }}-api" http://localhost:8080/v1/health/version
+{{- end }}
+{{- if not .Release.IsUpgrade }}
 
 First steps
-  1. Open the console and sign up.{{ if .Values.appwrite.console.whitelistRoot }} Only the first account can sign up
-     on its own; everyone else needs an invitation from it.{{ end }}
-{{- if not .Values.appwrite.secrets.existingSecret }}
-  2. Back up the encryption key now. Without it, encrypted data can't be read
-     after a restore:
+  1. Open the console and sign up.{{ if $v.console.whitelistRoot }} The first account becomes the
+     administrator; everyone else needs an invitation from it.{{ end }}
+{{- if not (or $v.secrets.existingSecret $v.secrets.opensslKey) }}
+  2. Back up the encryption key the chart generated. Without it, encrypted
+     data can't be read after a restore:
 
      kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} \
        -o jsonpath='{.data._APP_OPENSSL_KEY_V1}' | base64 -d
+{{- end }}
 {{- end }}
 
 {{- if .Values.compute.enabled }}
@@ -35,19 +54,19 @@ First steps
 Functions and Sites run on the executor at {{ .Values.compute.executor.host }}
 and build on the orchestrator at {{ .Values.compute.orchestrator.host }}.
 {{- if not .Values.compute.secrets.existingSecret }}
-Configure them with the secrets the chart generated:
+Give them the same secrets as Appwrite:
 
   kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} -o jsonpath='{.data.executor-secret}' | base64 -d
   kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} -o jsonpath='{.data.orchestrator-secret}' | base64 -d
 {{- end }}
 {{- else }}
 
-Functions and Sites are disabled: they need an executor and orchestrator on a
-Docker host (compute.enabled). See docs/executor.md.
+Functions and Sites are off. They need an executor and orchestrator on a
+Docker host: {{ $docs }}/executor.md
 {{- end }}
-{{- if not .Values.appwrite.smtp.host }}
+{{- if not $v.smtp.host }}
 
-Email is disabled until appwrite.smtp.host is set.
+Email is off until appwrite.smtp.host is set.
 {{- end }}
 
 {{- with include "appwrite.workers.unconsumed" . }}
@@ -56,6 +75,8 @@ WARNING: no worker consumes these queues, so their jobs will pile up in Redis:
   {{ . }}
 {{- end }}
 
-Check the installation with:
+Check the installation:
 
   helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+Guides: {{ $docs }}/README.md

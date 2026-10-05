@@ -98,12 +98,15 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -174,15 +177,19 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "successThreshold": {
+              "description": "Consecutive successes before the probe counts as passed again.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -253,15 +260,19 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "initialDelaySeconds": {
+              "description": "Seconds to wait before the first probe.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -304,7 +315,7 @@
           "type": "string"
         },
         "config": {
-          "description": "Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values; see https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.",
+          "description": "Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values, except variables set per container (credentials, `_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), which have their own values. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.",
           "type": "object",
           "patternProperties": {
             "^_APP_[A-Z0-9_]+$": {}
@@ -1451,12 +1462,15 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -1523,15 +1537,19 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "successThreshold": {
+              "description": "Consecutive successes before the probe counts as passed again.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -1602,12 +1620,15 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -2238,7 +2259,7 @@
               "type": "boolean"
             },
             "secretName": {
-              "description": "Secret with the certificate. Defaults to `<release>-tls`.",
+              "description": "Secret with the certificate. Defaults to `<fullname>-tls`.",
               "type": "string"
             }
           },
@@ -2266,7 +2287,7 @@
                   "type": "boolean"
                 },
                 "secretName": {
-                  "description": "Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`.",
+                  "description": "Secret with the wildcard certificate. Defaults to `<fullname>-wildcard-tls`.",
                   "type": "string"
                 }
               },
@@ -2842,12 +2863,15 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -2923,15 +2947,19 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "successThreshold": {
+              "description": "Consecutive successes before the probe counts as passed again.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -3002,12 +3030,15 @@
               "type": "boolean"
             },
             "failureThreshold": {
+              "description": "Consecutive failures before the probe counts as failed.",
               "type": "integer"
             },
             "periodSeconds": {
+              "description": "Seconds between probes.",
               "type": "integer"
             },
             "timeoutSeconds": {
+              "description": "Seconds before a probe times out.",
               "type": "integer"
             }
           },
@@ -3461,7 +3492,7 @@
               ]
             },
             "maxCoroutines": {
-              "description": "Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default matches the sum of every queue's concurrency.",
+              "description": "Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default is the sum of every queue's concurrency in Appwrite's own combined worker.",
               "type": "integer",
               "minimum": 1
             },
@@ -3691,7 +3722,7 @@
                   "additionalProperties": false
                 },
                 "enabled": {
-                  "description": "Consume the `builds` queue. Function and site builds (needs an executor).",
+                  "description": "Consume the `builds` queue. Function and site builds (needs the orchestrator, see `compute`).",
                   "type": "boolean"
                 },
                 "maxCoroutines": {
@@ -4036,7 +4067,7 @@
                   "additionalProperties": false
                 },
                 "enabled": {
-                  "description": "Consume the `functions` queue. Function executions (needs an executor).",
+                  "description": "Consume the `functions` queue. Function executions (needs the executor, see `compute`).",
                   "type": "boolean"
                 },
                 "maxCoroutines": {

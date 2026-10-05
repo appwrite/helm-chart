@@ -5,10 +5,10 @@ the same time if you can.
 
 | What | Where | Why it matters |
 | --- | --- | --- |
-| Encryption key | Secret `<release>`, key `_APP_OPENSSL_KEY_V1` (or your `existingSecret`) | Without it, encrypted data (secrets, OAuth tokens, variables) can't be read. |
+| Encryption key | Secret `<fullname>`, key `_APP_OPENSSL_KEY_V1` (or your `existingSecret`) | Without it, encrypted data (secrets, OAuth tokens, variables) can't be read. |
 | Database | PostgreSQL (built-in or external) | Users, projects, documents, everything. |
 | Files | `/storage` volume, or the S3 bucket | Bucket files, deployments, builds, certificates. |
-| ClickHouse | built-in or external | Usage statistics and execution logs. Losing it loses history, not data. |
+| ClickHouse | built-in or external | Usage statistics and the history of function and site executions. Losing it loses that history, not your projects' data. |
 | Redis | built-in or external | Queues and cache. Jobs in flight are lost; no need to back it up. |
 
 ## Encryption key

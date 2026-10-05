@@ -5,10 +5,10 @@ type: application
 version: 0.1.0
 appVersion: "2.3.0"
 kubeVersion: ">=1.29.0-0"
-home: https://github.com/levivannoort/helm-chart
+home: https://github.com/appwrite-labs/helm-chart
 icon: https://raw.githubusercontent.com/appwrite/appwrite/2.3.0/public/images/logos/appwrite-icon.svg
 sources:
-  - https://github.com/levivannoort/helm-chart
+  - https://github.com/appwrite-labs/helm-chart
   - https://github.com/appwrite/appwrite
 keywords:
   - appwrite
@@ -27,11 +27,11 @@ annotations:
   artifacthub.io/category: database
   artifacthub.io/links: |
     - name: Chart source
-      url: https://github.com/levivannoort/helm-chart
+      url: https://github.com/appwrite-labs/helm-chart
     - name: Appwrite
       url: https://appwrite.io
     - name: support
-      url: https://github.com/levivannoort/helm-chart/issues
+      url: https://github.com/appwrite-labs/helm-chart/issues
   artifacthub.io/changes: |
     - kind: added
       description: Appwrite 2.3.0 with the API, console, realtime, workers and tasks, passing the restricted Pod Security Standard

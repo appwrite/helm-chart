@@ -16,7 +16,7 @@ chart Secret is missing. Restore it from your backup, or set
 
 **Pods stuck in `Init`.** Init containers wait for dependencies:
 `wait-for-datastores` (API) for PostgreSQL, Redis and ClickHouse, and
-`wait-for-api` (everything else) for the API. Check those first:
+`wait-for-api` (realtime, workers and tasks) for the API. Check those first:
 
 ```console
 kubectl -n appwrite logs deploy/appwrite-api -c wait-for-datastores
@@ -46,9 +46,17 @@ ingress, or turn `forceHttps` off when nothing in front does TLS.
 this domain" (401).** `appwrite.routerProtection` is on and the hostname isn't
 `appwrite.domain`, `appwrite.consoleDomain` or a known custom domain.
 
-**The console loads, but API calls fail.** Requests to `/v1` must reach the
-API, not the console. Check your routes with `hack/routes.sh`
-([networking.md](networking.md)).
+**The console loads, but API calls fail (404).** Requests to `/v1` must reach
+the API, not the console. This is what happens with a `kubectl port-forward`
+to the console Service alone: the console sends API calls to its own
+address. Route through an ingress controller
+([getting-started.md](getting-started.md)), and check your routes with
+`hack/routes.sh` ([networking.md](networking.md)).
+
+**Requests fail with 500 for a moment after PostgreSQL restarts.** Appwrite
+keeps database connections open; after a restart, the first request on each
+stale connection fails (`terminating connection due to administrator
+command` in the API log) and Appwrite reconnects. It settles within seconds.
 
 **Realtime disconnects every minute.** The ingress controller or a load
 balancer closes idle WebSockets. Raise its idle timeout.
@@ -81,6 +89,6 @@ kubectl -n appwrite get pods,events
 kubectl -n appwrite logs deploy/appwrite-api --tail=200
 ```
 
-and open an issue at <https://github.com/levivannoort/helm-chart/issues>
+and open an issue at <https://github.com/appwrite-labs/helm-chart/issues>
 (remove secrets first). Problems in Appwrite itself belong at
 <https://github.com/appwrite/appwrite/issues>.

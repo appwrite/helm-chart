@@ -6,7 +6,7 @@
 
 > [!WARNING]
 > Pre-1.0: values and behaviour may still change between minor versions.
-> Read the [changelog](https://github.com/levivannoort/helm-chart/blob/main/CHANGELOG.md) before upgrading.
+> Read the [changelog](https://github.com/appwrite-labs/helm-chart/blob/main/CHANGELOG.md) before upgrading.
 
 - Runs Appwrite under the `restricted` Pod Security Standard: non-root,
   read-only root filesystem, no capabilities, no ServiceAccount token.
@@ -22,18 +22,26 @@
 
 ## Requirements
 
-- Kubernetes {{ template "chart.kubeVersion" . }}
+- Kubernetes 1.29 or later, with a default StorageClass (or set `global.storageClass`)
 - Helm 4, or Helm 3.18 or later
-- A default StorageClass, or `global.storageClass`
+- An ingress controller or a Gateway API implementation. Appwrite serves the
+  console and the API on one hostname and needs `/v1` routed to the API.
+- For HTTPS: cert-manager, or certificates you provide
 
 ## Quick start
 
+With an ingress controller and a cert-manager `ClusterIssuer` named
+`letsencrypt`:
+
 ```console
-helm install appwrite oci://ghcr.io/levivannoort/charts/appwrite \
+helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
   --namespace appwrite --create-namespace \
   --set appwrite.domain=appwrite.example.com \
   --set appwrite.certificatesEmail=ops@example.com \
-  --set ingress.enabled=true
+  --set ingress.enabled=true \
+  --set ingress.tls.enabled=true \
+  --set 'ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt' \
+  --wait --timeout 15m
 ```
 
 Open `https://appwrite.example.com` and sign up: the first account becomes the
@@ -43,13 +51,8 @@ console administrator. Then **back up the encryption key**:
 kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}' | base64 -d
 ```
 
-Without an ingress, port-forward instead:
-
-```console
-kubectl -n appwrite port-forward svc/appwrite-console 3000:80
-```
-
-Then, still without an ingress, install with `--set appwrite.forceHttps=false`.
+To try Appwrite on a laptop first, or for a step-by-step install, see
+[Getting started](https://github.com/appwrite-labs/helm-chart/blob/main/docs/getting-started.md).
 
 ## Architecture
 
@@ -68,34 +71,35 @@ flowchart LR
   api -. "optional" .-> compute[[executor and orchestrator\non a Docker host]]
 ```
 
-See the [architecture guide](https://github.com/levivannoort/helm-chart/blob/main/docs/architecture.md).
+See the [architecture guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md).
 
 ## Not included
 
 - **Functions and Sites runtime.** Appwrite's executor needs a Docker daemon;
-  run it next to the cluster ([guide](https://github.com/levivannoort/helm-chart/blob/main/docs/executor.md)).
+  run it next to the cluster ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md)).
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
-  ([guide](https://github.com/levivannoort/helm-chart/blob/main/docs/external-databases.md)).
+  ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md)).
 - **Metrics.** Appwrite 2.3.0 exposes no Prometheus metrics.
 
 ## Documentation
 
 | Guide | |
 | --- | --- |
-| [Production checklist](https://github.com/levivannoort/helm-chart/blob/main/docs/production.md) | What to change before going live |
-| [Architecture](https://github.com/levivannoort/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
-| [Networking, TLS and domains](https://github.com/levivannoort/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
-| [External databases](https://github.com/levivannoort/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
-| [Storage](https://github.com/levivannoort/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/levivannoort/helm-chart/blob/main/docs/executor.md) | External executor and orchestrator |
-| [Optional components](https://github.com/levivannoort/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
-| [Security](https://github.com/levivannoort/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
-| [Upgrading](https://github.com/levivannoort/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
-| [Backup and restore](https://github.com/levivannoort/helm-chart/blob/main/docs/backup-restore.md) | What to back up and how |
-| [Migrating from Docker](https://github.com/levivannoort/helm-chart/blob/main/docs/migrating-from-docker.md) | Moving an existing install |
-| [GitOps](https://github.com/levivannoort/helm-chart/blob/main/docs/gitops.md) | Argo CD and Flux |
-| [Troubleshooting](https://github.com/levivannoort/helm-chart/blob/main/docs/troubleshooting.md) | Common problems |
+| [Getting started](https://github.com/appwrite-labs/helm-chart/blob/main/docs/getting-started.md) | A local try-out and a first real install |
+| [Production checklist](https://github.com/appwrite-labs/helm-chart/blob/main/docs/production.md) | What to change before going live |
+| [Architecture](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
+| [Networking, TLS and domains](https://github.com/appwrite-labs/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
+| [External databases](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
+| [Storage](https://github.com/appwrite-labs/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
+| [Functions and Sites](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md) | External executor and orchestrator |
+| [Optional components](https://github.com/appwrite-labs/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
+| [Security](https://github.com/appwrite-labs/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
+| [Upgrading](https://github.com/appwrite-labs/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
+| [Backup and restore](https://github.com/appwrite-labs/helm-chart/blob/main/docs/backup-restore.md) | What to back up and how |
+| [Migrating from Docker](https://github.com/appwrite-labs/helm-chart/blob/main/docs/migrating-from-docker.md) | Moving an existing install |
+| [GitOps](https://github.com/appwrite-labs/helm-chart/blob/main/docs/gitops.md) | Argo CD and Flux |
+| [Troubleshooting](https://github.com/appwrite-labs/helm-chart/blob/main/docs/troubleshooting.md) | Common problems |
 
 ## Uninstalling
 
@@ -103,8 +107,14 @@ See the [architecture guide](https://github.com/levivannoort/helm-chart/blob/mai
 helm uninstall appwrite --namespace appwrite
 ```
 
-The chart's Secret and the `/storage` PersistentVolumeClaim are kept, as are
-the datastores' claims; delete them to remove all data.
+The chart's Secret (encryption key and passwords) and the PersistentVolumeClaims
+of `/storage` and the datastores are kept, so installing again with the same
+release name finds the data. To remove everything, delete them together:
+
+```console
+kubectl -n appwrite delete secret appwrite
+kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
+```
 
 {{ template "chart.maintainersSection" . }}
 
@@ -114,4 +124,4 @@ the datastores' claims; delete them to remove all data.
 
 ## License
 
-BSD 3-Clause. See [LICENSE](https://github.com/levivannoort/helm-chart/blob/main/LICENSE).
+BSD 3-Clause. See [LICENSE](https://github.com/appwrite-labs/helm-chart/blob/main/LICENSE).

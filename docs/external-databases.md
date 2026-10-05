@@ -86,6 +86,9 @@ Appwrite relies on session state.
 
 ### MariaDB and MySQL
 
+As for PostgreSQL, with `postgresql.enabled: false` and a password or
+`existingSecret`:
+
 ```yaml
 externalDatabase:
   adapter: mariadb    # or mysql
@@ -94,6 +97,8 @@ externalDatabase:
 ```
 
 ### MongoDB
+
+Also with `postgresql.enabled: false` and credentials:
 
 ```yaml
 externalDatabase:
@@ -126,9 +131,10 @@ externalRedis:
 
 - Appwrite 2.3.0 connects to a single Redis endpoint: TLS, Sentinel and
   Cluster aren't supported. Valkey works as a drop-in replacement.
-- Redis holds the job queues as well as the cache. Size it so it doesn't
-  evict queued jobs; with an eviction policy other than `noeviction`, a full
-  Redis can drop work.
+- Redis holds the job queues as well as the cache. Size it so it never fills
+  up: with an eviction policy such as `allkeys-lru` (what Appwrite's Docker
+  install and the built-in Redis use), a full Redis drops queued jobs; with
+  `noeviction`, it rejects new ones.
 - `externalRedis.username` sets an ACL user. Appwrite's MQTT server ignores
   it, so use the `default` user when MQTT is enabled.
 
@@ -184,7 +190,7 @@ appwrite:
 
 1. Scale the Appwrite workloads to zero, or stop writes.
 2. Dump the built-in database
-   (`kubectl exec <release>-postgresql-0 -- pg_dump -U appwrite appwrite`)
+   (`kubectl exec <fullname>-postgresql-0 -- pg_dump -U appwrite appwrite`)
    and restore it into the new server.
 3. Switch the values as shown above and upgrade.
 

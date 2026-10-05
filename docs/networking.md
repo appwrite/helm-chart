@@ -25,11 +25,11 @@ ingress:
   enabled: true
   className: traefik
   tls:
-    enabled: true            # secret: <release>-tls
+    enabled: true            # secret: <fullname>-tls
   wildcard:
     enabled: true
     tls:
-      enabled: true          # secret: <release>-wildcard-tls
+      enabled: true          # secret: <fullname>-wildcard-tls
   customDomains:
     enabled: false
 ```
@@ -39,9 +39,9 @@ and certificates:
 
 | Ingress | Hosts | TLS secret |
 | --- | --- | --- |
-| `<release>` | `appwrite.domain`, `appwrite.consoleDomain` | `ingress.tls.secretName` (default `<release>-tls`) |
-| `<release>-wildcard` | `*.functions.<domain>`, `*.sites.<domain>` | `ingress.wildcard.tls.secretName` (default `<release>-wildcard-tls`) |
-| `<release>-custom-domains` | a rule without a host | none |
+| `<fullname>` | `appwrite.domain`, `appwrite.consoleDomain` | `ingress.tls.secretName` (default `<fullname>-tls`) |
+| `<fullname>-wildcard` | `*.functions.<domain>`, `*.sites.<domain>` | `ingress.wildcard.tls.secretName` (default `<fullname>-wildcard-tls`) |
+| `<fullname>-custom-domains` | a rule without a host | none |
 
 The chart adds no controller-specific annotations. Add what your controller
 needs through `ingress.annotations` (all three), `ingress.wildcard.annotations`
@@ -69,8 +69,8 @@ httpRoute:
         sectionName: https-previews
 ```
 
-This creates three HTTPRoutes (`<release>`, `<release>-wildcard`,
-`<release>-custom-domains`) that mirror the Ingresses. TLS is configured on
+This creates up to three HTTPRoutes (`<fullname>`, `<fullname>-wildcard`,
+`<fullname>-custom-domains`) that mirror the Ingresses. TLS is configured on
 the Gateway's listeners, for example:
 
 ```yaml

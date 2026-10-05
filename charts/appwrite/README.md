@@ -6,7 +6,7 @@ Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, cons
 
 > [!WARNING]
 > Pre-1.0: values and behaviour may still change between minor versions.
-> Read the [changelog](https://github.com/levivannoort/helm-chart/blob/main/CHANGELOG.md) before upgrading.
+> Read the [changelog](https://github.com/appwrite-labs/helm-chart/blob/main/CHANGELOG.md) before upgrading.
 
 - Runs Appwrite under the `restricted` Pod Security Standard: non-root,
   read-only root filesystem, no capabilities, no ServiceAccount token.
@@ -22,18 +22,26 @@ Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, cons
 
 ## Requirements
 
-- Kubernetes >=1.29.0-0
+- Kubernetes 1.29 or later, with a default StorageClass (or set `global.storageClass`)
 - Helm 4, or Helm 3.18 or later
-- A default StorageClass, or `global.storageClass`
+- An ingress controller or a Gateway API implementation. Appwrite serves the
+  console and the API on one hostname and needs `/v1` routed to the API.
+- For HTTPS: cert-manager, or certificates you provide
 
 ## Quick start
 
+With an ingress controller and a cert-manager `ClusterIssuer` named
+`letsencrypt`:
+
 ```console
-helm install appwrite oci://ghcr.io/levivannoort/charts/appwrite \
+helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
   --namespace appwrite --create-namespace \
   --set appwrite.domain=appwrite.example.com \
   --set appwrite.certificatesEmail=ops@example.com \
-  --set ingress.enabled=true
+  --set ingress.enabled=true \
+  --set ingress.tls.enabled=true \
+  --set 'ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt' \
+  --wait --timeout 15m
 ```
 
 Open `https://appwrite.example.com` and sign up: the first account becomes the
@@ -43,13 +51,8 @@ console administrator. Then **back up the encryption key**:
 kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}' | base64 -d
 ```
 
-Without an ingress, port-forward instead:
-
-```console
-kubectl -n appwrite port-forward svc/appwrite-console 3000:80
-```
-
-Then, still without an ingress, install with `--set appwrite.forceHttps=false`.
+To try Appwrite on a laptop first, or for a step-by-step install, see
+[Getting started](https://github.com/appwrite-labs/helm-chart/blob/main/docs/getting-started.md).
 
 ## Architecture
 
@@ -68,34 +71,35 @@ flowchart LR
   api -. "optional" .-> compute[[executor and orchestrator\non a Docker host]]
 ```
 
-See the [architecture guide](https://github.com/levivannoort/helm-chart/blob/main/docs/architecture.md).
+See the [architecture guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md).
 
 ## Not included
 
 - **Functions and Sites runtime.** Appwrite's executor needs a Docker daemon;
-  run it next to the cluster ([guide](https://github.com/levivannoort/helm-chart/blob/main/docs/executor.md)).
+  run it next to the cluster ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md)).
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
-  ([guide](https://github.com/levivannoort/helm-chart/blob/main/docs/external-databases.md)).
+  ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md)).
 - **Metrics.** Appwrite 2.3.0 exposes no Prometheus metrics.
 
 ## Documentation
 
 | Guide | |
 | --- | --- |
-| [Production checklist](https://github.com/levivannoort/helm-chart/blob/main/docs/production.md) | What to change before going live |
-| [Architecture](https://github.com/levivannoort/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
-| [Networking, TLS and domains](https://github.com/levivannoort/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
-| [External databases](https://github.com/levivannoort/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
-| [Storage](https://github.com/levivannoort/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/levivannoort/helm-chart/blob/main/docs/executor.md) | External executor and orchestrator |
-| [Optional components](https://github.com/levivannoort/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
-| [Security](https://github.com/levivannoort/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
-| [Upgrading](https://github.com/levivannoort/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
-| [Backup and restore](https://github.com/levivannoort/helm-chart/blob/main/docs/backup-restore.md) | What to back up and how |
-| [Migrating from Docker](https://github.com/levivannoort/helm-chart/blob/main/docs/migrating-from-docker.md) | Moving an existing install |
-| [GitOps](https://github.com/levivannoort/helm-chart/blob/main/docs/gitops.md) | Argo CD and Flux |
-| [Troubleshooting](https://github.com/levivannoort/helm-chart/blob/main/docs/troubleshooting.md) | Common problems |
+| [Getting started](https://github.com/appwrite-labs/helm-chart/blob/main/docs/getting-started.md) | A local try-out and a first real install |
+| [Production checklist](https://github.com/appwrite-labs/helm-chart/blob/main/docs/production.md) | What to change before going live |
+| [Architecture](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
+| [Networking, TLS and domains](https://github.com/appwrite-labs/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
+| [External databases](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
+| [Storage](https://github.com/appwrite-labs/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
+| [Functions and Sites](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md) | External executor and orchestrator |
+| [Optional components](https://github.com/appwrite-labs/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
+| [Security](https://github.com/appwrite-labs/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
+| [Upgrading](https://github.com/appwrite-labs/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
+| [Backup and restore](https://github.com/appwrite-labs/helm-chart/blob/main/docs/backup-restore.md) | What to back up and how |
+| [Migrating from Docker](https://github.com/appwrite-labs/helm-chart/blob/main/docs/migrating-from-docker.md) | Moving an existing install |
+| [GitOps](https://github.com/appwrite-labs/helm-chart/blob/main/docs/gitops.md) | Argo CD and Flux |
+| [Troubleshooting](https://github.com/appwrite-labs/helm-chart/blob/main/docs/troubleshooting.md) | Common problems |
 
 ## Uninstalling
 
@@ -103,8 +107,14 @@ See the [architecture guide](https://github.com/levivannoort/helm-chart/blob/mai
 helm uninstall appwrite --namespace appwrite
 ```
 
-The chart's Secret and the `/storage` PersistentVolumeClaim are kept, as are
-the datastores' claims; delete them to remove all data.
+The chart's Secret (encryption key and passwords) and the PersistentVolumeClaims
+of `/storage` and the datastores are kept, so installing again with the same
+release name finds the data. To remove everything, delete them together:
+
+```console
+kubectl -n appwrite delete secret appwrite
+kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
+```
 
 ## Maintainers
 
@@ -114,7 +124,7 @@ the datastores' claims; delete them to remove all data.
 
 ## Source Code
 
-* <https://github.com/levivannoort/helm-chart>
+* <https://github.com/appwrite-labs/helm-chart>
 * <https://github.com/appwrite/appwrite>
 
 ## Values
@@ -136,9 +146,9 @@ the datastores' claims; delete them to remove all data.
 | api.extraVolumeMounts | list | `[]` | Extra volume mounts for the main container. |
 | api.extraVolumes | list | `[]` | Extra volumes for this component. |
 | api.livenessProbe.enabled | bool | `true` | Enable the liveness probe. |
-| api.livenessProbe.failureThreshold | int | `6` |  |
-| api.livenessProbe.periodSeconds | int | `10` |  |
-| api.livenessProbe.timeoutSeconds | int | `5` |  |
+| api.livenessProbe.failureThreshold | int | `6` | Consecutive failures before the probe counts as failed. |
+| api.livenessProbe.periodSeconds | int | `10` | Seconds between probes. |
+| api.livenessProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | api.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | api.pdb.enabled | bool | `true` | Create a PodDisruptionBudget when more than one replica can run. |
 | api.pdb.maxUnavailable | int | `1` | Maximum unavailable pods. |
@@ -149,27 +159,27 @@ the datastores' claims; delete them to remove all data.
 | api.preStopSleepSeconds | int | `5` | Seconds to sleep before shutdown so endpoints are removed first. |
 | api.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | api.readinessProbe.enabled | bool | `true` | Enable the readiness probe. |
-| api.readinessProbe.failureThreshold | int | `3` |  |
-| api.readinessProbe.periodSeconds | int | `10` |  |
-| api.readinessProbe.successThreshold | int | `1` |  |
-| api.readinessProbe.timeoutSeconds | int | `5` |  |
+| api.readinessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
+| api.readinessProbe.periodSeconds | int | `10` | Seconds between probes. |
+| api.readinessProbe.successThreshold | int | `1` | Consecutive successes before the probe counts as passed again. |
+| api.readinessProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | api.replicaCount | int | `1` | Number of API replicas. Ignored when autoscaling is enabled. |
 | api.resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"250m","memory":"512Mi"}}` | Resource requests and limits. |
 | api.service.annotations | object | `{}` | Service annotations. |
 | api.service.port | int | `80` | Service port. |
 | api.service.type | string | `"ClusterIP"` | Service type. |
 | api.startupProbe.enabled | bool | `true` | Enable the startup probe. The first start creates database schemas and can take minutes. |
-| api.startupProbe.failureThreshold | int | `72` |  |
-| api.startupProbe.initialDelaySeconds | int | `5` |  |
-| api.startupProbe.periodSeconds | int | `5` |  |
-| api.startupProbe.timeoutSeconds | int | `5` |  |
+| api.startupProbe.failureThreshold | int | `72` | Consecutive failures before the probe counts as failed. |
+| api.startupProbe.initialDelaySeconds | int | `5` | Seconds to wait before the first probe. |
+| api.startupProbe.periodSeconds | int | `5` | Seconds between probes. |
+| api.startupProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | api.terminationGracePeriodSeconds | int | `45` | Seconds to wait for in-flight requests on shutdown. Swoole drains for up to 30s. |
 | api.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | api.topologySpreadConstraints | list | `[]` | Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`. |
 | api.updateStrategy | object | `{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":0},"type":"RollingUpdate"}` | Deployment update strategy. |
 | appwrite.autoCertificates | bool | `false` | Have Appwrite issue Let's Encrypt certificates for function and site subdomains (`_APP_ROUTER_AUTO_CERTIFICATES`). Off by default: TLS for wildcard domains is expected to terminate at the ingress or Gateway. |
 | appwrite.certificatesEmail | string | `""` | Email used to register Let's Encrypt certificates (`_APP_EMAIL_CERTIFICATES`). Required. |
-| appwrite.config | object | `{}` | Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values; see https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables. |
+| appwrite.config | object | `{}` | Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values, except variables set per container (credentials, `_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), which have their own values. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables. |
 | appwrite.console.whitelistEmails | list | `[]` | Emails allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_EMAILS`). |
 | appwrite.console.whitelistIPs | list | `[]` | IPs allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_IPS`). |
 | appwrite.console.whitelistRoot | bool | `true` | Only the first user can sign up to the console; everyone else needs an invite (`_APP_CONSOLE_WHITELIST_ROOT`). |
@@ -344,9 +354,9 @@ the datastores' claims; delete them to remove all data.
 | console.image.repository | string | `"appwrite/new"` | Image repository. |
 | console.image.tag | string | `"1.1.159-self-hosted"` | Image tag. Pinned to the console that ships with the chart's appVersion. |
 | console.livenessProbe.enabled | bool | `true` | Enable the liveness probe. |
-| console.livenessProbe.failureThreshold | int | `3` |  |
-| console.livenessProbe.periodSeconds | int | `20` |  |
-| console.livenessProbe.timeoutSeconds | int | `5` |  |
+| console.livenessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
+| console.livenessProbe.periodSeconds | int | `20` | Seconds between probes. |
+| console.livenessProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | console.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | console.pdb.enabled | bool | `true` | Create a PodDisruptionBudget when more than one replica can run. |
 | console.pdb.maxUnavailable | int | `1` | Maximum unavailable pods. |
@@ -356,19 +366,19 @@ the datastores' claims; delete them to remove all data.
 | console.podSecurityContext | object | `{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. The console image's `bun` user is UID 1000. |
 | console.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | console.readinessProbe.enabled | bool | `true` | Enable the readiness probe. |
-| console.readinessProbe.failureThreshold | int | `3` |  |
-| console.readinessProbe.periodSeconds | int | `10` |  |
-| console.readinessProbe.successThreshold | int | `1` |  |
-| console.readinessProbe.timeoutSeconds | int | `5` |  |
+| console.readinessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
+| console.readinessProbe.periodSeconds | int | `10` | Seconds between probes. |
+| console.readinessProbe.successThreshold | int | `1` | Consecutive successes before the probe counts as passed again. |
+| console.readinessProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | console.replicaCount | int | `1` | Number of console replicas. Ignored when autoscaling is enabled. |
 | console.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests and limits. |
 | console.service.annotations | object | `{}` | Service annotations. |
 | console.service.port | int | `80` | Service port. |
 | console.service.type | string | `"ClusterIP"` | Service type. |
 | console.startupProbe.enabled | bool | `true` | Enable the startup probe. |
-| console.startupProbe.failureThreshold | int | `30` |  |
-| console.startupProbe.periodSeconds | int | `5` |  |
-| console.startupProbe.timeoutSeconds | int | `5` |  |
+| console.startupProbe.failureThreshold | int | `30` | Consecutive failures before the probe counts as failed. |
+| console.startupProbe.periodSeconds | int | `5` | Seconds between probes. |
+| console.startupProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | console.terminationGracePeriodSeconds | int | `30` | Seconds to wait for in-flight requests on shutdown. |
 | console.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | console.topologySpreadConstraints | list | `[]` | Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`. |
@@ -461,11 +471,11 @@ the datastores' claims; delete them to remove all data.
 | ingress.enabled | bool | `false` | Create Ingress resources. |
 | ingress.labels | object | `{}` | Labels for every Ingress. |
 | ingress.tls.enabled | bool | `false` | Terminate TLS for `appwrite.domain` and `appwrite.consoleDomain`. |
-| ingress.tls.secretName | string | `""` | Secret with the certificate. Defaults to `<release>-tls`. |
+| ingress.tls.secretName | string | `""` | Secret with the certificate. Defaults to `<fullname>-tls`. |
 | ingress.wildcard.annotations | object | `{}` | Annotations for the wildcard Ingress, merged over `ingress.annotations`. |
 | ingress.wildcard.enabled | bool | `true` | Route `*.<functionsDomain>` and `*.<sitesDomain>` (function and site preview URLs) to the API. |
 | ingress.wildcard.tls.enabled | bool | `false` | Terminate TLS for the wildcard hosts. Needs a wildcard certificate, which ACME issues through DNS-01. |
-| ingress.wildcard.tls.secretName | string | `""` | Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`. |
+| ingress.wildcard.tls.secretName | string | `""` | Secret with the wildcard certificate. Defaults to `<fullname>-wildcard-tls`. |
 | migrations.activeDeadlineSeconds | int | `7200` | Seconds the migration may run before it's stopped. |
 | migrations.allowDowngrade | bool | `false` | Allow upgrading to an older Appwrite version than the one installed. Appwrite can't migrate data backwards; restore a backup instead. |
 | migrations.backoffLimit | int | `1` | Retries after a failure. |
@@ -544,9 +554,9 @@ the datastores' claims; delete them to remove all data.
 | realtime.extraVolumeMounts | list | `[]` | Extra volume mounts for the main container. |
 | realtime.extraVolumes | list | `[]` | Extra volumes for this component. |
 | realtime.livenessProbe.enabled | bool | `true` | Enable the liveness probe. |
-| realtime.livenessProbe.failureThreshold | int | `3` |  |
-| realtime.livenessProbe.periodSeconds | int | `20` |  |
-| realtime.livenessProbe.timeoutSeconds | int | `5` |  |
+| realtime.livenessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
+| realtime.livenessProbe.periodSeconds | int | `20` | Seconds between probes. |
+| realtime.livenessProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | realtime.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | realtime.pdb.enabled | bool | `true` | Create a PodDisruptionBudget when more than one replica can run. |
 | realtime.pdb.maxUnavailable | int | `1` | Maximum unavailable pods. |
@@ -558,19 +568,19 @@ the datastores' claims; delete them to remove all data.
 | realtime.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | realtime.processes | int | `1` | Swoole worker processes per pod (`_APP_WORKERS_NUM`). Prefer more replicas over more processes. |
 | realtime.readinessProbe.enabled | bool | `true` | Enable the readiness probe. |
-| realtime.readinessProbe.failureThreshold | int | `3` |  |
-| realtime.readinessProbe.periodSeconds | int | `10` |  |
-| realtime.readinessProbe.successThreshold | int | `1` |  |
-| realtime.readinessProbe.timeoutSeconds | int | `5` |  |
+| realtime.readinessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
+| realtime.readinessProbe.periodSeconds | int | `10` | Seconds between probes. |
+| realtime.readinessProbe.successThreshold | int | `1` | Consecutive successes before the probe counts as passed again. |
+| realtime.readinessProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | realtime.replicaCount | int | `1` | Number of realtime replicas. Ignored when autoscaling is enabled. |
 | realtime.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests and limits. |
 | realtime.service.annotations | object | `{}` | Service annotations. |
 | realtime.service.port | int | `80` | Service port. |
 | realtime.service.type | string | `"ClusterIP"` | Service type. |
 | realtime.startupProbe.enabled | bool | `true` | Enable the startup probe. |
-| realtime.startupProbe.failureThreshold | int | `60` |  |
-| realtime.startupProbe.periodSeconds | int | `5` |  |
-| realtime.startupProbe.timeoutSeconds | int | `5` |  |
+| realtime.startupProbe.failureThreshold | int | `60` | Consecutive failures before the probe counts as failed. |
+| realtime.startupProbe.periodSeconds | int | `5` | Seconds between probes. |
+| realtime.startupProbe.timeoutSeconds | int | `5` | Seconds before a probe times out. |
 | realtime.terminationGracePeriodSeconds | int | `30` | Seconds to wait on shutdown. Realtime drains for up to 15s before closing sockets. |
 | realtime.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | realtime.topologySpreadConstraints | list | `[]` | Topology spread constraints. Empty inherits `defaults.topologySpreadConstraints`. |
@@ -625,7 +635,7 @@ the datastores' claims; delete them to remove all data.
 | tests.enabled | bool | `true` | Render `helm test` pods. |
 | workers.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | workers.combined.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |
-| workers.combined.maxCoroutines | int | `78` | Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default matches the sum of every queue's concurrency. |
+| workers.combined.maxCoroutines | int | `78` | Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default is the sum of every queue's concurrency in Appwrite's own combined worker. |
 | workers.combined.processes | int | `1` | Worker processes per pod (`_APP_WORKERS_NUM`). |
 | workers.combined.replicaCount | int | `1` | Replicas. Capped at 1, because the `databases` queue must have a single consumer; use `separate` or `grouped` to scale other queues. |
 | workers.combined.resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"250m","memory":"512Mi"}}` | Resource requests and limits. |
@@ -644,7 +654,7 @@ the datastores' claims; delete them to remove all data.
 | workers.queues.builds.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
 | workers.queues.builds.autoscaling.minReplicas | int | `1` | Minimum replicas. |
 | workers.queues.builds.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
-| workers.queues.builds.enabled | bool | `true` | Consume the `builds` queue. Function and site builds (needs an executor). |
+| workers.queues.builds.enabled | bool | `true` | Consume the `builds` queue. Function and site builds (needs the orchestrator, see `compute`). |
 | workers.queues.builds.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
 | workers.queues.builds.replicaCount | int | `1` | Replicas. |
 | workers.queues.builds.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
@@ -680,7 +690,7 @@ the datastores' claims; delete them to remove all data.
 | workers.queues.functions.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
 | workers.queues.functions.autoscaling.minReplicas | int | `1` | Minimum replicas. |
 | workers.queues.functions.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
-| workers.queues.functions.enabled | bool | `true` | Consume the `functions` queue. Function executions (needs an executor). |
+| workers.queues.functions.enabled | bool | `true` | Consume the `functions` queue. Function executions (needs the executor, see `compute`). |
 | workers.queues.functions.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
 | workers.queues.functions.replicaCount | int | `1` | Replicas. |
 | workers.queues.functions.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
@@ -763,4 +773,4 @@ the datastores' claims; delete them to remove all data.
 
 ## License
 
-BSD 3-Clause. See [LICENSE](https://github.com/levivannoort/helm-chart/blob/main/LICENSE).
+BSD 3-Clause. See [LICENSE](https://github.com/appwrite-labs/helm-chart/blob/main/LICENSE).

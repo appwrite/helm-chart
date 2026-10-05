@@ -23,7 +23,9 @@ A headless Chromium (Playwright) that renders screenshots of sites and of
 arbitrary URLs through the avatars API. Because users choose those URLs,
 with `networkPolicy.enabled` the browser may only reach DNS, the Appwrite
 API and public IP addresses: private, link-local and CGNAT ranges are blocked,
-so it can't be used to probe the cluster. It runs as UID 999 with a memory
+so it can't be used to probe the cluster. With `networkPolicy.egress.enabled`
+as well, the release-wide egress policy also lets it reach the release's
+other pods ([security.md](security.md#network-policies)). It runs as UID 999 with a memory
 `emptyDir` for `/dev/shm`.
 
 ## Assistant

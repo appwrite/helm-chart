@@ -1,6 +1,6 @@
 name: Release
 
-# Publishes the chart to ghcr.io/levivannoort/charts/appwrite when its version
+# Publishes the chart to ghcr.io/appwrite-labs/charts/appwrite when its version
 # changes on main: OCI push, keyless cosign signature, build provenance
 # attestation, GitHub release and Artifact Hub metadata.
 on:

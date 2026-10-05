@@ -42,7 +42,9 @@ on it, go through this list.
 - [ ] **Worker topology:** `separate` or `grouped` when one queue (usage,
       builds) shouldn't slow down the others
       ([architecture.md](architecture.md#worker-topologies)).
-- [ ] **Redis memory** big enough that queued jobs aren't evicted.
+- [ ] **Redis memory** big enough that it never fills up. The built-in Redis
+      evicts least-recently-used keys when full (`allkeys-lru`, as in
+      Appwrite's Docker install), and queued jobs are keys too.
 
 ## Operations
 
@@ -80,6 +82,8 @@ appwrite:
       endpoint: https://s3.example.com
       bucket: appwrite
       existingSecret: appwrite-s3
+  database:
+    poolClients: 20    # Appwrite pods at peak: 8 API, 2 realtime, 4 workers, 3 tasks
 
 api:
   resources:
@@ -125,7 +129,7 @@ externalClickhouse:
   existingSecret: appwrite-clickhouse
 
 persistence:
-  size: 5Gi        # certificates and imports only, with S3
+  size: 5Gi        # certificates only, with S3
 
 ingress:
   enabled: true

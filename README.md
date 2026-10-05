@@ -4,12 +4,18 @@ A Helm chart for running [Appwrite](https://appwrite.io), the open-source
 backend platform, on Kubernetes.
 
 ```console
-helm install appwrite oci://ghcr.io/levivannoort/charts/appwrite \
+helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
   --namespace appwrite --create-namespace \
   --set appwrite.domain=appwrite.example.com \
   --set appwrite.certificatesEmail=ops@example.com \
-  --set ingress.enabled=true
+  --set ingress.enabled=true \
+  --set ingress.tls.enabled=true \
+  --set 'ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt'
 ```
+
+This assumes an ingress controller and a cert-manager `ClusterIssuer` named
+`letsencrypt`. New here? [Getting started](docs/getting-started.md) covers a
+local install you can try in ten minutes, and a real one step by step.
 
 | | |
 | --- | --- |

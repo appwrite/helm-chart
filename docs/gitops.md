@@ -63,7 +63,35 @@ Helm 4 applies resources with server-side apply by default. Don't edit
 chart-managed resources with `kubectl edit`; another field manager owning a
 field makes the next upgrade conflict. Change values instead.
 
+## Migrations
+
+When the Appwrite version changes, its data migration has to run once
+([upgrading.md](upgrading.md)). With the Helm CLI and Flux, a post-upgrade
+hook does that. Argo CD renders the chart with `helm template`, which never
+looks like an upgrade, so the hook doesn't run there. With Argo CD, set
+`migrations.mode: job`: the chart then renders a plain Job named after the
+Appwrite version, which runs once per version
+([upgrading.md](upgrading.md#gitops)).
+
 ## Argo CD
+
+Charts on GHCR are OCI artifacts, so register the registry with Argo CD
+first:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: appwrite-charts
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  type: helm
+  name: appwrite-charts
+  url: ghcr.io/appwrite-labs/charts
+  enableOCI: "true"
+```
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -74,7 +102,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: ghcr.io/levivannoort/charts
+    repoURL: ghcr.io/appwrite-labs/charts
     chart: appwrite
     targetRevision: 0.1.0
     helm:
@@ -85,6 +113,8 @@ spec:
           secrets:
             generate: false
             existingSecret: appwrite-core
+        migrations:
+          mode: job
         # ...
   destination:
     server: https://kubernetes.default.svc
@@ -105,7 +135,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 1h
-  url: oci://ghcr.io/levivannoort/charts/appwrite
+  url: oci://ghcr.io/appwrite-labs/charts/appwrite
   ref:
     semver: "0.1.x"
 ---
@@ -123,7 +153,7 @@ spec:
   install:
     timeout: 15m
   upgrade:
-    timeout: 15m
+    timeout: 2h    # covers the data migration on Appwrite version changes
   values:
     appwrite:
       domain: appwrite.example.com

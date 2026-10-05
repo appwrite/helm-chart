@@ -10,13 +10,13 @@ previous minor release.
 
 ## What happens during an upgrade
 
-1. Helm applies the new manifests. Pods roll one at a time; the scheduler,
-   maintenance and interval tasks are recreated.
+1. Helm applies the new manifests. Deployments roll out their new pods; the
+   scheduler, maintenance and interval tasks are stopped and recreated.
 2. API pods create any new tables and collections when they start.
 3. If the Appwrite version changed, a post-upgrade hook Job runs
    `php app/cli.php migrate`, which migrates every project's data to the new
-   version. The upgrade only succeeds once the Job completes; with `--wait`
-   Helm waits for it.
+   version. Helm waits for hook Jobs, with or without `--wait`, so the upgrade
+   only reports success once the migration has finished.
 
 The chart records the running Appwrite version in the `appwrite/version`
 annotation of the API Deployment, so upgrades that don't change the version
@@ -29,31 +29,55 @@ skip the migration.
    [backup-restore.md](backup-restore.md).
 2. **Read the Appwrite release notes** for the versions in between, especially
    for breaking API changes your apps depend on.
-3. **Upgrade one minor version at a time** (2.2 → 2.3, not 2.1 → 2.3), as
-   Appwrite recommends.
+3. **Upgrade one minor version at a time** (2.2 → 2.3, not 2.1 → 2.3).
+   Appwrite's `migrate` applies the migration of the version it runs and
+   doesn't replay those of the versions in between.
 
 ```console
-helm upgrade appwrite oci://ghcr.io/levivannoort/charts/appwrite \
+helm upgrade appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
   --version <new chart version> -n appwrite -f values.yaml --wait --timeout 30m
 ```
 
 On large installs the migration can take a long time; raise
-`migrations.activeDeadlineSeconds` (default two hours) and `--timeout`.
+`migrations.activeDeadlineSeconds` (default two hours) and `--timeout`
+together. When `--timeout` runs out first, Helm reports a failure while the
+migration Job is still running.
+
+## If the migration fails
+
+The upgrade fails and the Job is kept, so you can read why:
+
+```console
+kubectl -n appwrite logs job/appwrite-migrate
+```
+
+The new Appwrite version is already running at that point. Fix the cause,
+then run the migration by hand:
+
+```console
+kubectl -n appwrite exec deploy/appwrite-api -- php app/cli.php migrate
+```
 
 ## Rolling back
 
-`helm rollback` (or `--rollback-on-failure`) restores the previous manifests,
-**not the data**. After a migration ran, the previous Appwrite version may not
-understand the migrated data. The chart refuses to deploy an older Appwrite
-version than the one recorded on the cluster unless
-`migrations.allowDowngrade=true`. To go back, restore the backup you took
+`helm rollback` restores the previous manifests, **not the data**. After a
+migration ran, the previous Appwrite version may not understand the migrated
+data. To go back to an older Appwrite version, restore the backup you took
 before upgrading.
+
+`helm upgrade` refuses to deploy an older Appwrite version than the one
+running, unless `migrations.allowDowngrade=true`. `helm rollback` doesn't
+check: it reapplies stored manifests without rendering the chart. For the
+same reason, don't pass `--rollback-on-failure` (`--atomic` in Helm 3) to an
+upgrade that changes the Appwrite version: a failed migration would put the
+old version back on partly migrated data. Rolling back chart changes that
+keep the Appwrite version is safe.
 
 ## GitOps
 
 Argo CD doesn't run Helm hooks the way Helm does. Use
 `migrations.mode: job`: the chart then renders a regular Job named after the
-Appwrite version (`<release>-migrate-2-3-0`). Jobs are immutable, so it runs
+Appwrite version (`<fullname>-migrate-2-3-0`). Jobs are immutable, so it runs
 once per version. Delete old migration Jobs whenever you like.
 
 With `migrations.mode: none`, run the migration yourself after the new version

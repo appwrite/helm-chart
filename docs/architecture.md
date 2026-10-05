@@ -114,7 +114,7 @@ Kubernetes has no `depends_on`, so the chart uses init containers:
 
 Every Appwrite pod gets the same configuration:
 
-- **`<release>-env` ConfigMap**, loaded with `envFrom`. It starts from the
+- **`<fullname>-env` ConfigMap**, loaded with `envFrom`. It starts from the
   defaults Appwrite's Docker installer writes to `.env`
   ([`files/env-defaults.yaml`](../charts/appwrite/files/env-defaults.yaml)),
   then applies values the chart computes, then `appwrite.config`.
@@ -122,7 +122,10 @@ Every Appwrite pod gets the same configuration:
   chart works the same whether a credential comes from the chart's own Secret
   or from one you manage.
 - **Per-pod variables** that depend on the component: `PORT`, `_APP_CPU_NUM`,
-  `_APP_WORKERS_NUM` and `_APP_WORKER_MAX_COROUTINES`.
+  `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES` and the ClickHouse
+  connection strings. Kubernetes gives these precedence over the ConfigMap,
+  so `appwrite.config` can't override them; use the component's values
+  (`cpuNum`, `processes`, `maxCoroutines`) instead.
 
 Pods carry checksums of the ConfigMap and the chart Secret, so changing values
 rolls them. Changes to Secrets you manage yourself don't; use a tool such as
@@ -162,7 +165,7 @@ at least as large as the number of Appwrite pods. The built-in PostgreSQL sets
 Appwrite routes every request by its `Host` header and looks unknown hosts up
 in the database (custom domains), redirecting to HTTPS when `forceHttps` is on.
 The chart sets `_APP_MIGRATION_HOST` to the API Service name, which Appwrite
-treats as an internal hostname, and its probes send `Host: <release>-api`.
+treats as an internal hostname, and its probes send `Host: <fullname>-api`.
 Probes then skip both the lookup and the redirect.
 
 ## Storage
@@ -173,7 +176,7 @@ Appwrite keeps files under `/storage`:
 | --- | --- | --- |
 | `/storage/uploads` | Bucket files | shared volume, or S3 |
 | `/storage/functions`, `/storage/sites`, `/storage/builds` | Deployment code and build output | shared volume, or S3 |
-| `/storage/imports` | Migration imports | shared volume |
+| `/storage/imports` | Migration imports | shared volume, or S3 |
 | `/storage/certificates`, `/storage/config` | Let's Encrypt certificates and ACME challenges | shared volume |
 | `/storage/cache` | Image previews and other cached responses | per-pod `emptyDir` |
 

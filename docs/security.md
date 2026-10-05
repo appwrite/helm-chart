@@ -32,6 +32,10 @@ What that means for each pod:
 | PostgreSQL | `postgres` (999) | `/var/run/postgresql` is an `emptyDir`. |
 | Redis | `redis` (999) | |
 | ClickHouse | `clickhouse` (101) | Users and logging come from mounted files, because the image's entrypoint would otherwise write them to `/etc`. Logs go to stdout. |
+| Browser | 999 | `/dev/shm` is a memory `emptyDir`. |
+| Assistant | 1000 | |
+| Autogravity | 65532 | |
+| Embedding | 10001 | Models are kept on their own PersistentVolumeClaim. |
 
 Every security context is a value you can override per component
 (`<component>.podSecurityContext`, `<component>.containerSecurityContext`). For
@@ -56,7 +60,15 @@ The chart keeps credentials in a Secret named after the release:
 | `_APP_OPENSSL_KEY_V1` | Encrypting data at rest and signing JWTs. Losing it makes encrypted data unreadable. |
 | `_APP_NOTIFICATIONS_TRACKING_SECRET` | Signing email tracking links. |
 | `_APP_GEO_SECRET` | Authenticating Appwrite to the geo service. |
-| `postgres-password`, `redis-password`, `clickhouse-password` | Built-in datastores. |
+| `postgres-password`, `redis-password`, `clickhouse-password` | Built-in datastores, or an external Redis or ClickHouse with an inline password. |
+| `db-password`, `documentsdb-password`, `vectorsdb-password` | External databases with an inline password. |
+| `executor-secret`, `orchestrator-secret` | The external executor and orchestrator (`compute.enabled`). |
+| `s3-access-key`, `s3-secret-key` | S3 storage with inline keys. |
+| `smtp-password`, `openai-api-key` | SMTP and the assistant, when set inline. |
+
+Values you set inline (`password: ...`) are stored in this Secret too. Only
+the first group is generated; the rest exist when the matching feature is on
+and has no `existingSecret`.
 
 Missing values are generated on install and reused on every upgrade: the chart
 reads the existing Secret back with `lookup`. The Secret has
@@ -102,6 +114,24 @@ Key names are configurable (`appwrite.secrets.keys.*`, `*.auth.passwordKey`).
 > render. Use existing Secrets and `appwrite.secrets.generate: false` with them;
 > see [gitops.md](gitops.md).
 
+## Rotating credentials
+
+| Credential | How |
+| --- | --- |
+| `_APP_OPENSSL_KEY_V1` | Don't. Appwrite can't re-encrypt existing data with a new key. |
+| `_APP_NOTIFICATIONS_TRACKING_SECRET`, `_APP_GEO_SECRET` | Change the value in the Secret (or `appwrite.secrets.*`) and upgrade. |
+| Built-in PostgreSQL password | PostgreSQL only reads `POSTGRES_PASSWORD` when it creates the database. Change the password in PostgreSQL first (`ALTER USER appwrite PASSWORD '...'`), then in the Secret, then upgrade. |
+| Built-in Redis and ClickHouse passwords | Change the value and upgrade; both read it on every start. |
+| External services, executor and orchestrator | Change it on the service and in the Secret, then upgrade or restart the Appwrite pods. |
+
+Pods restart on their own when the chart's Secret changes through
+`helm upgrade`. When you change a Secret you manage, restart them:
+`kubectl -n appwrite rollout restart deployment -l app.kubernetes.io/instance=appwrite`.
+
+For the same reason, don't delete the chart's Secret while keeping the
+PostgreSQL volume: a new install would generate a password the existing
+database doesn't accept.
+
 ## Network policies
 
 `networkPolicy.enabled: true` creates policies that only take effect with a
@@ -109,10 +139,21 @@ CNI that enforces them (Calico, Cilium, kindnet, and most managed offerings).
 
 | Policy | Selects | Allows in |
 | --- | --- | --- |
-| `<release>-edge` | API, console, realtime | `networkPolicy.ingress.from` (any source when empty) on the HTTP port, and every pod of the release |
-| `<release>-internal` | geo | pods of the release |
-| `<release>-datastores` | PostgreSQL, Redis, ClickHouse | Appwrite pods of the release (label `appwrite/datastore-client: "true"`) |
-| `<release>-background` | workers and tasks | nothing |
+| `<fullname>-edge` | API, console, realtime | `networkPolicy.ingress.from` (any source when empty) on the HTTP port, and every pod of the release |
+| `<fullname>-internal` | geo, browser, assistant, autogravity, embedding | pods of the release |
+| `<fullname>-datastores` | PostgreSQL, Redis, ClickHouse | Appwrite pods of the release (label `appwrite/datastore-client: "true"`) |
+| `<fullname>-background` | workers and tasks | nothing |
+| `<fullname>-mqtt` | MQTT broker (`mqtt.enabled`) | any source, on the MQTT ports |
+
+Two more limit outgoing traffic:
+
+| Policy | Selects | Allows out |
+| --- | --- | --- |
+| `<fullname>-browser-egress` | browser (`browser.enabled`) | DNS, the API, and public IP addresses (private, link-local and CGNAT ranges are blocked) |
+| `<fullname>-egress` | every pod of the release (`networkPolicy.egress.enabled`) | DNS, pods of the release, `networkPolicy.egress.extraRules` |
+
+Policies add up: with `egress.enabled`, the browser may also reach the other
+pods of the release.
 
 Restrict the entry points to your ingress controller or Gateway:
 
@@ -159,10 +200,10 @@ Released charts are signed with [cosign](https://github.com/sigstore/cosign)
 keyless signing from GitHub Actions, and carry a build provenance attestation:
 
 ```console
-cosign verify ghcr.io/levivannoort/charts/appwrite:<version> \
-  --certificate-identity-regexp '^https://github.com/levivannoort/helm-chart/' \
+cosign verify ghcr.io/appwrite-labs/charts/appwrite:<version> \
+  --certificate-identity https://github.com/appwrite-labs/helm-chart/.github/workflows/release.yaml@refs/heads/main \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
-gh attestation verify oci://ghcr.io/levivannoort/charts/appwrite:<version> \
-  --owner levivannoort
+gh attestation verify oci://ghcr.io/appwrite-labs/charts/appwrite:<version> \
+  --repo appwrite-labs/helm-chart
 ```

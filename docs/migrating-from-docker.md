@@ -21,16 +21,29 @@ From the Docker install's `.env`:
 | `_APP_EMAIL_CERTIFICATES` | `appwrite.certificatesEmail` |
 | `_APP_SMTP_*` | `appwrite.smtp.*` |
 | `_APP_STORAGE_*` | `appwrite.storage.*` |
+| `_APP_EXECUTOR_SECRET`, `_APP_JOBS_SECRET` | `compute.secrets.*` ([executor.md](executor.md)) |
+| other secrets you set (OAuth, VCS and SMS keys, `_APP_LOGGING_CONFIG`) | `appwrite.secretConfig` |
 | anything else you changed | `appwrite.config` |
 
 **The encryption key must be identical**, or encrypted data can't be read.
+Put the three core secrets in one Secret; with `existingSecret` set, the chart
+reads all three from it:
+
+```console
+set -a; . ./.env; set +a      # in the Docker install's directory
+kubectl create namespace appwrite
+kubectl -n appwrite create secret generic appwrite-core \
+  --from-literal=_APP_OPENSSL_KEY_V1="$_APP_OPENSSL_KEY_V1" \
+  --from-literal=_APP_NOTIFICATIONS_TRACKING_SECRET="$_APP_NOTIFICATIONS_TRACKING_SECRET" \
+  --from-literal=_APP_GEO_SECRET="$_APP_GEO_SECRET"
+```
 
 ```yaml
 appwrite:
   domain: appwrite.example.com
   certificatesEmail: ops@example.com
   secrets:
-    existingSecret: appwrite-core   # created from the .env values
+    existingSecret: appwrite-core
 ```
 
 ## 2. Stop the Docker install and dump the database
@@ -38,7 +51,8 @@ appwrite:
 ```console
 docker compose stop
 docker compose start postgresql          # or mariadb
-docker compose exec postgresql pg_dump -U "$_APP_DB_USER" -d "$_APP_DB_SCHEMA" --format=custom > appwrite.dump
+docker compose exec -T postgresql \
+  sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --no-owner --no-acl' > appwrite.dump
 ```
 
 MariaDB and MongoDB installs keep their engine: point the chart at an external
@@ -51,7 +65,7 @@ Install with the API scaled to zero so nothing writes to the new database
 before the restore:
 
 ```console
-helm install appwrite oci://ghcr.io/levivannoort/charts/appwrite -n appwrite --create-namespace \
+helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite -n appwrite --create-namespace \
   -f values.yaml --set api.replicaCount=0 --set workers.combined.replicaCount=0 \
   --set realtime.replicaCount=0 --set tasks.scheduler.enabled=false \
   --set tasks.maintenance.enabled=false --set tasks.interval.enabled=false
@@ -64,27 +78,41 @@ kubectl -n appwrite exec -i appwrite-postgresql-0 -- \
   sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < appwrite.dump
 ```
 
-Copy the volumes. The Docker volumes are owned by `www-data` (82), which is the
-user the chart runs as, so ownership carries over:
+Copy the volumes. Docker Compose prefixes volume names with the project name,
+usually `appwrite`; the builds volume has a fixed name, `appwrite-builds`.
+Check with `docker volume ls`.
 
 ```console
 # on the Docker host
-for v in uploads functions sites builds imports certificates config; do
+for v in uploads functions sites imports certificates config; do
   docker run --rm -v appwrite_appwrite-$v:/src alpine tar -C /src -cf - . > $v.tar
 done
+docker run --rm -v appwrite-builds:/src alpine tar -C /src -cf - . > builds.tar
 ```
 
-Then extract each archive into the matching directory of the `<release>-storage`
-volume, for example with a temporary pod that mounts it, or upload them to S3
-under `storage/<directory>/` if you switch to S3 storage.
+Extract each archive into the matching directory of the `<fullname>-storage`
+volume, for example from a temporary pod that mounts it, and hand the files
+to the user the chart runs as (UID 82). The Docker install runs as root, so
+without this Appwrite can't write to folders it created there:
 
-ClickHouse holds only usage history; starting with an empty one is fine.
+```console
+tar -C /storage/<directory> -xf <directory>.tar
+chown -R 82:82 /storage/<directory>
+```
+
+Keep the storage device the Docker install used (`local` or `s3`). Switching
+during the move breaks the file paths stored in the database.
+
+ClickHouse holds usage statistics and the history of function and site
+executions. Starting with an empty one loses that history. To keep it, back
+up the `appwrite` database in the Docker install's ClickHouse and restore it
+into the chart's ([backup-restore.md](backup-restore.md#clickhouse)).
 
 ## 5. Start Appwrite
 
 ```console
-helm upgrade appwrite oci://ghcr.io/levivannoort/charts/appwrite -n appwrite -f values.yaml --wait
-hack/smoke.sh appwrite appwrite   # with SMOKE_EMAIL and SMOKE_PASSWORD of a console admin
+helm upgrade appwrite oci://ghcr.io/appwrite-labs/charts/appwrite -n appwrite -f values.yaml --wait
 ```
 
-Then move DNS to the cluster's ingress.
+Sign in to the console with an existing account and check that projects,
+files and functions are there. Then move DNS to the cluster's ingress.

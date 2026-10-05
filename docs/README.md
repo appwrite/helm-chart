@@ -2,6 +2,7 @@
 
 | Guide | What it covers |
 | --- | --- |
+| [Getting started](getting-started.md) | Try Appwrite locally, then a first install with HTTPS |
 | [Production checklist](production.md) | What to change before going live, with an example values file |
 | [Architecture](architecture.md) | Components, startup order, configuration flow, worker topologies |
 | [Networking, TLS and domains](networking.md) | Ingress, Gateway API, cert-manager, custom domains |
@@ -15,3 +16,13 @@
 | [Migrating from Docker](migrating-from-docker.md) | Moving an existing Docker Compose install |
 | [GitOps](gitops.md) | Argo CD and Flux |
 | [Troubleshooting](troubleshooting.md) | Common problems and what to check |
+
+## Conventions
+
+Examples use the release name `appwrite` in the namespace `appwrite`.
+Resource names start with the chart's *fullname*, written `<fullname>` in
+these guides: the release name when it contains `appwrite`, otherwise
+`<release>-appwrite`. A release called `appwrite` creates the Secret
+`appwrite` and the Service `appwrite-api`; a release called `prod` creates
+`prod-appwrite` and `prod-appwrite-api`. Set `fullnameOverride` to choose the
+prefix yourself.

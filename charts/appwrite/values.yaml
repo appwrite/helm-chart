@@ -250,7 +250,10 @@ appwrite:
     # -- Key in the Secret holding the password.
     passwordKey: vectorsdb-password
   # -- Extra `_APP_*` environment variables for every Appwrite pod. They
-  # override the chart's defaults and computed values; see
+  # override the chart's defaults and computed values, except variables set
+  # per container (credentials, `_APP_CPU_NUM`, `_APP_WORKERS_NUM`,
+  # `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), which have their
+  # own values. See
   # https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.
   config: {} # @schema additionalProperties: {type: [string, number, boolean]}; patternProperties: {"^_APP_[A-Z0-9_]+$": {}}
   # -- Extra sensitive `_APP_*` environment variables, stored in a Secret.
@@ -347,22 +350,33 @@ api:
   startupProbe:
     # -- Enable the startup probe. The first start creates database schemas and can take minutes.
     enabled: true
+    # -- Seconds to wait before the first probe.
     initialDelaySeconds: 5
+    # -- Seconds between probes.
     periodSeconds: 5
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 72
   readinessProbe:
     # -- Enable the readiness probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 10
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 3
+    # -- Consecutive successes before the probe counts as passed again.
     successThreshold: 1
   livenessProbe:
     # -- Enable the liveness probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 10
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 6
   # -- Pod security context. Empty inherits `podSecurityContext`.
   podSecurityContext: {} # @schema additionalProperties: true
@@ -456,21 +470,31 @@ console:
   startupProbe:
     # -- Enable the startup probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 5
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 30
   readinessProbe:
     # -- Enable the readiness probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 10
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 3
+    # -- Consecutive successes before the probe counts as passed again.
     successThreshold: 1
   livenessProbe:
     # -- Enable the liveness probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 20
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 3
   # -- Pod security context. The console image's `bun` user is UID 1000.
   podSecurityContext:
@@ -561,21 +585,31 @@ realtime:
   startupProbe:
     # -- Enable the startup probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 5
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 60
   readinessProbe:
     # -- Enable the readiness probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 10
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 3
+    # -- Consecutive successes before the probe counts as passed again.
     successThreshold: 1
   livenessProbe:
     # -- Enable the liveness probe.
     enabled: true
+    # -- Seconds between probes.
     periodSeconds: 20
+    # -- Seconds before a probe times out.
     timeoutSeconds: 5
+    # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 3
   # -- Pod security context. Empty inherits `podSecurityContext`.
   podSecurityContext: {} # @schema additionalProperties: true
@@ -616,7 +650,8 @@ workers:
     # -- Worker processes per pod (`_APP_WORKERS_NUM`).
     processes: 1 # @schema minimum: 1
     # -- Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`).
-    # The default matches the sum of every queue's concurrency.
+    # The default is the sum of every queue's concurrency in Appwrite's own
+    # combined worker.
     maxCoroutines: 78 # @schema minimum: 1
     # -- CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty.
     cpuNum: "" # @schema type: [string, integer]
@@ -712,7 +747,7 @@ workers:
       # -- Resource requests and limits. Empty inherits `workers.resources`.
       resources: {}
     builds:
-      # -- Consume the `builds` queue. Function and site builds (needs an executor).
+      # -- Consume the `builds` queue. Function and site builds (needs the orchestrator, see `compute`).
       enabled: true
       # -- Replicas.
       replicaCount: 1 # @schema minimum: 0
@@ -802,7 +837,7 @@ workers:
         # -- Target average CPU utilisation, in percent.
         targetCPUUtilizationPercentage: 75
     functions:
-      # -- Consume the `functions` queue. Function executions (needs an executor).
+      # -- Consume the `functions` queue. Function executions (needs the executor, see `compute`).
       enabled: true
       # -- Replicas.
       replicaCount: 1 # @schema minimum: 0
@@ -1617,7 +1652,7 @@ persistence:
   colocateReadWriteOnce: true
 
 # Ingress resources for the routes Appwrite's Docker install serves through
-# Traefik. See docs/networking.md for controller-specific settings.
+# Traefik. See docs/networking.md for TLS, wildcard previews and custom domains.
 ingress:
   # -- Create Ingress resources.
   enabled: false
@@ -1630,7 +1665,7 @@ ingress:
   tls:
     # -- Terminate TLS for `appwrite.domain` and `appwrite.consoleDomain`.
     enabled: false
-    # -- Secret with the certificate. Defaults to `<release>-tls`.
+    # -- Secret with the certificate. Defaults to `<fullname>-tls`.
     secretName: ""
   wildcard:
     # -- Route `*.<functionsDomain>` and `*.<sitesDomain>` (function and site preview URLs) to the API.
@@ -1640,7 +1675,7 @@ ingress:
     tls:
       # -- Terminate TLS for the wildcard hosts. Needs a wildcard certificate, which ACME issues through DNS-01.
       enabled: false
-      # -- Secret with the wildcard certificate. Defaults to `<release>-wildcard-tls`.
+      # -- Secret with the wildcard certificate. Defaults to `<fullname>-wildcard-tls`.
       secretName: ""
   customDomains:
     # -- Route every other hostname to the API, for custom domains of

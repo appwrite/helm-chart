@@ -17,7 +17,7 @@ persistence:
   storageClass: ""
 ```
 
-The chart creates one PersistentVolumeClaim, `<release>-storage`, and mounts
+The chart creates one PersistentVolumeClaim, `<fullname>-storage`, and mounts
 these paths from it in the API and in the workers that need files:
 
 | Path | Contents |
@@ -77,8 +77,8 @@ volume, and what an external compute plane needs
 ([executor.md](executor.md)). Create the bucket before installing; Appwrite
 doesn't create it.
 
-`/storage` is still used for certificates, ACME challenges, imports and some
-scratch files, so keep `persistence.enabled` (a small volume is enough) unless
+`/storage` is still used for certificates, ACME challenges and some scratch
+files, so keep `persistence.enabled` (a small volume is enough) unless
 you manage TLS for custom domains outside Appwrite.
 
 Tested with SeaweedFS; any S3-compatible store that supports path-style
