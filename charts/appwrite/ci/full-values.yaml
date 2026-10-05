@@ -1,6 +1,9 @@
 # Every optional component, used by the nightly workflow together with the
 # compute values hack/compute-plane.sh writes (S3, executor, in-cluster
 # builds). Also linted and rendered on its own like the other scenarios.
+#
+# CPU requests are cut down so everything fits on a single kind node on a
+# 2-vCPU GitHub-hosted runner, next to the control plane and Traefik.
 appwrite:
   domain: appwrite.ci.local
   certificatesEmail: ci@example.com
@@ -14,21 +17,72 @@ api:
     requests:
       cpu: 100m
       memory: 256Mi
+realtime:
+  resources:
+    requests:
+      cpu: 50m
+console:
+  resources:
+    requests:
+      cpu: 20m
+workers:
+  combined:
+    resources:
+      requests:
+        cpu: 100m
 tasks:
   scheduler:
     mode: separate
+    resources:
+      requests:
+        cpu: 20m
+  maintenance:
+    resources:
+      requests:
+        cpu: 10m
+  interval:
+    resources:
+      requests:
+        cpu: 10m
 browser:
   enabled: true
+  resources:
+    requests:
+      cpu: 50m
 assistant:
   enabled: true
   # Not a real key: the assistant only needs one to start.
   openaiApiKey: sk-ci-placeholder
+  resources:
+    requests:
+      cpu: 10m
 autogravity:
   enabled: true
+  resources:
+    requests:
+      cpu: 20m
 embedding:
   enabled: true
+  resources:
+    requests:
+      cpu: 50m
 mqtt:
   enabled: true
+  resources:
+    requests:
+      cpu: 20m
+postgresql:
+  resources:
+    requests:
+      cpu: 50m
+clickhouse:
+  resources:
+    requests:
+      cpu: 50m
+redis:
+  resources:
+    requests:
+      cpu: 20m
 migrations:
   mode: job
 networkPolicy:
