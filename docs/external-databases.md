@@ -154,9 +154,15 @@ externalClickhouse:
   passwordKey: clickhouse-password
 ```
 
-Appwrite talks to ClickHouse over HTTP(S) and creates its tables on start.
-The password ends up in a connection URL, so it must be URL-safe (or
-URL-encoded in the Secret).
+Appwrite talks to ClickHouse over HTTP or HTTPS and creates its tables on
+start. Appwrite ignores the scheme of its connection string and only uses TLS
+when the string carries `?secure=true`; the chart adds that for an `https://`
+URL. Without a port, `https://` uses 8443 and `http://` 8123.
+
+The password ends up in that connection string unencoded, so it must be
+URL-safe: letters, digits, `-`, `_`, `.` and `~`. Characters such as `+`, `%`,
+`@` or `/` corrupt it. This applies to a password from `existingSecret` too,
+and to the built-in ClickHouse with `clickhouse.auth.existingSecret`.
 
 ## Optional databases
 
@@ -188,10 +194,15 @@ appwrite:
 
 ## Moving from built-in to external
 
-1. Scale the Appwrite workloads to zero, or stop writes.
-2. Dump the built-in database
-   (`kubectl exec <fullname>-postgresql-0 -- pg_dump -U appwrite appwrite`)
-   and restore it into the new server.
+1. Scale the Appwrite workloads to zero
+   ([backup-restore.md](backup-restore.md#restoring), step 1).
+2. Dump the built-in database and restore it into the new server:
+
+   ```console
+   kubectl -n appwrite exec appwrite-postgresql-0 -- \
+     sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --no-owner --no-acl' > appwrite.dump
+   pg_restore -h appwrite-db.example.internal -U appwrite -d appwrite --no-owner appwrite.dump
+   ```
 3. Switch the values as shown above and upgrade.
 
-See [backup-restore.md](backup-restore.md) for dumping each service.
+See [backup-restore.md](backup-restore.md) for ClickHouse.

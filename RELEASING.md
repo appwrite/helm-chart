@@ -16,6 +16,8 @@ Versions that are already in the registry are skipped.
 
 1. Move the `[Unreleased]` changelog entries under `## [<version>] - <date>`
    and mirror them into `artifacthub.io/changes` in `Chart.yaml`.
+   The release notes are the CHANGELOG section headed `## [<version>]`; if
+   it's missing, the GitHub release has no notes.
 2. Bump `version` in `charts/appwrite/Chart.yaml` (SemVer). Bump the minor
    version for new features or a new Appwrite minor, the major version for
    breaking value changes after 1.0.
@@ -29,8 +31,20 @@ Versions that are already in the registry are skipped.
    gh attestation verify oci://ghcr.io/appwrite/charts/appwrite:<version> --repo appwrite/helm-chart
    ```
 
+## Pre-releases
+
+Every 0.x version is a pre-release: the workflow marks its GitHub release as
+one (as it does for versions with a `-suffix`), and `Chart.yaml` carries
+`artifacthub.io/prerelease: "true"`. At 1.0.0, set that annotation to
+`"false"` in the same PR that bumps the version. For a later pre-release such
+as `1.1.0-rc.1`, set it back to `"true"` for that version only.
+
 ## Before the first release (0.1.0)
 
+- [ ] Rename `## [Unreleased]` in `CHANGELOG.md` to `## [0.1.0] - <date>`
+      (add a new empty `## [Unreleased]` above it), and check that
+      `artifacthub.io/changes` in `Chart.yaml` matches. Do this before running
+      the workflow below, or the release ships without notes.
 - [ ] Make the repository public, then run the release workflow manually
       (Actions → Release → Run workflow); it skips itself while the repository
       is private. Build provenance attestations on private

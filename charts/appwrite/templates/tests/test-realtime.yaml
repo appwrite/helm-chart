@@ -13,6 +13,7 @@ metadata:
 spec:
   restartPolicy: Never
   automountServiceAccountToken: false
+  {{- with include "appwrite.pod.scheduling" (dict "root" . "values" dict "component" "test") | trim }}{{ . | nindent 2 }}{{ end }}
   {{- with include "appwrite.imagePullSecrets" . | trim }}{{ . | nindent 2 }}{{ end }}
   securityContext:
     {{- toYaml .Values.podSecurityContext | nindent 4 }}

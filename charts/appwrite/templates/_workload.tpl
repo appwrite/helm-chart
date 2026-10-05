@@ -32,12 +32,15 @@ Usage: include "appwrite.deployment" (dict
 {{- $v := .values }}
 {{- $parent := .parent | default dict }}
 {{- $name := include "appwrite.componentName" (dict "root" $root "component" .component) }}
-{{- $podSecurityContext := $v.podSecurityContext | default $parent.podSecurityContext }}
-{{- $containerSecurityContext := $v.containerSecurityContext | default $parent.containerSecurityContext }}
+{{- /* Component settings are merged over the group's, then (Appwrite pods) the global ones, key by key. */}}
+{{- $podLayers := list $v.podSecurityContext $parent.podSecurityContext }}
+{{- $containerLayers := list $v.containerSecurityContext $parent.containerSecurityContext }}
 {{- if .appwrite }}
-{{- $podSecurityContext = $podSecurityContext | default $root.Values.podSecurityContext }}
-{{- $containerSecurityContext = $containerSecurityContext | default $root.Values.containerSecurityContext }}
+{{- $podLayers = append $podLayers $root.Values.podSecurityContext }}
+{{- $containerLayers = append $containerLayers $root.Values.containerSecurityContext }}
 {{- end }}
+{{- $podSecurityContext := include "appwrite.overlay" $podLayers | fromYaml }}
+{{- $containerSecurityContext := include "appwrite.overlay" $containerLayers | fromYaml }}
 {{- $extraEnv := concat ($parent.extraEnv | default list) ($v.extraEnv | default list) }}
 {{- $extraVolumes := concat ($parent.extraVolumes | default list) ($v.extraVolumes | default list) }}
 {{- $extraVolumeMounts := concat ($parent.extraVolumeMounts | default list) ($v.extraVolumeMounts | default list) }}
@@ -94,7 +97,7 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      terminationGracePeriodSeconds: {{ $v.terminationGracePeriodSeconds | default $parent.terminationGracePeriodSeconds | default 30 }}
+      terminationGracePeriodSeconds: {{ include "appwrite.firstSet" (list $v.terminationGracePeriodSeconds $parent.terminationGracePeriodSeconds 30) }}
       {{- with include "appwrite.pod.scheduling" (dict "root" $root "values" $v "parent" $parent "component" .component "spread" .spread "storage" .storage) | trim }}{{ . | nindent 6 }}{{ end }}
       {{- if or .initContainers $v.extraInitContainers }}
       initContainers:
@@ -190,7 +193,7 @@ Usage: include "appwrite.service" (dict "root" $ "component" "api" "service" .Va
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ if .headless }}{{ $name }}-headless{{ else }}{{ $name }}{{ end }}
+  name: {{ if .headless }}{{ include "appwrite.headlessName" (dict "root" .root "component" .component) }}{{ else }}{{ $name }}{{ end }}
   namespace: {{ .root.Release.Namespace }}
   labels:
     {{- include "appwrite.componentLabels" (dict "root" .root "component" .component) | nindent 4 }}
@@ -261,12 +264,15 @@ spec:
 
 {{/*
 PodDisruptionBudget for a component. Only rendered when more than one pod
-can run; a PDB on a single replica would block node drains.
-Usage: include "appwrite.pdb" (dict "root" $ "component" "api" "pdb" .Values.api.pdb "replicas" 1 "autoscaling" .Values.api.autoscaling)
+can run, and not for pods that share a ReadWriteOnce /storage volume ("storage"
+true): either would block node drains.
+Usage: include "appwrite.pdb" (dict "root" $ "component" "api" "pdb" .Values.api.pdb "replicas" 1 "autoscaling" .Values.api.autoscaling "storage" true)
 */}}
 {{- define "appwrite.pdb" -}}
 {{- $multi := or (gt (int .replicas) 1) (and .autoscaling .autoscaling.enabled (gt (int .autoscaling.minReplicas) 1)) }}
-{{- if and .pdb.enabled $multi }}
+{{- /* Pods pinned to one node by a ReadWriteOnce volume can't move during a drain; a PDB would block it. */}}
+{{- $pinned := and .storage (include "appwrite.storage.colocate" .root) }}
+{{- if and .pdb.enabled $multi (not $pinned) }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

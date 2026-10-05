@@ -15,7 +15,7 @@ screenshots: {name: screenshots, coroutines: 8, storage: true}
 certificates: {name: certificates, coroutines: 8, storage: true, certbot: true}
 executions: {name: executions, coroutines: 8}
 functions: {name: functions, coroutines: 8}
-mails: {name: mails, coroutines: 6}
+mails: {name: mails, coroutines: 1}
 notifications: {name: notifications, coroutines: 1}
 messaging: {name: messaging, coroutines: 1, storage: true}
 migrations: {name: migrations, coroutines: 1, storage: true}
@@ -28,7 +28,7 @@ Worker Deployments to render, as a YAML list. Each item has:
   values      replicaCount, processes, maxCoroutines, cpuNum, resources, autoscaling
   storage     mounts /storage
   certbot     mounts writable certbot directories
-  singleton   consumes the databases queue (at most one replica)
+  singleton   consumes the databases queue: one replica, recreated on update
 */}}
 {{- define "appwrite.workers.deployments" -}}
 {{- $w := .Values.workers }}
@@ -82,7 +82,9 @@ Queue names no worker Deployment consumes. Their jobs pile up in Redis.
 {{- define "appwrite.workers.unconsumed" -}}
 {{- $consumed := list }}
 {{- range (include "appwrite.workers.deployments" . | fromYamlArray) }}
+{{- if or (gt (int (.values.replicaCount | default 0)) 0) (and .values.autoscaling .values.autoscaling.enabled) }}
 {{- $consumed = concat $consumed .queues }}
+{{- end }}
 {{- end }}
 {{- $missing := list }}
 {{- if not (has "all" $consumed) }}

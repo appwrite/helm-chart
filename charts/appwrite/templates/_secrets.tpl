@@ -86,6 +86,9 @@ value already stored in the cluster, else a new random value.
 {{- fail (printf "No value for %s: provide it explicitly or through an existing Secret (appwrite.secrets.generate is false)." .key) }}
 {{- else if and .root.Release.IsUpgrade (eq .key "_APP_OPENSSL_KEY_V1") }}
 {{- fail (printf "Refusing to generate a new _APP_OPENSSL_KEY_V1 during an upgrade: Secret %s/%s was not found. Restore it, or set appwrite.secrets.existingSecret or appwrite.secrets.opensslKey. With --dry-run, use --dry-run=server so the existing Secret can be read." .root.Release.Namespace (include "appwrite.secretName" .root)) }}
+{{- else if and .root.Release.IsUpgrade (not .existing) (has .key (list "postgres-password" "clickhouse-password")) }}
+{{- /* These passwords are written into the data volume on first start: a new one wouldn't match it. */}}
+{{- fail (printf "Refusing to generate a new %s during an upgrade: Secret %s/%s was not found, and the existing data volume keeps the old password. Restore the Secret, or set the password explicitly. With --dry-run, use --dry-run=server so the existing Secret can be read." .key .root.Release.Namespace (include "appwrite.secretName" .root)) }}
 {{- else }}
 {{- randAlphaNum 48 | b64enc }}
 {{- end }}

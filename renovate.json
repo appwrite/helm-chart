@@ -5,41 +5,163 @@
     "helpers:pinGitHubActionDigests",
     ":dependencyDashboard"
   ],
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "helm-values": {
-    "managerFilePatterns": ["/charts/.+/values\\.yaml$/"]
+    "managerFilePatterns": [
+      "/charts/.+/values\\.yaml$/"
+    ]
   },
   "customManagers": [
     {
       "description": "Appwrite version the chart ships (Chart.yaml appVersion)",
       "customType": "regex",
-      "managerFilePatterns": ["/charts/appwrite/Chart\\.yaml$/"],
-      "matchStrings": ["appVersion: \"(?<currentValue>[^\"]+)\""],
+      "managerFilePatterns": [
+        "/charts/appwrite/Chart\\.yaml$/"
+      ],
+      "matchStrings": [
+        "appVersion: \"(?<currentValue>[^\"]+)\""
+      ],
       "depNameTemplate": "docker.io/appwrite/appwrite",
       "datasourceTemplate": "docker"
     },
     {
       "description": "Images listed in the artifacthub.io/images annotation, kept in step with values.yaml",
       "customType": "regex",
-      "managerFilePatterns": ["/charts/appwrite/Chart\\.yaml$/"],
-      "matchStrings": ["image: (?<depName>[^:\\s]+):(?<currentValue>[^\\s]+)"],
+      "managerFilePatterns": [
+        "/charts/appwrite/Chart\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: (?<depName>[^:\\s]+):(?<currentValue>[^\\s]+)"
+      ],
       "datasourceTemplate": "docker"
     },
     {
-      "description": "Tool versions in the Makefile and workflows",
+      "description": "helm-unittest version in the Makefile and workflows",
       "customType": "regex",
-      "managerFilePatterns": ["/^Makefile$/", "/^\\.github/workflows/.+\\.ya?ml$/"],
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
       "matchStrings": [
         "HELM_UNITTEST\\s*\\?=\\s*(?<currentValue>v[\\d.]+)",
         "HELM_UNITTEST_VERSION:\\s*(?<currentValue>v[\\d.]+)"
       ],
       "depNameTemplate": "helm-unittest/helm-unittest",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "helm-values-schema-json version in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "HELM_SCHEMA\\s*\\?=\\s*(?<currentValue>v[\\d.]+)",
+        "HELM_SCHEMA_VERSION:\\s*(?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "losisin/helm-values-schema-json",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "helm-docs version in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "HELM_DOCS_VERSION:\\s*(?<currentValue>[\\d.]+)"
+      ],
+      "depNameTemplate": "norwoodj/helm-docs",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "description": "kubeconform version in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "KUBECONFORM_VERSION:\\s*(?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "yannh/kubeconform",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "cosign version in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "COSIGN_VERSION:\\s*(?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "sigstore/cosign",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "oras version in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "ORAS_VERSION:\\s*(?<currentValue>[\\d.]+)"
+      ],
+      "depNameTemplate": "oras-project/oras",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "description": "gateway-api version in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "GATEWAY_API_VERSION:\\s*(?<currentValue>v[\\d.]+)"
+      ],
+      "depNameTemplate": "kubernetes-sigs/gateway-api",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "helm version in the Makefile and workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "version:\\s*(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "helm/helm",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Traefik chart used by the end-to-end workflows",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "TRAEFIK_CHART_VERSION:\\s*(?<currentValue>[\\d.]+)"
+      ],
+      "depNameTemplate": "traefik",
+      "registryUrlTemplate": "https://traefik.github.io/charts",
+      "datasourceTemplate": "helm"
     }
   ],
   "packageRules": [
     {
-      "description": "Appwrite, its console and its services change together and need the chart reviewed against the release: group them and wait for approval",
+      "description": "Appwrite, its console, its services and the orchestrator it drives change together and need the chart reviewed against the release: group them and wait for approval",
       "matchPackageNames": [
         "docker.io/appwrite/appwrite",
         "docker.io/appwrite/new",
@@ -48,26 +170,37 @@
         "docker.io/appwrite/assistant",
         "docker.io/appwrite/embedding",
         "docker.io/appwrite/postgres",
-        "ghcr.io/appwrite/autogravity"
+        "ghcr.io/appwrite/autogravity",
+        "ghcr.io/open-runtimes/orchestrator/jobs-service",
+        "ghcr.io/open-runtimes/orchestrator/job-sidecar"
       ],
       "groupName": "appwrite",
       "dependencyDashboardApproval": true
     },
     {
       "description": "The console's tags carry a -self-hosted suffix; only follow those",
-      "matchPackageNames": ["docker.io/appwrite/new"],
+      "matchPackageNames": [
+        "docker.io/appwrite/new"
+      ],
       "allowedVersions": "/-self-hosted$/",
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-self-hosted$"
     },
     {
       "description": "Keep datastore images on their current major version",
-      "matchPackageNames": ["docker.io/redis", "docker.io/clickhouse/clickhouse-server"],
-      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "docker.io/redis",
+        "docker.io/clickhouse/clickhouse-server"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "enabled": false
     },
     {
       "description": "Group GitHub Actions updates",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github actions"
     }
   ]

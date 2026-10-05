@@ -30,7 +30,7 @@ metadata:
   {{- with include "appwrite.annotations" (dict "root" $root) | trim }}{{ . | nindent 2 }}{{ end }}
 spec:
   replicas: 1
-  serviceName: {{ $name }}-headless
+  serviceName: {{ include "appwrite.headlessName" (dict "root" $root "component" .component) }}
   podManagementPolicy: OrderedReady
   updateStrategy:
     type: RollingUpdate
@@ -49,7 +49,7 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      terminationGracePeriodSeconds: {{ $v.terminationGracePeriodSeconds | default 60 }}
+      terminationGracePeriodSeconds: {{ include "appwrite.firstSet" (list $v.terminationGracePeriodSeconds 60) }}
       {{- with include "appwrite.pod.scheduling" (dict "root" $root "values" $v "component" .component) | trim }}{{ . | nindent 6 }}{{ end }}
       containers:
         - name: {{ .component }}

@@ -58,7 +58,7 @@ tests:
             port: http
             httpHeaders:
               - name: Host
-                value: aw-appwrite-api
+                value: aw-appwrite-api.appwrite.svc
 
   - it: can disable individual probes
     set:
@@ -253,3 +253,30 @@ tests:
       - equal:
           path: spec.template.metadata.annotations["example.com/scrape"]
           value: "false"
+
+  - it: lets appwrite.config replace variables set per container
+    set:
+      appwrite.config:
+        _APP_CPU_NUM: 4
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          any: true
+          content: {name: _APP_CPU_NUM}
+
+  # The two tests below pin the checksum without secretConfig, then check that
+  # secretConfig changes it, so a constant checksum fails one of them.
+  - it: checksums an empty secretConfig
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/secret-env"]
+          value: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+
+  - it: rolls Appwrite pods when secretConfig changes
+    set:
+      appwrite.secretConfig:
+        _APP_SMS_PROVIDER: sms://key:secret@twilio
+    asserts:
+      - notEqual:
+          path: spec.template.metadata.annotations["checksum/secret-env"]
+          value: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a

@@ -11,8 +11,6 @@ path that fits:
 Both use the chart's built-in PostgreSQL, Redis and ClickHouse. Functions and
 Sites need extra infrastructure and come [afterwards](#functions-and-sites).
 
-Examples use the release name `appwrite` in the namespace `appwrite`.
-
 ## What you need
 
 - Kubernetes 1.29 or later, with a default StorageClass
@@ -61,6 +59,10 @@ helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
 The first start pulls about 2 GB of images and creates the database schema,
 so expect a few minutes. `forceHttps=false` is needed because nothing
 terminates TLS locally.
+
+If the chart isn't published to `ghcr.io` yet, or you want to try an
+unreleased change, install it from a clone instead
+([installing from source](#installing-from-source)).
 
 **4. Open it.**
 
@@ -113,7 +115,8 @@ ingress:
 ```
 
 `appwrite.forceHttps` is on by default: Appwrite redirects HTTP to HTTPS and
-generates `https://` links.
+generates `https://` links. Keep `ingress.tls.enabled` on with it, otherwise
+the redirect points at an HTTPS endpoint nothing serves.
 
 To send emails (verification, password recovery, invitations), add SMTP:
 
@@ -176,8 +179,35 @@ Compose file for that host.
 
 Function and site previews use wildcard hostnames (`*.functions.<domain>` and
 `*.sites.<domain>`). Turn `ingress.wildcard.enabled` back on then, with a
-wildcard certificate from a DNS-01 issuer
-([networking.md](networking.md#cert-manager)).
+wildcard certificate from a DNS-01 issuer. `ingress.annotations` applies to
+every Ingress, so give the wildcard Ingress its own issuer, or cert-manager
+tries HTTP-01, which can't issue wildcards:
+
+```yaml
+ingress:
+  wildcard:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-dns01   # a DNS-01 ClusterIssuer
+    tls:
+      enabled: true
+```
+
+[networking.md](networking.md#cert-manager) has the details.
+
+## Installing from source
+
+Until the chart is published, or to test a branch, install from a clone. The
+commands are the same with `./charts/appwrite` in place of the `oci://`
+reference:
+
+```console
+git clone https://github.com/appwrite/helm-chart
+cd helm-chart
+helm install appwrite ./charts/appwrite \
+  --namespace appwrite --create-namespace \
+  -f values.yaml --wait --timeout 15m
+```
 
 ## Next steps
 

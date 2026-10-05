@@ -30,9 +30,8 @@ flowchart LR
   api --- storage[(/storage volume\nor S3)]
   worker --- storage
 
-  worker -. "builds (optional)" .-> orchestrator[orchestrator] -.-> builds[[build Jobs\nin their own namespace]]
-  worker -. "executions (optional)" .-> executor[[open-runtimes executor\non a Docker host]]
-  api -. "function and site traffic" .-> executor
+  api & worker -. "builds (optional)" .-> orchestrator[orchestrator] -.-> builds[[build Jobs\nin their own namespace]]
+  api & worker -. "executions (optional)" .-> executor[[open-runtimes executor\non a Docker host]]
 ```
 
 | Component | Image | Command | Scales | Notes |
@@ -48,7 +47,13 @@ flowchart LR
 | `postgresql` | `appwrite/postgres` | `postgres` | One replica | Built-in database. Optional. |
 | `redis` | `redis` | `redis-server` | One replica | Cache, queues, pub/sub and locks. Optional. |
 | `clickhouse` | `clickhouse/clickhouse-server` | image default | One replica | Usage statistics and execution logs. Optional. |
-| `orchestrator` | `open-runtimes/orchestrator/jobs-service` | image default | One replica | Runs builds of functions and sites as Jobs in the build namespace. With `compute.enabled`. |
+| `orchestrator` | `open-runtimes/orchestrator/jobs-service` | image default | One replica | Runs builds of functions and sites as Jobs in the build namespace. With `compute.enabled` and `compute.orchestrator.mode: cluster`. |
+
+The builds worker starts builds through the orchestrator, and the API cancels
+them. The functions worker and the API (synchronous executions, function and
+site traffic) call the executor. Optional components such as the browser,
+assistant and MQTT broker are described in
+[optional-components.md](optional-components.md).
 
 The scheduler, maintenance and interval tasks have no leader election in
 Appwrite, so a second copy would do the same work twice. The chart always runs
@@ -82,7 +87,9 @@ The `databases` queue applies schema changes in order and must have exactly
 one consumer, so whichever Deployment consumes it is capped at one replica
 and never autoscaled. In `combined` mode that is the only worker, which is why
 `workers.combined.replicaCount` can't exceed 1; switch to `separate` or
-`grouped` to scale the rest.
+`grouped` to scale the rest. That Deployment is also recreated rather than
+rolled on updates, so an old and a new pod never consume the queue at the
+same time.
 
 `_APP_WORKER_MAX_COROUTINES` sizes each worker's connection pool. The chart
 sets it to the queue's own concurrency in `separate` mode (as Appwrite's
@@ -144,7 +151,7 @@ rolls them. Changes to Secrets you manage yourself don't; use a tool such as
 | `_APP_REDIS_*` | the built-in Redis Service |
 | `_APP_CONNECTIONS_DB_USAGE`, `_APP_CONNECTIONS_DB_EXECUTIONS` | the built-in ClickHouse Service |
 | `_APP_GEO_ENDPOINT` | the geo Service, or empty when geo is disabled |
-| `_APP_MIGRATION_HOST` | the API Service name |
+| `_APP_MIGRATION_HOST` | the API Service's DNS name, `<fullname>-api.<namespace>.svc` |
 | `_APP_WORKER_SCREENSHOTS_ROUTER`, `_APP_JOBS_ENDPOINT` | the API Service URL |
 | `_APP_CPU_NUM` | each component's CPU limit (or request), rounded up |
 
@@ -159,16 +166,27 @@ each component's resources; override it with `<component>.cpuNum`.
 Connection pools are split across pods with `_APP_CONNECTIONS_MAX`
 (`appwrite.database.connectionsMax`, the total budget) and `_APP_POOL_CLIENTS`
 (`appwrite.database.poolClients`, how many pods share it). Keep `poolClients`
-at least as large as the number of Appwrite pods. The built-in PostgreSQL sets
-`max_connections` to `connectionsMax + 20`.
+at least as large as the number of Appwrite pods, counting HPA maximums:
+`separate` workers alone add 15 Deployments, more than the default of 15
+clients once the API, realtime and tasks are counted. The built-in PostgreSQL
+sets `max_connections` to `connectionsMax + 20`.
 
 ### Health checks without a Host lookup
 
 Appwrite routes every request by its `Host` header and looks unknown hosts up
 in the database (custom domains), redirecting to HTTPS when `forceHttps` is on.
-The chart sets `_APP_MIGRATION_HOST` to the API Service name, which Appwrite
-treats as an internal hostname, and its probes send `Host: <fullname>-api`.
-Probes then skip both the lookup and the redirect.
+The chart sets `_APP_MIGRATION_HOST` to the API Service's DNS name,
+`<fullname>-api.<namespace>.svc`, which Appwrite treats as an internal
+hostname, and its probes, init containers and tests send that `Host` header.
+They then skip both the lookup and the redirect. Build pods in the build
+namespace reach the API under the same name, which is why it includes the
+namespace.
+
+Appwrite skips the HTTPS redirect for this hostname, and the custom-domains
+route forwards any `Host` to the API. A client outside the cluster that sends
+`Host: <fullname>-api.<namespace>.svc` can therefore reach the API over plain
+HTTP. It's the same API with the same authentication, but if plain HTTP must
+never be accepted, terminate TLS at the edge and redirect there.
 
 ## Storage
 
@@ -186,7 +204,9 @@ The chart creates one PersistentVolumeClaim and mounts each path as a
 `subPath`. With a ReadWriteOnce volume (the default), every pod that mounts
 it is scheduled on the same node through pod affinity, so the volume can be
 attached. To spread the API and workers across nodes, use a ReadWriteMany
-storage class or S3.
+storage class. S3 alone isn't enough: certificates and ACME challenges stay
+on the volume, so the API and workers mount it either way
+([storage.md](storage.md#s3)).
 
 The cache is per pod: Appwrite only serves a cached file when the database
 says it exists, so a pod that hasn't cached it yet just regenerates it.
@@ -204,5 +224,6 @@ Writable paths are `emptyDir`s. Build Jobs run in their own namespace under
 - The geo image listens on port 80, so its pod sets the namespaced sysctl
   `net.ipv4.ip_unprivileged_port_start=0`, which the `restricted` profile allows.
 - ServiceAccount tokens aren't mounted; nothing in Appwrite uses the
-  Kubernetes API. The only RBAC is the orchestrator's Role, limited to Jobs
-  and their pods in the build namespace.
+  Kubernetes API. The exception is the orchestrator, which mounts its own
+  ServiceAccount's token. Its Role, the only RBAC in the chart, is limited to
+  Jobs and their pods in the build namespace.

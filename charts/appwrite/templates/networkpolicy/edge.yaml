@@ -16,11 +16,4 @@ spec:
       {{- end }}
     - from:
         - {{- include "appwrite.networkPolicy.releasePeer" . | nindent 10 }}
-    {{- if include "appwrite.builds.inCluster" . }}
-    {{- /* Build Jobs download sources from the API and report back to it. */}}
-    - ports:
-        - port: http
-      from:
-        - {{- include "appwrite.networkPolicy.buildsPeer" . | nindent 10 }}
-    {{- end }}
 {{- end }}

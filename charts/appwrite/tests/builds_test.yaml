@@ -8,6 +8,7 @@ templates:
   - templates/builds/serviceaccount.yaml
   - templates/builds/networkpolicy.yaml
   - templates/networkpolicy/edge.yaml
+  - templates/networkpolicy/builds-to-api.yaml
   - templates/networkpolicy/orchestrator.yaml
 release:
   name: aw
@@ -190,17 +191,69 @@ tests:
             namespaceSelector:
               matchLabels: {kubernetes.io/metadata.name: apps-builds}
 
-  - it: lets build pods reach the API when entry points are restricted
+  - it: doesn't admit build pods to the console or realtime
     template: templates/networkpolicy/edge.yaml
     set:
       networkPolicy.enabled: true
       networkPolicy.ingress.from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: traefik}}}]
     asserts:
+      - notContains:
+          path: spec.ingress
+          content:
+            ports: [{port: http}]
+            from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: apps-builds}}}]
+
+  - it: lets build pods reach the API, and only the API
+    template: templates/networkpolicy/builds-to-api.yaml
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.podSelector.matchExpressions[0].values
+          value: [api]
       - contains:
           path: spec.ingress
           content:
             ports: [{port: http}]
             from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: apps-builds}}}]
+
+  - it: renders no builds-to-api policy without NetworkPolicies
+    template: templates/networkpolicy/builds-to-api.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: refuses the release namespace for builds even when it isn't created
+    template: templates/configmap-env.yaml
+    set:
+      compute.builds.namespace: apps
+      compute.builds.createNamespace: false
+    asserts:
+      - failedTemplate:
+          errorPattern: compute.builds.namespace must differ from the release namespace
+
+  - it: blocks special-purpose ranges and extra CIDRs for build egress
+    template: templates/builds/networkpolicy.yaml
+    set:
+      compute.builds.networkPolicy.deniedCIDRs: [34.118.224.0/20, "2600:1900::/28"]
+    asserts:
+      - contains:
+          path: spec.egress[3].to[0].ipBlock.except
+          content: 168.63.129.16/32
+      - contains:
+          path: spec.egress[3].to[0].ipBlock.except
+          content: 34.118.224.0/20
+      - contains:
+          path: spec.egress[3].to[1].ipBlock.except
+          content: "2600:1900::/28"
+
+  - it: limits the orchestrator to the Job verbs it uses
+    template: templates/orchestrator/rbac.yaml
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: rules[0].verbs
+          value: [get, list, watch, create, delete]
 
   - it: refuses to run builds in the release namespace
     template: templates/configmap-env.yaml

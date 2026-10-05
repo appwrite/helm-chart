@@ -6,7 +6,8 @@
 Build pods run your build commands: nothing may connect to them, and they may
 only reach DNS, the API and orchestrator of this release, the S3 endpoint, and
 public addresses (so package managers work). Private, link-local (cloud
-metadata) and CGNAT ranges are blocked.
+metadata), CGNAT and special-purpose ranges are blocked, plus
+compute.builds.networkPolicy.deniedCIDRs.
 */}}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -45,12 +46,7 @@ spec:
           protocol: TCP
     {{- end }}
     - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16, 127.0.0.0/8]
-        - ipBlock:
-            cidr: ::/0
-            except: ["fc00::/7", "fe80::/10", "::1/128"]
+        {{- include "appwrite.networkPolicy.publicPeers" (dict "denied" .Values.compute.builds.networkPolicy.deniedCIDRs "ipv6" true) | nindent 8 }}
     {{- with .Values.compute.builds.networkPolicy.extraEgress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

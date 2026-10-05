@@ -25,3 +25,20 @@ determined.
 {{- $installed := include "appwrite.installedVersion" . }}
 {{- if or (not $installed) (ne $installed (include "appwrite.version" .)) }}true{{ end }}
 {{- end }}
+
+{{/*
+Name of the post-upgrade migration hook Job.
+*/}}
+{{- define "appwrite.migrateHookName" -}}
+{{- printf "%s-migrate" (include "appwrite.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+"true" when the previous hook migration didn't finish. Helm deletes the hook
+Job when it succeeds, so a Job still in the cluster failed or outlived the
+hook timeout. The API's appwrite/version annotation has already moved on by
+then, so without this check the next upgrade would skip the migration.
+*/}}
+{{- define "appwrite.migrationFailed" -}}
+{{- if lookup "batch/v1" "Job" .Release.Namespace (include "appwrite.migrateHookName" .) }}true{{ end }}
+{{- end }}

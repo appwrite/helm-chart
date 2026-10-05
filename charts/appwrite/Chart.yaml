@@ -46,7 +46,9 @@ annotations:
     - kind: added
       description: Optional browser, assistant, autogravity, embedding and MQTT components
     - kind: added
-      description: NetworkPolicies, PodDisruptionBudgets, autoscaling and topology spread
+      description: PodDisruptionBudgets and topology spread by default; NetworkPolicies and autoscaling
+    - kind: added
+      description: Credentials generated once and kept across upgrades, with guards against losing the encryption key or datastore passwords
     - kind: added
       description: Data migrations on upgrade and a downgrade guard
   artifacthub.io/images: |

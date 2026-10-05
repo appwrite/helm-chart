@@ -15,21 +15,24 @@ First release of the chart, for Appwrite 2.3.0.
 - API, console, realtime, workers, scheduler, maintenance and interval tasks,
   and the geo service, all passing the `restricted` Pod Security Standard.
 - Built-in single-replica PostgreSQL, Redis and ClickHouse, or external ones
-  (PostgreSQL, MariaDB, MySQL, MongoDB; Redis; ClickHouse over HTTP(S)).
+  (PostgreSQL, MariaDB, MySQL, MongoDB; Redis; ClickHouse over HTTP or TLS).
 - Combined, separate and grouped worker topologies; split schedulers.
 - Ingress and Gateway API HTTPRoutes for the API, console, realtime, function
   and site previews, and custom domains.
 - S3 storage, and Functions and Sites: builds run in the cluster as
   Kubernetes Jobs through the open-runtimes orchestrator, in their own
-  `baseline` namespace behind a NetworkPolicy; executions run on an external
-  open-runtimes executor.
+  `baseline` namespace behind a NetworkPolicy that only allows public
+  addresses (plus `deniedCIDRs`); executions run on an external open-runtimes
+  executor.
 - Optional browser, assistant, autogravity, embedding and MQTT components.
-- Opt-in NetworkPolicies, PodDisruptionBudgets, HorizontalPodAutoscalers and
-  topology spread.
+- PodDisruptionBudgets and topology spread by default; opt-in
+  NetworkPolicies and HorizontalPodAutoscalers.
 - Credentials generated once, kept across upgrades and uninstalls, with guards
-  against changing the encryption key.
-- Data migrations as a post-upgrade hook or a version-named Job, and a
-  downgrade guard.
-- `values.schema.json`, `helm test` pods, and documentation for production,
-  networking, storage, external databases, upgrades, backups, GitOps and
-  troubleshooting.
+  against changing the encryption key or regenerating datastore passwords.
+- Data migrations as a post-upgrade hook (retried after a failure) or a Job
+  named after the version and its spec, and a downgrade guard.
+- `values.schema.json` that also accepts a parent chart's `global` values,
+  validation of worker topologies and connection limits, `helm test` pods,
+  and documentation: getting started, architecture, executor, production,
+  networking, security, storage, external databases, optional components,
+  migrating from Docker, upgrades, backups, GitOps and troubleshooting.

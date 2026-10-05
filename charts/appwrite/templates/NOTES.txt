@@ -33,7 +33,7 @@ A port-forward to the console alone won't work: the console sends its API
 calls to its own address. To check that the API is up:
 
   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $fullname }}-api 8080:{{ .Values.api.service.port }}
-  curl -H "Host: {{ $fullname }}-api" http://localhost:8080/v1/health/version
+  curl -H "Host: {{ include "appwrite.api.internalHost" . }}" http://localhost:8080/v1/health/version
 {{- end }}
 {{- if not .Release.IsUpgrade }}
 
@@ -79,6 +79,44 @@ Email is off until appwrite.smtp.host is set.
 
 WARNING: no worker consumes these queues, so their jobs will pile up in Redis:
   {{ . }}
+{{- end }}
+{{- $pods := include "appwrite.pods.max" . | int }}
+{{- if gt $pods (int $v.database.poolClients) }}
+
+WARNING: up to {{ $pods }} Appwrite pods can run, but appwrite.database.poolClients
+is {{ $v.database.poolClients }}. Each pod opens connectionsMax / poolClients database
+connections, so together they can exceed appwrite.database.connectionsMax.
+Set poolClients to at least {{ $pods }}.
+{{- end }}
+{{- if and (not .Values.persistence.enabled) (or (gt $pods 1) (ne .Values.workers.mode "combined")) }}
+
+WARNING: persistence.enabled is false, so every pod that mounts /storage gets
+its own empty volume. Files written by one pod (uploads, builds,
+certificates) aren't visible to the others.
+{{- end }}
+{{- if and .Values.compute.enabled .Values.networkPolicy.enabled .Values.networkPolicy.egress.enabled (not .Values.networkPolicy.egress.extraRules) }}
+
+WARNING: networkPolicy.egress is restricted, but no extraRules are set.
+Appwrite can't reach the executor ({{ .Values.compute.executor.host }}) or S3, and
+the orchestrator can't reach the Kubernetes API. Allow them in
+networkPolicy.egress.extraRules: {{ $docs }}/executor.md
+{{- end }}
+{{- if and (include "appwrite.builds.inCluster" .) (not .Values.compute.builds.createNamespace) }}
+{{- $ns := lookup "v1" "Namespace" "" (include "appwrite.builds.namespace" .) }}
+{{- $enforce := dig "metadata" "labels" "pod-security.kubernetes.io/enforce" "" ($ns | default dict) }}
+{{- if and $ns (not (has $enforce (list "baseline" "restricted"))) }}
+
+WARNING: namespace "{{ include "appwrite.builds.namespace" . }}" doesn't enforce a Pod Security
+Standard. Build Jobs run there; label it so a leaked orchestrator key can't
+start privileged pods:
+
+  kubectl label namespace {{ include "appwrite.builds.namespace" . }} pod-security.kubernetes.io/enforce=baseline
+{{- end }}
+{{- end }}
+{{- if and .Release.IsUpgrade (eq .Values.migrations.mode "none") }}
+
+migrations.mode is none: after changing the Appwrite version, run the data
+migration yourself (kubectl exec into an API pod: php app/cli.php migrate).
 {{- end }}
 
 Check the installation:

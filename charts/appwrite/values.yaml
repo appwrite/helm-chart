@@ -14,7 +14,8 @@
 global:
   # -- Registry that replaces the registry of every image, e.g. a pull-through cache.
   imageRegistry: ""
-  # -- Image pull secrets added to every pod, as a list of Secret names.
+  # -- Image pull secrets added to every pod, as a list of Secret names (or
+  # `{name: ...}` objects).
   imagePullSecrets: [] # @schema item: string
   # -- Storage class for every PersistentVolumeClaim that doesn't set one. `-` means no class.
   storageClass: ""
@@ -147,7 +148,9 @@ appwrite:
     # pods (`_APP_CONNECTIONS_MAX`). Keep it below the database's `max_connections`.
     connectionsMax: 151 # @schema minimum: 1
     # -- Number of Appwrite processes sharing `connectionsMax`
-    # (`_APP_POOL_CLIENTS`). Must be at least the number of Appwrite pods.
+    # (`_APP_POOL_CLIENTS`): each pod opens `connectionsMax / poolClients`
+    # connections. Must be at least the number of Appwrite pods, counting
+    # autoscalers at `maxReplicas`; NOTES warns when it isn't.
     poolClients: 15 # @schema minimum: 1
   smtp:
     # -- SMTP server (`_APP_SMTP_HOST`). Empty disables email.
@@ -167,7 +170,7 @@ appwrite:
   storage:
     # -- Where Appwrite stores files (`_APP_STORAGE_DEVICE`): `local` uses the
     # `/storage` volume (see `persistence`), `s3` any S3-compatible object
-    # store. S3 is required with an external compute plane.
+    # store. S3 is required when `compute.enabled` is true.
     device: local # @schema enum: [local, s3]
     # -- Maximum file size in bytes (`_APP_STORAGE_LIMIT`).
     limit: 30000000 # @schema minimum: 0
@@ -250,13 +253,14 @@ appwrite:
     # -- Key in the Secret holding the password.
     passwordKey: vectorsdb-password
   # -- Extra `_APP_*` environment variables for every Appwrite pod. They
-  # override the chart's defaults and computed values, except variables set
-  # per container (credentials, `_APP_CPU_NUM`, `_APP_WORKERS_NUM`,
-  # `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), which have their
-  # own values. See
+  # override the chart's defaults and computed values, including those set
+  # per container (`_APP_CPU_NUM`, `_APP_WORKERS_NUM`,
+  # `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), except
+  # credentials, which come from Secrets. See
   # https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.
   config: {} # @schema additionalProperties: {type: [string, number, boolean]}; patternProperties: {"^_APP_[A-Z0-9_]+$": {}}
   # -- Extra sensitive `_APP_*` environment variables, stored in a Secret.
+  # Same precedence as `config`; changing them restarts Appwrite pods.
   secretConfig: {} # @schema additionalProperties: {type: string}
   # -- Extra environment variables for every Appwrite container, as a list of EnvVar objects.
   extraEnv: [] # @schema item: object
@@ -369,12 +373,18 @@ compute:
       # S3 endpoint on a private network that isn't an IP address, or a
       # private package registry.
       extraEgress: [] # @schema item: object
+      # -- CIDRs build pods may not reach, on top of the private, link-local,
+      # CGNAT and special-purpose ranges always blocked. Add pod, Service and
+      # node ranges that aren't private addresses (GKE privately used public
+      # ranges, IPv6 clusters).
+      deniedCIDRs: [] # @schema item: string
   # -- URL build Jobs use to download sources from and report back to
   # Appwrite (`_APP_JOBS_ENDPOINT`). Defaults to the API Service in the
   # cluster, or, with an external orchestrator, to `https://<domain>`
   # (`http` when `forceHttps` is off), whose host must then be `appwrite.domain`.
   appwriteEndpoint: ""
-  # -- Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps Appwrite's default list.
+  # -- Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps the
+  # Docker installer's list (node-16.0, php-8.0, python-3.9, ruby-3.0).
   functionsRuntimes: [] # @schema item: string
   # -- Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's
   # default list. Sites build with `node-22`, so keep it in the list.
@@ -475,9 +485,9 @@ api:
     timeoutSeconds: 5
     # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 6
-  # -- Pod security context. Empty inherits `podSecurityContext`.
+  # -- Pod security context, merged key by key over `podSecurityContext`.
   podSecurityContext: {} # @schema additionalProperties: true
-  # -- Container security context. Empty inherits `containerSecurityContext`.
+  # -- Container security context, merged key by key over `containerSecurityContext`.
   containerSecurityContext: {} # @schema additionalProperties: true
   # -- Pod annotations, merged over `defaults.podAnnotations`.
   podAnnotations: {} # @schema additionalProperties: {type: string}
@@ -708,9 +718,9 @@ realtime:
     timeoutSeconds: 5
     # -- Consecutive failures before the probe counts as failed.
     failureThreshold: 3
-  # -- Pod security context. Empty inherits `podSecurityContext`.
+  # -- Pod security context, merged key by key over `podSecurityContext`.
   podSecurityContext: {} # @schema additionalProperties: true
-  # -- Container security context. Empty inherits `containerSecurityContext`.
+  # -- Container security context, merged key by key over `containerSecurityContext`.
   containerSecurityContext: {} # @schema additionalProperties: true
   # -- Pod annotations, merged over `defaults.podAnnotations`.
   podAnnotations: {} # @schema additionalProperties: {type: string}
@@ -744,8 +754,9 @@ workers:
     # -- Replicas. Capped at 1, because the `databases` queue must have a
     # single consumer; use `separate` or `grouped` to scale other queues.
     replicaCount: 1 # @schema minimum: 0; maximum: 1
-    # -- Worker processes per pod (`_APP_WORKERS_NUM`).
-    processes: 1 # @schema minimum: 1
+    # -- Worker processes per pod (`_APP_WORKERS_NUM`). Must be 1: each
+    # process would consume the `databases` queue.
+    processes: 1 # @schema minimum: 1; maximum: 1
     # -- Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`).
     # The default is the sum of every queue's concurrency in Appwrite's own
     # combined worker.
@@ -957,7 +968,7 @@ workers:
       # -- Replicas.
       replicaCount: 1 # @schema minimum: 0
       # -- Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`).
-      maxCoroutines: 6 # @schema minimum: 1
+      maxCoroutines: 1 # @schema minimum: 1
       # -- Resource requests and limits. Empty inherits `workers.resources`.
       resources: {}
       autoscaling:
@@ -1037,9 +1048,9 @@ workers:
       memory: 1Gi
   # -- Seconds to let workers finish in-flight jobs on shutdown. The queue drains for up to 30s.
   terminationGracePeriodSeconds: 45
-  # -- Pod security context. Empty inherits `podSecurityContext`.
+  # -- Pod security context, merged key by key over `podSecurityContext`.
   podSecurityContext: {} # @schema additionalProperties: true
-  # -- Container security context. Empty inherits `containerSecurityContext`.
+  # -- Container security context, merged key by key over `containerSecurityContext`.
   containerSecurityContext: {} # @schema additionalProperties: true
   # -- Pod annotations, merged over `defaults.podAnnotations`.
   podAnnotations: {} # @schema additionalProperties: {type: string}
@@ -1101,9 +1112,9 @@ tasks:
         memory: 512Mi
   # -- Seconds to wait on shutdown.
   terminationGracePeriodSeconds: 30
-  # -- Pod security context. Empty inherits `podSecurityContext`.
+  # -- Pod security context, merged key by key over `podSecurityContext`.
   podSecurityContext: {} # @schema additionalProperties: true
-  # -- Container security context. Empty inherits `containerSecurityContext`.
+  # -- Container security context, merged key by key over `containerSecurityContext`.
   containerSecurityContext: {} # @schema additionalProperties: true
   # -- Pod annotations, merged over `defaults.podAnnotations`.
   podAnnotations: {} # @schema additionalProperties: {type: string}
@@ -1366,7 +1377,8 @@ embedding:
   persistence:
     # -- Keep downloaded models in a PersistentVolumeClaim.
     enabled: true
-    # -- Storage class. Empty uses the cluster default.
+    # -- Storage class. Empty uses `global.storageClass`, then the cluster
+    # default; `-` requests no class.
     storageClass: ""
     # -- Volume size.
     size: 5Gi
@@ -1426,9 +1438,9 @@ mqtt:
     annotations: {} # @schema additionalProperties: {type: string}
     # -- Source ranges allowed through a LoadBalancer.
     loadBalancerSourceRanges: [] # @schema item: string
-  # -- Pod security context. Empty inherits `podSecurityContext`.
+  # -- Pod security context, merged key by key over `podSecurityContext`.
   podSecurityContext: {} # @schema additionalProperties: true
-  # -- Container security context. Empty inherits `containerSecurityContext`.
+  # -- Container security context, merged key by key over `containerSecurityContext`.
   containerSecurityContext: {} # @schema additionalProperties: true
   # -- Pod annotations, merged over `defaults.podAnnotations`.
   podAnnotations: {} # @schema additionalProperties: {type: string}
@@ -1485,7 +1497,8 @@ postgresql:
   persistence:
     # -- Persist data in a PersistentVolumeClaim. Data is lost on restart when disabled.
     enabled: true
-    # -- Storage class. Empty uses the cluster default.
+    # -- Storage class. Empty uses `global.storageClass`, then the cluster
+    # default; `-` requests no class.
     storageClass: ""
     # -- Access modes.
     accessModes: [ReadWriteOnce] # @schema item: string
@@ -1550,7 +1563,8 @@ redis:
   image:
     # -- Image registry.
     registry: docker.io
-    # -- Image repository. `valkey/valkey` works as a drop-in replacement.
+    # -- Image repository. `valkey/valkey` works as a drop-in replacement,
+    # with a Valkey tag (e.g. `8-alpine`).
     repository: redis
     # -- Image tag.
     tag: 7.4.7-alpine
@@ -1581,7 +1595,8 @@ redis:
   persistence:
     # -- Persist data in a PersistentVolumeClaim.
     enabled: true
-    # -- Storage class. Empty uses the cluster default.
+    # -- Storage class. Empty uses `global.storageClass`, then the cluster
+    # default; `-` requests no class.
     storageClass: ""
     # -- Access modes.
     accessModes: [ReadWriteOnce] # @schema item: string
@@ -1655,9 +1670,10 @@ clickhouse:
     database: appwrite
     # -- User.
     username: appwrite
-    # -- Password. Generated and kept across upgrades when empty.
+    # -- Password. Generated and kept across upgrades when empty. Must be
+    # URL-safe, or URL-encoded, because Appwrite reads it from a connection URL.
     password: ""
-    # -- Existing Secret holding the password.
+    # -- Existing Secret holding the password. The same URL-safety rule applies.
     existingSecret: ""
     # -- Key in the Secret holding the password.
     passwordKey: clickhouse-password
@@ -1671,7 +1687,8 @@ clickhouse:
   persistence:
     # -- Persist data in a PersistentVolumeClaim.
     enabled: true
-    # -- Storage class. Empty uses the cluster default.
+    # -- Storage class. Empty uses `global.storageClass`, then the cluster
+    # default; `-` requests no class.
     storageClass: ""
     # -- Access modes.
     accessModes: [ReadWriteOnce] # @schema item: string
@@ -1729,14 +1746,18 @@ externalClickhouse:
 # (`/storage/*`).
 persistence:
   # -- Persist `/storage` in a PersistentVolumeClaim. When disabled every pod
-  # gets its own emptyDir, which only works with a single API and worker pod.
+  # gets its own emptyDir, which only works with a single API and worker pod
+  # (NOTES warns otherwise).
   enabled: true
   # -- Use an existing PersistentVolumeClaim instead of creating one.
   existingClaim: ""
-  # -- Storage class. Empty uses the cluster default.
+  # -- Storage class. Empty uses `global.storageClass`, then the cluster
+  # default; `-` requests no class.
   storageClass: ""
-  # -- Access modes. Use ReadWriteMany (or S3 storage) to spread API and
-  # worker pods across nodes.
+  # -- Access modes. Use ReadWriteMany to spread API and worker pods across
+  # nodes. They mount `/storage` even with S3 storage, so a ReadWriteOnce
+  # volume pins them to one node (and the API gets no PodDisruptionBudget,
+  # which would block drains).
   accessModes: [ReadWriteOnce] # @schema item: string
   # -- Volume size.
   size: 20Gi
@@ -1817,9 +1838,13 @@ networkPolicy:
   egress:
     # -- Restrict egress to DNS, pods of this release and `extraRules`. Off by
     # default: Appwrite calls webhooks, SMTP servers, OAuth providers, the
-    # executor and other external services.
+    # executor, S3, and the DNS server it verifies custom domains against
+    # (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the
+    # Kubernetes API. Allow what you use in `extraRules`.
     enabled: false
-    # -- DNS servers to allow (NetworkPolicyPeer) when egress is restricted.
+    # -- DNS servers to allow (NetworkPolicyPeer) when egress is restricted,
+    # on port 53. DNS on another port (OpenShift: 5353) or NodeLocal DNSCache
+    # (169.254.20.10) needs a rule in `extraRules`.
     dns:
       - namespaceSelector: {}
         podSelector:
@@ -1831,9 +1856,10 @@ networkPolicy:
 # Appwrite's data migration (`php app/cli.php migrate`), which must run after
 # Appwrite is upgraded to a new version. Fresh installs don't need it.
 migrations:
-  # -- How to run it. `hook`: a Helm post-upgrade hook, only when the Appwrite
-  # version changes. `job`: a regular Job named after the version, for tools
-  # that don't run Helm hooks (Argo CD). `none`: run it yourself.
+  # -- How to run it. `hook`: a Helm post-upgrade hook, when the Appwrite
+  # version changes or the previous hook failed. `job`: a regular Job named
+  # after the version and a hash of its spec, for tools that don't run Helm
+  # hooks (Argo CD). `none`: run it yourself.
   mode: hook # @schema enum: [hook, job, none]
   # -- Allow upgrading to an older Appwrite version than the one installed.
   # Appwrite can't migrate data backwards; restore a backup instead.

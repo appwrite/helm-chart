@@ -1,0 +1,15 @@
+{{- if and .Values.networkPolicy.enabled (include "appwrite.builds.inCluster" .) }}
+{{- /* Build Jobs download sources from the API and report back to it; they reach nothing else here. */}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+{{ include "appwrite.networkPolicy.metadata" (dict "root" . "name" "builds-to-api") }}
+spec:
+  podSelector:
+    {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "api")) | nindent 4 }}
+  policyTypes: [Ingress]
+  ingress:
+    - ports:
+        - port: http
+      from:
+        - {{- include "appwrite.networkPolicy.buildsPeer" . | nindent 10 }}
+{{- end }}

@@ -18,3 +18,12 @@ tests:
     asserts:
       - notExists:
           path: spec.template.metadata.labels["appwrite/datastore-client"]
+
+  - it: accepts extra console environment variables
+    template: templates/console/deployment.yaml
+    set:
+      console.env.VITE_EXTRA: "1"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: VITE_EXTRA, value: "1"}

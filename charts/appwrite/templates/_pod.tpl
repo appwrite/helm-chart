@@ -77,7 +77,7 @@ Usage: include "appwrite.pod.metadata" (dict "root" $ "values" .Values.api "pare
 {{- $labels := merge (dict) (.labels | default dict) (.values.podLabels | default dict) ($parent.podLabels | default dict) ($root.Values.defaults.podLabels | default dict) }}
 {{- $annotations := merge (dict) (.annotations | default dict) (.values.podAnnotations | default dict) ($parent.podAnnotations | default dict) ($root.Values.defaults.podAnnotations | default dict) }}
 labels:
-  {{- include "appwrite.componentLabels" (dict "root" $root "component" .component) | nindent 2 }}
+  {{- include "appwrite.podLabels" (dict "root" $root "component" .component) | nindent 2 }}
   {{- with $labels }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
@@ -88,13 +88,14 @@ annotations:
 {{- end }}
 
 {{/*
-Checksums of the env ConfigMap and chart Secret, so Appwrite pods roll when
-configuration changes.
+Checksums of the env ConfigMap, the chart Secret and the secretConfig Secret,
+so Appwrite pods roll when configuration changes.
 */}}
 {{- define "appwrite.pod.checksums" -}}
 {{- dict
   "checksum/config" (include "appwrite.env.config" . | sha256sum)
   "checksum/secret" (include "appwrite.secret.data" . | sha256sum)
+  "checksum/secret-env" (toYaml (.Values.appwrite.secretConfig | default dict) | sha256sum)
   | toYaml }}
 {{- end }}
 
@@ -211,7 +212,7 @@ Init container that waits until the API answers, which means the database
 schema exists. Appwrite's CLI tasks and workers exit if they start before it.
 */}}
 {{- define "appwrite.initContainer.waitForApi" -}}
-{{- $host := include "appwrite.api.host" . }}
+{{- $host := include "appwrite.api.internalHost" . }}
 - name: wait-for-api
   image: {{ include "appwrite.appwriteImage" . }}
   imagePullPolicy: {{ .Values.image.pullPolicy }}

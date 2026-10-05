@@ -1,8 +1,14 @@
 {{- if eq .Values.migrations.mode "job" }}
 {{- /*
-One Job per Appwrite version. Jobs are immutable, so tools that sync
-continuously (Argo CD) run the migration once per version.
+One Job per Appwrite version and Job spec. A Job's template is immutable, so
+the name carries a hash of the spec: a chart bump that leaves the spec alone
+keeps the existing Job, and a spec change (env, resources, scheduling)
+creates a new one instead of failing with "field is immutable". Re-running
+the migration is safe. Tools that sync continuously (Argo CD) run it once per
+version and spec.
 */}}
-{{- $name := printf "%s-migrate-%s" (include "appwrite.fullname" .) (include "appwrite.version" . | replace "." "-" | replace "+" "-" | lower) | trunc 63 | trimSuffix "-" }}
-{{- include "appwrite.migrateJob" (dict "root" . "name" $name "hook" false) }}
+{{- $spec := include "appwrite.migrateJob" (dict "root" . "name" "migrate" "hook" false) | fromYaml }}
+{{- $hash := get $spec "spec" | toYaml | sha256sum | trunc 8 }}
+{{- $prefix := printf "%s-migrate-%s" (include "appwrite.fullname" .) (include "appwrite.version" . | replace "." "-" | replace "+" "-" | lower) | trunc 54 | trimSuffix "-" }}
+{{- include "appwrite.migrateJob" (dict "root" . "name" (printf "%s-%s" $prefix $hash) "hook" false) }}
 {{- end }}

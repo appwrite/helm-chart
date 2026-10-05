@@ -39,6 +39,10 @@ Several pods use the volume at once.
   on the same node, through required pod affinity
   (`persistence.colocateReadWriteOnce`). It works on any cluster, but those pods
   can't spread across nodes, and the node is a single point of failure.
+  Draining that node takes them all down at once: a replacement pod can only
+  start next to the others, on the node being drained. A PodDisruptionBudget
+  would block the drain forever, so the chart doesn't create one for the API
+  while it's co-located.
 - **ReadWriteMany** (`accessModes: [ReadWriteMany]`): pods spread freely. Use
   a storage class that supports it, such as EFS, Azure Files, Filestore, CephFS,
   Longhorn RWX or NFS. The volume must honour `fsGroup` (82), or be writable
@@ -71,18 +75,50 @@ appwrite:
       secretKeyKey: s3-secret-key
 ```
 
-With S3, uploads, deployment code and build output live in the bucket, which
-is what lets the API and workers scale across nodes without a ReadWriteMany
-volume, and what builds and the executor need
-([executor.md](executor.md)). Create the bucket before installing; Appwrite
-doesn't create it.
+With S3, uploads, deployment code and build output live in the bucket. Builds
+and the executor need that ([executor.md](executor.md)). Create the bucket
+before installing; Appwrite doesn't create it.
 
 `/storage` is still used for certificates, ACME challenges and some scratch
-files, so keep `persistence.enabled` (a small volume is enough) unless
-you manage TLS for custom domains outside Appwrite.
+files, so the API and the storage workers mount the volume with S3 too. Keep
+`persistence.enabled` (a small volume is enough). S3 alone doesn't let those
+pods spread across nodes: with a ReadWriteOnce claim they're still
+co-located. To scale them across nodes, use a small ReadWriteMany volume:
+
+```yaml
+persistence:
+  size: 5Gi
+  accessModes: [ReadWriteMany]
+  storageClass: efs              # any class that supports ReadWriteMany
+```
+
+With `persistence.enabled: false` every pod gets its own `emptyDir` at
+`/storage`. That works only with a single API pod and the `combined` worker,
+and certificates for custom domains are lost on every restart.
 
 Tested with SeaweedFS; any S3-compatible store that supports path-style
 requests should work (Ceph RGW, Garage, Hetzner, Cloudflare R2, AWS S3, ...).
+
+## Datastore volumes
+
+The built-in PostgreSQL, Redis and ClickHouse each keep their data on a claim
+created from their StatefulSet's `volumeClaimTemplates`, named
+`data-<fullname>-<datastore>-0` (for example `data-appwrite-postgresql-0`).
+Kubernetes doesn't allow changing a StatefulSet's claim templates, so changing
+`<datastore>.persistence.size` after installing makes `helm upgrade` fail.
+
+To grow a volume, with a StorageClass that has `allowVolumeExpansion: true`:
+
+```console
+kubectl -n appwrite patch pvc data-appwrite-postgresql-0 \
+  -p '{"spec":{"resources":{"requests":{"storage":"50Gi"}}}}'
+kubectl -n appwrite delete statefulset appwrite-postgresql --cascade=orphan
+helm upgrade appwrite <chart> -n appwrite --reuse-values --set postgresql.persistence.size=50Gi
+```
+
+Deleting the StatefulSet with `--cascade=orphan` leaves the pod and the claim
+alone. The upgrade recreates the StatefulSet with the new size, and the pod
+carries on.
 
 ## Antivirus
 

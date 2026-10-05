@@ -33,8 +33,8 @@ tests:
             _APP_REDIS_HOST: aw-appwrite-redis
             _APP_REDIS_PORT: "6379"
             _APP_GEO_ENDPOINT: http://aw-appwrite-geo/v1
-            _APP_MIGRATION_HOST: aw-appwrite-api
-            _APP_WORKER_SCREENSHOTS_ROUTER: http://aw-appwrite-api
+            _APP_MIGRATION_HOST: aw-appwrite-api.appwrite.svc
+            _APP_WORKER_SCREENSHOTS_ROUTER: http://aw-appwrite-api.appwrite.svc
 
   - it: turns booleans into enabled/disabled
     set:
@@ -116,13 +116,20 @@ tests:
       - failedTemplate:
           errorPattern: appwrite.certificatesEmail is required
 
-  - it: rejects non-Appwrite keys in appwrite.config
+  - it: rejects non-Appwrite keys in appwrite.config and secretConfig
     set:
       appwrite.config:
         PATH: /bin
     asserts:
       - failedTemplate:
-          errorPattern: "appwrite.config.PATH: keys must be Appwrite variables"
+          errorPattern: "PATH' does not match pattern"
+
+  - it: rejects maxConnections below connectionsMax
+    set:
+      postgresql.maxConnections: 50
+    asserts:
+      - failedTemplate:
+          errorPattern: postgresql.maxConnections \(50\) is below appwrite.database.connectionsMax
 
   - it: requires parentRefs for HTTPRoutes
     set:
