@@ -1,0 +1,57 @@
+{{- if and (include "appwrite.builds.inCluster" .) .Values.compute.builds.networkPolicy.enabled }}
+{{- $s3 := urlParse (.Values.appwrite.storage.s3.endpoint | default "https://s3.amazonaws.com") }}
+{{- $s3Host := regexReplaceAll ":[0-9]+$" $s3.host "" }}
+{{- $s3Port := regexFind "[0-9]+$" (regexFind ":[0-9]+$" $s3.host) | default (ternary "443" "80" (eq $s3.scheme "https")) }}
+{{- /*
+Build pods run your build commands: nothing may connect to them, and they may
+only reach DNS, the API and orchestrator of this release, the S3 endpoint, and
+public addresses (so package managers work). Private, link-local (cloud
+metadata) and CGNAT ranges are blocked.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "appwrite.componentName" (dict "root" . "component" "build") }}
+  namespace: {{ include "appwrite.builds.namespace" . }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "build") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  egress:
+    - to:
+        {{- toYaml .Values.networkPolicy.egress.dns | nindent 8 }}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Release.Namespace }}
+          podSelector:
+            {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "api" "orchestrator")) | nindent 12 }}
+      ports:
+        - port: 8080
+          protocol: TCP
+    {{- if regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" $s3Host }}
+    - to:
+        - ipBlock:
+            cidr: {{ $s3Host }}/32
+      ports:
+        - port: {{ $s3Port }}
+          protocol: TCP
+    {{- end }}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16, 127.0.0.0/8]
+        - ipBlock:
+            cidr: ::/0
+            except: ["fc00::/7", "fe80::/10", "::1/128"]
+    {{- with .Values.compute.builds.networkPolicy.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

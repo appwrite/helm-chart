@@ -1,0 +1,56 @@
+{{- if include "appwrite.builds.inCluster" . }}
+{{- $v := .Values.compute.orchestrator }}
+{{- $b := .Values.compute.builds }}
+{{- $cs := .Values.compute.secrets }}
+{{- $s3 := .Values.appwrite.storage.s3 }}
+{{- $name := include "appwrite.componentName" (dict "root" . "component" "orchestrator") }}
+{{- $env := list
+  (dict "name" "ORCHESTRATOR_BACKEND" "value" "kubernetes")
+  (dict "name" "PORT" "value" "8080")
+  (dict "name" "KUBE_NAMESPACE" "value" (include "appwrite.builds.namespace" .))
+  (dict "name" "KUBE_JOB_SERVICE_ACCOUNT" "value" (include "appwrite.componentName" (dict "root" . "component" "build")))
+  (dict "name" "JOB_SIDECAR_IMAGE" "value" (include "appwrite.image" (dict "root" . "image" $b.sidecarImage)))
+  (dict "name" "ARTIFACT_ENDPOINT" "value" (printf "http://%s.%s.svc:8080" $name .Release.Namespace))
+  (dict "name" "JOB_RETENTION" "value" $b.retention)
+  (dict "name" "KUBE_CPU_OVERCOMMIT" "value" (include "appwrite.envValue" $b.cpuOvercommit))
+  (dict "name" "KUBE_MEMORY_OVERCOMMIT" "value" (include "appwrite.envValue" $b.memoryOvercommit))
+  (dict "name" "SHUTDOWN_DRAIN_WAIT" "value" "0s")
+  (dict "name" "API_KEY_FILE" "value" "/var/run/secrets/orchestrator/api-key")
+  (dict "name" "S3_REGION" "value" $s3.region)
+  (dict "name" "S3_ACCESS_KEY_ID" "valueFrom" (include "appwrite.secretRef" (dict "root" . "existingSecret" $s3.existingSecret "key" $s3.accessKeyKey "defaultKey" "s3-access-key") | fromYaml))
+  (dict "name" "S3_SECRET_ACCESS_KEY" "valueFrom" (include "appwrite.secretRef" (dict "root" . "existingSecret" $s3.existingSecret "key" $s3.secretKeyKey "defaultKey" "s3-secret-key") | fromYaml)) }}
+{{- with $s3.endpoint }}
+{{- $env = append $env (dict "name" "S3_ENDPOINT" "value" .) }}
+{{- end }}
+{{- with $b.nodeSelector }}
+{{- $env = append $env (dict "name" "KUBE_WORKLOAD_NODE_SELECTOR" "value" (toJson .)) }}
+{{- end }}
+{{- with $b.tolerations }}
+{{- $env = append $env (dict "name" "KUBE_WORKLOAD_TOLERATIONS" "value" (toJson .)) }}
+{{- end }}
+{{- $probes := printf "readinessProbe:\n  httpGet:\n    path: /readyz\n    port: http\n  periodSeconds: 5\n  timeoutSeconds: 5\nlivenessProbe:\n  httpGet:\n    path: /livez\n    port: http\n  periodSeconds: 10\n  timeoutSeconds: 5\n  failureThreshold: 6" }}
+{{- $volumes := list
+  (dict "name" "tmp" "emptyDir" dict)
+  (dict "name" "api-key" "secret" (dict
+    "secretName" ($cs.existingSecret | default (include "appwrite.secretName" .))
+    "items" (list (dict "key" (ternary $cs.orchestratorSecretKey "orchestrator-secret" (not (empty $cs.existingSecret))) "path" "api-key")))) }}
+{{- $mounts := list
+  (dict "name" "tmp" "mountPath" "/tmp")
+  (dict "name" "api-key" "mountPath" "/var/run/secrets/orchestrator" "readOnly" true) }}
+{{- include "appwrite.deployment" (dict
+  "root" .
+  "component" "orchestrator"
+  "values" $v
+  "image" (include "appwrite.image" (dict "root" . "image" $v.image))
+  "pullPolicy" $v.image.pullPolicy
+  "env" (toYaml $env)
+  "ports" (list (dict "name" "http" "containerPort" 8080 "protocol" "TCP"))
+  "probes" $probes
+  "singleton" true
+  "volumeMounts" (toYaml $mounts)
+  "volumes" (toYaml $volumes)
+  "podAnnotations" (dict "checksum/secret" (include "appwrite.secret.data" . | sha256sum))
+  "serviceAccountName" $name
+  "automountServiceAccountToken" true
+) }}
+{{- end }}

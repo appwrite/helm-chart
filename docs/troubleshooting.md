@@ -32,7 +32,8 @@ allows six minutes; raise `api.startupProbe.failureThreshold` on slow storage.
 every pod that mounts it must run on the same node. Use ReadWriteMany or S3 to
 spread them ([storage.md](storage.md)), or give that node enough room.
 
-**Pods rejected by Pod Security admission.** All pods pass `restricted`. If
+**Pods rejected by Pod Security admission.** All pods in the Appwrite
+namespace pass `restricted`; build Jobs run in their own `baseline` namespace. If
 you overrode a security context, check it against the
 [restricted profile](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted).
 

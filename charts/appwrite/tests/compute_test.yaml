@@ -45,11 +45,12 @@ tests:
           path: data.s3-access-key
           value: a2V5
 
-  - it: points Appwrite at the external compute plane
+  - it: points Appwrite at an external orchestrator
     template: templates/configmap-env.yaml
     set:
       compute.enabled: true
       compute.executor.host: http://10.0.0.20:9900/v1
+      compute.orchestrator.mode: external
       compute.orchestrator.host: http://10.0.0.20:8080
       compute.functionsRuntimes: [node-22, python-3.12]
     asserts:
@@ -88,7 +89,7 @@ tests:
             valueFrom:
               secretKeyRef: {name: compute, key: orchestrator-secret}
 
-  - it: requires S3 for the external compute plane
+  - it: requires S3 for Functions and Sites
     template: templates/configmap-env.yaml
     set:
       appwrite.storage.device: local
@@ -99,13 +100,23 @@ tests:
       - failedTemplate:
           errorPattern: compute.enabled needs appwrite.storage.device=s3
 
-  - it: requires executor and orchestrator hosts
+  - it: requires the executor host
     template: templates/configmap-env.yaml
     set:
       compute.enabled: true
     asserts:
       - failedTemplate:
           errorPattern: compute.executor.host is required
+
+  - it: requires the host of an external orchestrator
+    template: templates/configmap-env.yaml
+    set:
+      compute.enabled: true
+      compute.executor.host: http://e/v1
+      compute.orchestrator.mode: external
+    asserts:
+      - failedTemplate:
+          errorPattern: compute.orchestrator.host is required when compute.orchestrator.mode is external
 
   - it: requires a bucket and credentials
     template: templates/configmap-env.yaml

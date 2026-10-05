@@ -1,0 +1,220 @@
+suite: in-cluster builds
+templates:
+  - templates/configmap-env.yaml
+  - templates/orchestrator/deployment.yaml
+  - templates/orchestrator/service.yaml
+  - templates/orchestrator/rbac.yaml
+  - templates/builds/namespace.yaml
+  - templates/builds/serviceaccount.yaml
+  - templates/builds/networkpolicy.yaml
+  - templates/networkpolicy/edge.yaml
+  - templates/networkpolicy/orchestrator.yaml
+release:
+  name: aw
+  namespace: apps
+values:
+  - values/required.yaml
+set:
+  appwrite.storage.device: s3
+  appwrite.storage.s3.endpoint: http://10.1.2.3:9000
+  appwrite.storage.s3.bucket: files
+  appwrite.storage.s3.existingSecret: s3
+  compute.enabled: true
+  compute.executor.host: http://10.0.0.20:9900/v1
+tests:
+  - it: points Appwrite at the orchestrator and gives builds the API Service
+    template: templates/configmap-env.yaml
+    asserts:
+      - isSubset:
+          path: data
+          content:
+            _APP_JOBS_HOST: http://aw-appwrite-orchestrator:8080
+            _APP_JOBS_ENDPOINT: http://aw-appwrite-api.apps.svc
+
+  - it: adds a non-default API port to the build endpoint
+    template: templates/configmap-env.yaml
+    set:
+      api.service.port: 8080
+    asserts:
+      - equal:
+          path: data._APP_JOBS_ENDPOINT
+          value: http://aw-appwrite-api.apps.svc:8080
+
+  - it: runs the orchestrator with the Kubernetes backend
+    template: templates/orchestrator/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/open-runtimes/orchestrator/jobs-service:2.2.2
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: aw-appwrite-orchestrator
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: ORCHESTRATOR_BACKEND, value: kubernetes}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_NAMESPACE, value: apps-builds}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_JOB_SERVICE_ACCOUNT, value: aw-appwrite-build}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: ARTIFACT_ENDPOINT, value: "http://aw-appwrite-orchestrator.apps.svc:8080"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_MEMORY_OVERCOMMIT, value: "8"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: S3_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef: {name: s3, key: s3-secret-key}
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: api-key
+            secret:
+              secretName: aw-appwrite
+              items: [{key: orchestrator-secret, path: api-key}]
+
+  - it: passes build scheduling to the orchestrator as JSON
+    template: templates/orchestrator/deployment.yaml
+    set:
+      compute.builds.nodeSelector: {pool: builds}
+      compute.builds.tolerations: [{key: builds, operator: Exists, effect: NoSchedule}]
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_WORKLOAD_NODE_SELECTOR, value: '{"pool":"builds"}'}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_WORKLOAD_TOLERATIONS, value: '[{"effect":"NoSchedule","key":"builds","operator":"Exists"}]'}
+
+  - it: reads the API key from an existing Secret
+    template: templates/orchestrator/deployment.yaml
+    set:
+      compute.secrets.existingSecret: compute
+      compute.secrets.orchestratorSecretKey: jobs
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: api-key
+            secret:
+              secretName: compute
+              items: [{key: jobs, path: api-key}]
+
+  - it: grants the orchestrator Jobs and pod reads in the build namespace only
+    template: templates/orchestrator/rbac.yaml
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.namespace
+          value: apps-builds
+      - equal:
+          path: rules[0].resources
+          value: [jobs]
+
+  - it: creates the build namespace under the baseline profile
+    template: templates/builds/namespace.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: apps-builds
+      - equal:
+          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          value: baseline
+
+  - it: uses an existing build namespace
+    template: templates/builds/namespace.yaml
+    set:
+      compute.builds.namespace: ci-builds
+      compute.builds.createNamespace: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: gives build pods no ServiceAccount token
+    template: templates/builds/serviceaccount.yaml
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+      - equal:
+          path: metadata.namespace
+          value: apps-builds
+
+  - it: isolates build pods and allows an S3 endpoint given as an IP
+    template: templates/builds/networkpolicy.yaml
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: apps-builds
+      - notExists:
+          path: spec.ingress
+      - contains:
+          path: spec.egress
+          content:
+            to: [{ipBlock: {cidr: 10.1.2.3/32}}]
+            ports: [{port: 9000, protocol: TCP}]
+      - contains:
+          path: spec.egress[3].to[0].ipBlock.except
+          content: 169.254.0.0/16
+
+  - it: adds no S3 rule for a hostname endpoint
+    template: templates/builds/networkpolicy.yaml
+    set:
+      appwrite.storage.s3.endpoint: https://s3.example.com
+    asserts:
+      - lengthEqual:
+          path: spec.egress
+          count: 3
+
+  - it: lets build pods reach the API and the orchestrator
+    template: templates/networkpolicy/orchestrator.yaml
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - contains:
+          path: spec.ingress[0].from
+          content:
+            namespaceSelector:
+              matchLabels: {kubernetes.io/metadata.name: apps-builds}
+
+  - it: lets build pods reach the API when entry points are restricted
+    template: templates/networkpolicy/edge.yaml
+    set:
+      networkPolicy.enabled: true
+      networkPolicy.ingress.from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: traefik}}}]
+    asserts:
+      - contains:
+          path: spec.ingress
+          content:
+            ports: [{port: http}]
+            from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: apps-builds}}}]
+
+  - it: refuses to run builds in the release namespace
+    template: templates/configmap-env.yaml
+    set:
+      compute.builds.namespace: apps
+    asserts:
+      - failedTemplate:
+          errorPattern: compute.builds.namespace must differ from the release namespace
+
+  - it: renders nothing for an external orchestrator
+    template: templates/orchestrator/deployment.yaml
+    set:
+      compute.orchestrator.mode: external
+      compute.orchestrator.host: http://10.0.0.20:8080
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -32,3 +32,12 @@ metadata:
     {{- include "appwrite.labels" .root | nindent 4 }}
   {{- with include "appwrite.annotations" (dict "root" .root) | trim }}{{ . | nindent 2 }}{{ end }}
 {{- end }}
+
+{{/*
+Peer matching every pod in the build namespace.
+*/}}
+{{- define "appwrite.networkPolicy.buildsPeer" -}}
+namespaceSelector:
+  matchLabels:
+    kubernetes.io/metadata.name: {{ include "appwrite.builds.namespace" . }}
+{{- end }}

@@ -22,6 +22,9 @@ Usage: include "appwrite.deployment" (dict
   "initContainers" "<yaml list>" init containers (rendered YAML)
   "preStopSleepSeconds" 0        sleep before shutdown
   "annotations" (dict)           extra Deployment annotations
+  "podAnnotations" (dict)        pod annotations, e.g. config checksums (non-Appwrite components)
+  "serviceAccountName" ""        ServiceAccount other than the chart's shared one
+  "automountServiceAccountToken" false   mount its token (only components that call the Kubernetes API)
 )
 */}}
 {{- define "appwrite.deployment" -}}
@@ -49,7 +52,7 @@ Usage: include "appwrite.deployment" (dict
 {{- with .role }}
 {{- $_ := set $podLabels "appwrite/role" . }}
 {{- end }}
-{{- $podAnnotations := dict }}
+{{- $podAnnotations := .podAnnotations | default dict }}
 {{- if .appwrite }}
 {{- $podAnnotations = include "appwrite.pod.checksums" $root | fromYaml }}
 {{- end }}
@@ -83,8 +86,8 @@ spec:
     metadata:
       {{- include "appwrite.pod.metadata" (dict "root" $root "values" $v "parent" $parent "component" .component "labels" $podLabels "annotations" $podAnnotations) | trim | nindent 6 }}
     spec:
-      serviceAccountName: {{ include "appwrite.serviceAccountName" $root }}
-      automountServiceAccountToken: false
+      serviceAccountName: {{ .serviceAccountName | default (include "appwrite.serviceAccountName" $root) }}
+      automountServiceAccountToken: {{ .automountServiceAccountToken | default false }}
       enableServiceLinks: false
       {{- with include "appwrite.imagePullSecrets" $root | trim }}{{ . | nindent 6 }}{{ end }}
       {{- with $podSecurityContext }}

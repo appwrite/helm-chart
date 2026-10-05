@@ -2,7 +2,7 @@
 
 ## Pod Security Standards
 
-Every pod the chart runs passes the Kubernetes
+Every pod in the Appwrite namespace passes the Kubernetes
 [`restricted` Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted),
 and CI installs the chart into a namespace that enforces it. You can do the same:
 
@@ -22,7 +22,7 @@ What that means for each pod:
 | `capabilities` | drop `ALL` |
 | `seccompProfile` | `RuntimeDefault` |
 | `readOnlyRootFilesystem` | `true`; writable paths are `emptyDir` volumes |
-| ServiceAccount token | not mounted |
+| ServiceAccount token | not mounted, except for the orchestrator (`compute.enabled`) |
 
 | Component | User | Notes |
 | --- | --- | --- |
@@ -36,6 +36,7 @@ What that means for each pod:
 | Assistant | 1000 | |
 | Autogravity | 65532 | |
 | Embedding | 10001 | Models are kept on their own PersistentVolumeClaim. |
+| Orchestrator | `nonroot` (65532) | The only pod with a ServiceAccount token, for its Role in the build namespace. |
 
 Every security context is a value you can override per component
 (`<component>.podSecurityContext`, `<component>.containerSecurityContext`). For
@@ -44,12 +45,16 @@ top level apply to every component that doesn't set its own.
 
 ### Functions and Sites
 
-Appwrite runs functions and sites with the
-[open-runtimes executor](https://github.com/open-runtimes/executor), which needs
-a Docker daemon. Mounting a node's Docker socket, or running Docker-in-Docker,
-gives that pod root on the node, so the chart doesn't do either. Run the
-executor on a separate Docker host and point the chart at it; see
-[executor.md](executor.md).
+Builds run user-supplied build commands, possibly as root, so they can't
+pass `restricted`. The chart runs them in a namespace of their own under
+`baseline`, which still forbids privileged pods and host access, without
+ServiceAccount tokens and behind a NetworkPolicy.
+
+Executions need a Docker daemon: the
+[open-runtimes executor](https://github.com/open-runtimes/executor) starts a
+container per runtime. Mounting a node's Docker socket, or running
+Docker-in-Docker, gives that pod root on the node, so the chart runs neither.
+The executor runs on a separate Docker host; see [executor.md](executor.md).
 
 ## Credentials
 
@@ -62,7 +67,7 @@ The chart keeps credentials in a Secret named after the release:
 | `_APP_GEO_SECRET` | Authenticating Appwrite to the geo service. |
 | `postgres-password`, `redis-password`, `clickhouse-password` | Built-in datastores, or an external Redis or ClickHouse with an inline password. |
 | `db-password`, `documentsdb-password`, `vectorsdb-password` | External databases with an inline password. |
-| `executor-secret`, `orchestrator-secret` | The external executor and orchestrator (`compute.enabled`). |
+| `executor-secret`, `orchestrator-secret` | The executor and the orchestrator (`compute.enabled`). |
 | `s3-access-key`, `s3-secret-key` | S3 storage with inline keys. |
 | `smtp-password`, `openai-api-key` | SMTP and the assistant, when set inline. |
 
@@ -144,6 +149,12 @@ CNI that enforces them (Calico, Cilium, kindnet, and most managed offerings).
 | `<fullname>-datastores` | PostgreSQL, Redis, ClickHouse | Appwrite pods of the release (label `appwrite/datastore-client: "true"`) |
 | `<fullname>-background` | workers and tasks | nothing |
 | `<fullname>-mqtt` | MQTT broker (`mqtt.enabled`) | any source, on the MQTT ports |
+| `<fullname>-orchestrator` | orchestrator (`compute.enabled`) | pods of the release and build pods |
+
+With in-cluster builds, `<fullname>-edge` also admits build pods to the API.
+Build pods get their own policy in the build namespace, `<fullname>-build`,
+on by default (`compute.builds.networkPolicy.enabled`); see
+[executor.md](executor.md#isolation).
 
 Two more limit outgoing traffic:
 

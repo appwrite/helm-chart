@@ -101,12 +101,17 @@ the env ConfigMap. Precedence, lowest first:
 {{- $_ := set $computed "_APP_STORAGE_S3_BUCKET" $storage.s3.bucket }}
 {{- end }}
 
-{{- /* External compute plane (Functions and Sites) */}}
+{{- /* Compute plane (Functions and Sites): builds in the cluster or on a Docker host, executions on a Docker host */}}
 {{- $compute := .Values.compute }}
 {{- if $compute.enabled }}
 {{- $_ := set $computed "_APP_EXECUTOR_HOST" $compute.executor.host }}
+{{- if include "appwrite.builds.inCluster" . }}
+{{- $_ := set $computed "_APP_JOBS_HOST" (printf "http://%s:8080" (include "appwrite.componentName" (dict "root" . "component" "orchestrator"))) }}
+{{- $_ := set $computed "_APP_JOBS_ENDPOINT" ($compute.appwriteEndpoint | default (include "appwrite.api.url" .)) }}
+{{- else }}
 {{- $_ := set $computed "_APP_JOBS_HOST" $compute.orchestrator.host }}
 {{- $_ := set $computed "_APP_JOBS_ENDPOINT" ($compute.appwriteEndpoint | default (printf "%s://%s" (ternary "https" "http" $v.forceHttps) $domain)) }}
+{{- end }}
 {{- end }}
 {{- with $compute.functionsRuntimes }}
 {{- $_ := set $computed "_APP_FUNCTIONS_RUNTIMES" (join "," .) }}

@@ -15,8 +15,9 @@
 - Ingress or Gateway API routes for the API, console, realtime, function and
   site previews and custom domains.
 - Worker topologies from one combined worker to one Deployment per queue.
-- Functions and Sites through an executor on a separate Docker host, so the
-  cluster never runs privileged pods.
+- Functions and Sites: builds run in the cluster as unprivileged Jobs in their
+  own namespace, executions on an executor on a Docker host, so the cluster
+  never runs privileged pods.
 - Credentials generated once and kept, data migrations on upgrade, and guards
   against changing the encryption key or downgrading.
 
@@ -68,15 +69,16 @@ flowchart LR
   redis -- queues --> workers[workers]
   tasks[scheduler, maintenance,\ninterval] --> redis
   workers --> pg
-  api -. "optional" .-> compute[[executor and orchestrator\non a Docker host]]
+  api -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
+  api -. "executions" .-> executor[[executor\non a Docker host]]
 ```
 
 See the [architecture guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md).
 
 ## Not included
 
-- **Functions and Sites runtime.** Appwrite's executor needs a Docker daemon;
-  run it next to the cluster ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md)).
+- **The executor for Functions and Sites.** It needs a Docker daemon, so it
+  runs on a Docker host next to the cluster; builds run in the cluster ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md)).
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
   ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md)).
@@ -92,7 +94,7 @@ See the [architecture guide](https://github.com/appwrite-labs/helm-chart/blob/ma
 | [Networking, TLS and domains](https://github.com/appwrite-labs/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
 | [External databases](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
 | [Storage](https://github.com/appwrite-labs/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md) | External executor and orchestrator |
+| [Functions and Sites](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
 | [Optional components](https://github.com/appwrite-labs/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
 | [Security](https://github.com/appwrite-labs/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
 | [Upgrading](https://github.com/appwrite-labs/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |

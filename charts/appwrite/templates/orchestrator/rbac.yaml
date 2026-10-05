@@ -1,0 +1,49 @@
+{{- if include "appwrite.builds.inCluster" . }}
+{{- $name := include "appwrite.componentName" (dict "root" . "component" "orchestrator") }}
+{{- /* The orchestrator calls the Kubernetes API to run builds: it gets its own ServiceAccount, allowed only to manage Jobs and read their pods in the build namespace. */}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "orchestrator") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "appwrite.builds.namespace" . }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "orchestrator") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+rules:
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "appwrite.builds.namespace" . }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "orchestrator") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}
+{{- end }}

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# End-to-end test for Functions against an external executor and orchestrator.
+# End-to-end test for Functions: builds through the orchestrator, executions
+# on the executor.
 #
 # Creates a Node.js function, uploads its code, waits for the orchestrator to
 # build it, then executes it through the executor and checks the response.

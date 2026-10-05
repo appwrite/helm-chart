@@ -192,3 +192,26 @@ reads as floats) render as integers, so 30000000 doesn't become 3e+07.
 {{- . | toString }}
 {{- end }}
 {{- end }}
+
+{{/*
+"true" when builds run in the cluster: compute is on and the chart runs the
+orchestrator.
+*/}}
+{{- define "appwrite.builds.inCluster" -}}
+{{- if and .Values.compute.enabled (eq .Values.compute.orchestrator.mode "cluster") }}true{{ end }}
+{{- end }}
+
+{{/*
+Namespace build Jobs run in.
+*/}}
+{{- define "appwrite.builds.namespace" -}}
+{{- .Values.compute.builds.namespace | default (printf "%s-builds" .Release.Namespace) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+In-cluster URL of the API Service, reachable from other namespaces.
+*/}}
+{{- define "appwrite.api.url" -}}
+{{- $port := int .Values.api.service.port }}
+{{- printf "http://%s.%s.svc%s" (include "appwrite.api.host" .) .Release.Namespace (ternary "" (printf ":%d" $port) (eq $port 80)) }}
+{{- end }}

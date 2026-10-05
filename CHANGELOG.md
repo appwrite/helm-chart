@@ -19,8 +19,10 @@ First release of the chart, for Appwrite 2.3.0.
 - Combined, separate and grouped worker topologies; split schedulers.
 - Ingress and Gateway API HTTPRoutes for the API, console, realtime, function
   and site previews, and custom domains.
-- S3 storage, and Functions and Sites through an external open-runtimes
-  executor and orchestrator.
+- S3 storage, and Functions and Sites: builds run in the cluster as
+  Kubernetes Jobs through the open-runtimes orchestrator, in their own
+  `baseline` namespace behind a NetworkPolicy; executions run on an external
+  open-runtimes executor.
 - Optional browser, assistant, autogravity, embedding and MQTT components.
 - Opt-in NetworkPolicies, PodDisruptionBudgets, HorizontalPodAutoscalers and
   topology spread.

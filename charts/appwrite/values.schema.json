@@ -1268,11 +1268,93 @@
       "type": "object",
       "properties": {
         "appwriteEndpoint": {
-          "description": "URL build containers use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Its host must be `appwrite.domain`. Defaults to `https://<domain>` (`http` when `forceHttps` is off).",
+          "description": "URL build Jobs use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Defaults to the API Service in the cluster, or, with an external orchestrator, to `https://<domain>` (`http` when `forceHttps` is off), whose host must then be `appwrite.domain`.",
           "type": "string"
         },
+        "builds": {
+          "type": "object",
+          "properties": {
+            "cpuOvercommit": {
+              "description": "Divides each build's CPU limit to get its CPU request (`KUBE_CPU_OVERCOMMIT`). Appwrite gives builds up to 8 CPUs; the default requests 1.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "createNamespace": {
+              "description": "Create the namespace, labelled for the `baseline` Pod Security Standard. Set to false to create it yourself.",
+              "type": "boolean"
+            },
+            "memoryOvercommit": {
+              "description": "Divides each build's memory limit to get its memory request (`KUBE_MEMORY_OVERCOMMIT`). Appwrite gives builds up to 8 GiB; the default requests 1 GiB.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "namespace": {
+              "description": "Namespace for build Jobs. Defaults to `<release namespace>-builds`. Use a different one per release when several releases share a namespace.",
+              "type": "string"
+            },
+            "networkPolicy": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "description": "Restrict build pods' traffic: no incoming connections; outgoing only to DNS, the API, the orchestrator, the S3 endpoint and public addresses. Takes effect only with a CNI that enforces NetworkPolicies.",
+                  "type": "boolean"
+                },
+                "extraEgress": {
+                  "description": "Extra egress rules (NetworkPolicyEgressRule) for build pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a private package registry.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "nodeSelector": {
+              "description": "Node selector for build pods.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "retention": {
+              "description": "How long finished build Jobs are kept (`JOB_RETENTION`).",
+              "type": "string"
+            },
+            "sidecarImage": {
+              "type": "object",
+              "properties": {
+                "digest": {
+                  "description": "Image digest.",
+                  "type": "string"
+                },
+                "registry": {
+                  "description": "Image registry.",
+                  "type": "string"
+                },
+                "repository": {
+                  "description": "Image repository of the sidecar that moves sources, outputs and caches for each build.",
+                  "type": "string"
+                },
+                "tag": {
+                  "description": "Image tag.",
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "tolerations": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Tolerations for build pods."
+            }
+          },
+          "additionalProperties": false
+        },
         "enabled": {
-          "description": "Enable Functions and Sites through an external executor and orchestrator.",
+          "description": "Enable Functions and Sites. Needs `appwrite.storage.device: s3` and an external executor (`compute.executor.host`).",
           "type": "boolean"
         },
         "executor": {
@@ -1295,9 +1377,123 @@
         "orchestrator": {
           "type": "object",
           "properties": {
+            "affinity": {
+              "type": "object",
+              "description": "Affinity. Empty inherits `defaults.affinity`."
+            },
+            "containerSecurityContext": {
+              "type": "object",
+              "description": "Container security context."
+            },
             "host": {
-              "description": "URL of the open-runtimes orchestrator API that runs builds (`_APP_JOBS_HOST`), e.g. `http://10.0.0.20:8080`.",
+              "description": "URL of an external orchestrator's API (`_APP_JOBS_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:8080`.",
               "type": "string"
+            },
+            "image": {
+              "type": "object",
+              "properties": {
+                "digest": {
+                  "description": "Image digest.",
+                  "type": "string"
+                },
+                "pullPolicy": {
+                  "description": "Image pull policy.",
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "IfNotPresent",
+                    "Never"
+                  ]
+                },
+                "registry": {
+                  "description": "Image registry.",
+                  "type": "string"
+                },
+                "repository": {
+                  "description": "Image repository: the orchestrator's jobs service, with the Kubernetes backend.",
+                  "type": "string"
+                },
+                "tag": {
+                  "description": "Image tag.",
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "mode": {
+              "description": "Where builds run. `cluster`: the chart runs the orchestrator, which starts every build as a Kubernetes Job in `compute.builds.namespace`. `external`: an orchestrator you run on a Docker host, at `host`.",
+              "type": "string",
+              "enum": [
+                "cluster",
+                "external"
+              ]
+            },
+            "nodeSelector": {
+              "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "podAnnotations": {
+              "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "podLabels": {
+              "description": "Pod labels, merged over `defaults.podLabels`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "podSecurityContext": {
+              "type": "object",
+              "description": "Pod security context. The image's `nonroot` user is UID 65532."
+            },
+            "priorityClassName": {
+              "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+              "type": "string"
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "claims": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "additionalProperties": false,
+              "description": "Resource requests and limits."
+            },
+            "tolerations": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Tolerations. Empty inherits `defaults.tolerations`."
             }
           },
           "additionalProperties": false
@@ -1314,7 +1510,7 @@
               "type": "string"
             },
             "existingSecret": {
-              "description": "Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the same values on the Docker host.",
+              "description": "Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the executor (and an external orchestrator) with the same values.",
               "type": "string"
             },
             "orchestratorSecret": {
@@ -1329,7 +1525,7 @@
           "additionalProperties": false
         },
         "sitesRuntimes": {
-          "description": "Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list.",
+          "description": "Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list. Sites build with `node-22`, so keep it in the list.",
           "type": "array",
           "items": {
             "type": "string"

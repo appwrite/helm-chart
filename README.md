@@ -27,13 +27,14 @@ local install you can try in ten minutes, and a real one step by step.
 
 ## Highlights
 
-- Every pod passes the `restricted` Pod Security Standard.
+- Every Appwrite pod passes the `restricted` Pod Security Standard.
 - Built-in PostgreSQL, Redis and ClickHouse, or your own managed services.
 - Ingress and Gateway API routes, including function and site previews and
   custom domains.
 - Combined, per-queue or grouped workers.
-- Functions and Sites through an executor on a separate Docker host: no
-  privileged pods, no Docker socket in the cluster.
+- Functions and Sites: builds run in the cluster as unprivileged Kubernetes
+  Jobs in their own namespace; executions run on an executor on a Docker host,
+  so no pod gets a Docker socket.
 - Credentials generated once and kept; data migrations on upgrade.
 
 ## Repository layout

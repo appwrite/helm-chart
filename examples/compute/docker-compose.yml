@@ -1,12 +1,11 @@
-# Appwrite's compute plane (Functions and Sites) for a Kubernetes install.
+# The executor for Appwrite's Functions and Sites on a Kubernetes install.
 #
 # Run this on a Docker host that the Appwrite pods can reach over a private
-# network. It runs:
-#   - the open-runtimes executor, which runs function and site runtimes;
-#   - the open-runtimes orchestrator, which runs builds.
-# Both create containers through the host's Docker socket, which is why they
-# don't run inside Kubernetes. Files move through the same S3 bucket Appwrite
-# uses (appwrite.storage.device: s3).
+# network. The executor runs function and site runtimes as containers through
+# the host's Docker socket, which is why it doesn't run inside Kubernetes.
+# Builds run in the cluster; with compute.orchestrator.mode=external, start
+# the orchestrator here too: docker compose --profile external-builds up -d.
+# Files move through the S3 bucket Appwrite uses (appwrite.storage.device: s3).
 #
 #   cp .env.example .env    # then fill it in
 #   docker compose up -d
@@ -14,8 +13,7 @@
 # Then set in the chart:
 #   compute.enabled: true
 #   compute.executor.host: http://<this-host>:${EXECUTOR_PORT}/v1
-#   compute.orchestrator.host: http://<this-host>:${ORCHESTRATOR_PORT}
-# and use the same executor and orchestrator secrets (compute.secrets).
+# and use the same executor secret (compute.secrets).
 
 name: appwrite-compute
 
@@ -59,7 +57,10 @@ services:
       timeout: 3s
       retries: 10
 
+  # Only with compute.orchestrator.mode=external: builds on this host
+  # instead of in the cluster.
   orchestrator:
+    profiles: [external-builds]
     image: ghcr.io/open-runtimes/orchestrator/orchestrator:2.2.2
     container_name: appwrite-orchestrator
     restart: unless-stopped
@@ -82,8 +83,8 @@ services:
       API_KEY_FILE: /run/secrets/api-key
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_REGION: ${S3_REGION:-us-east-1}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-}
     healthcheck:
       test: ["CMD", "/ko-app/orchestrator", "-check-ready"]
       interval: 10s

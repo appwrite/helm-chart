@@ -1,7 +1,8 @@
 name: Nightly end-to-end
 
-# Functions against an external executor and orchestrator, which needs a
-# Docker daemon next to the cluster and takes longer than PR checks should.
+# Functions built in the cluster and executed on an external executor, which
+# needs a Docker daemon next to the cluster and takes longer than PR checks
+# should.
 on:
   schedule:
     - cron: "17 3 * * *"
@@ -56,7 +57,7 @@ jobs:
             kubectl -n appwrite logs "$pod" --all-containers --tail=200 || true
             echo "::endgroup::"
           done
-          for c in aw-executor aw-orchestrator aw-s3; do
+          for c in aw-executor aw-s3; do
             echo "::group::$c"
             docker logs "$c" --tail=200 || true
             echo "::endgroup::"

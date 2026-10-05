@@ -42,7 +42,7 @@ annotations:
     - kind: added
       description: Ingress and Gateway API routes, including function and site previews and custom domains
     - kind: added
-      description: S3 storage and Functions and Sites through an external executor and orchestrator
+      description: S3 storage, and Functions and Sites with builds as Kubernetes Jobs and an external executor
     - kind: added
       description: Optional browser, assistant, autogravity, embedding and MQTT components
     - kind: added
@@ -58,6 +58,8 @@ annotations:
       image: ghcr.io/appwrite/autogravity:0.0.11
     - name: browser
       image: docker.io/appwrite/browser:0.3.4
+    - name: builds
+      image: ghcr.io/open-runtimes/orchestrator/job-sidecar:2.2.2
     - name: clickhouse
       image: docker.io/clickhouse/clickhouse-server:26.4.3-alpine
     - name: console
@@ -66,6 +68,8 @@ annotations:
       image: docker.io/appwrite/embedding:0.3.1
     - name: geo
       image: docker.io/appwrite/geo:0.3.1
+    - name: orchestrator
+      image: ghcr.io/open-runtimes/orchestrator/jobs-service:2.2.2
     - name: postgresql
       image: docker.io/appwrite/postgres:0.1.0
     - name: redis

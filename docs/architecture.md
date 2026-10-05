@@ -30,7 +30,8 @@ flowchart LR
   api --- storage[(/storage volume\nor S3)]
   worker --- storage
 
-  worker -. "builds and executions\n(optional, external)" .-> executor[[open-runtimes executor\non a Docker host]]
+  worker -. "builds (optional)" .-> orchestrator[orchestrator] -.-> builds[[build Jobs\nin their own namespace]]
+  worker -. "executions (optional)" .-> executor[[open-runtimes executor\non a Docker host]]
   api -. "function and site traffic" .-> executor
 ```
 
@@ -47,6 +48,7 @@ flowchart LR
 | `postgresql` | `appwrite/postgres` | `postgres` | One replica | Built-in database. Optional. |
 | `redis` | `redis` | `redis-server` | One replica | Cache, queues, pub/sub and locks. Optional. |
 | `clickhouse` | `clickhouse/clickhouse-server` | image default | One replica | Usage statistics and execution logs. Optional. |
+| `orchestrator` | `open-runtimes/orchestrator/jobs-service` | image default | One replica | Runs builds of functions and sites as Jobs in the build namespace. With `compute.enabled`. |
 
 The scheduler, maintenance and interval tasks have no leader election in
 Appwrite, so a second copy would do the same work twice. The chart always runs
@@ -191,13 +193,16 @@ says it exists, so a pod that hasn't cached it yet just regenerates it.
 
 ## Security
 
-All pods run as non-root with a read-only root filesystem, no capabilities and
-the `RuntimeDefault` seccomp profile, so they're admitted under the Pod
-Security Standard `restricted` profile. Writable paths are `emptyDir`s.
+All pods in the Appwrite namespace run as non-root with a read-only root
+filesystem, no capabilities and the `RuntimeDefault` seccomp profile, so
+they're admitted under the Pod Security Standard `restricted` profile.
+Writable paths are `emptyDir`s. Build Jobs run in their own namespace under
+`baseline` ([executor.md](executor.md#isolation)).
 
 - The Appwrite image runs as `www-data` (UID 82). The API and realtime listen
   on 8080 instead of 80.
 - The geo image listens on port 80, so its pod sets the namespaced sysctl
   `net.ipv4.ip_unprivileged_port_start=0`, which the `restricted` profile allows.
 - ServiceAccount tokens aren't mounted; nothing in Appwrite uses the
-  Kubernetes API, and the chart creates no RBAC.
+  Kubernetes API. The only RBAC is the orchestrator's Role, limited to Jobs
+  and their pods in the build namespace.

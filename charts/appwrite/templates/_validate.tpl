@@ -89,11 +89,15 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- if not $v.compute.executor.host }}
 {{- $errors = append $errors "compute.executor.host is required when compute.enabled is true." }}
 {{- end }}
+{{- if eq $v.compute.orchestrator.mode "external" }}
 {{- if not $v.compute.orchestrator.host }}
-{{- $errors = append $errors "compute.orchestrator.host is required when compute.enabled is true." }}
+{{- $errors = append $errors "compute.orchestrator.host is required when compute.orchestrator.mode is external." }}
+{{- end }}
+{{- else if and $v.compute.builds.createNamespace (eq (include "appwrite.builds.namespace" .) .Release.Namespace) }}
+{{- $errors = append $errors "compute.builds.namespace must differ from the release namespace: build pods need the baseline Pod Security Standard, so they get a namespace of their own." }}
 {{- end }}
 {{- if ne $storage.device "s3" }}
-{{- $errors = append $errors "compute.enabled needs appwrite.storage.device=s3: the executor and orchestrator run outside the cluster and can't reach the /storage volume." }}
+{{- $errors = append $errors "compute.enabled needs appwrite.storage.device=s3: builds and the executor exchange code and build output through object storage." }}
 {{- end }}
 {{- end }}
 {{- if and $v.assistant.enabled (not (or $v.assistant.openaiApiKey $v.assistant.existingSecret)) }}

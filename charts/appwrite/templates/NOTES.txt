@@ -51,18 +51,24 @@ First steps
 
 {{- if .Values.compute.enabled }}
 
-Functions and Sites run on the executor at {{ .Values.compute.executor.host }}
-and build on the orchestrator at {{ .Values.compute.orchestrator.host }}.
+Functions and Sites execute on the executor at {{ .Values.compute.executor.host }}.
+{{- if include "appwrite.builds.inCluster" . }}
+Builds run as Jobs in namespace "{{ include "appwrite.builds.namespace" . }}".
+{{- else }}
+Builds run on the orchestrator at {{ .Values.compute.orchestrator.host }}.
+{{- end }}
 {{- if not .Values.compute.secrets.existingSecret }}
-Give them the same secrets as Appwrite:
+Give the {{ if include "appwrite.builds.inCluster" . }}executor{{ else }}executor and orchestrator{{ end }} the same {{ if include "appwrite.builds.inCluster" . }}secret{{ else }}secrets{{ end }} as Appwrite:
 
   kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} -o jsonpath='{.data.executor-secret}' | base64 -d
+{{- if not (include "appwrite.builds.inCluster" .) }}
   kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} -o jsonpath='{.data.orchestrator-secret}' | base64 -d
+{{- end }}
 {{- end }}
 {{- else }}
 
-Functions and Sites are off. They need an executor and orchestrator on a
-Docker host: {{ $docs }}/executor.md
+Functions and Sites are off. Builds can run in the cluster; executions need an
+executor on a Docker host: {{ $docs }}/executor.md
 {{- end }}
 {{- if not $v.smtp.host }}
 

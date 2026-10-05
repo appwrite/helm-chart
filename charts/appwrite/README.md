@@ -15,8 +15,9 @@ Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, cons
 - Ingress or Gateway API routes for the API, console, realtime, function and
   site previews and custom domains.
 - Worker topologies from one combined worker to one Deployment per queue.
-- Functions and Sites through an executor on a separate Docker host, so the
-  cluster never runs privileged pods.
+- Functions and Sites: builds run in the cluster as unprivileged Jobs in their
+  own namespace, executions on an executor on a Docker host, so the cluster
+  never runs privileged pods.
 - Credentials generated once and kept, data migrations on upgrade, and guards
   against changing the encryption key or downgrading.
 
@@ -68,15 +69,16 @@ flowchart LR
   redis -- queues --> workers[workers]
   tasks[scheduler, maintenance,\ninterval] --> redis
   workers --> pg
-  api -. "optional" .-> compute[[executor and orchestrator\non a Docker host]]
+  api -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
+  api -. "executions" .-> executor[[executor\non a Docker host]]
 ```
 
 See the [architecture guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md).
 
 ## Not included
 
-- **Functions and Sites runtime.** Appwrite's executor needs a Docker daemon;
-  run it next to the cluster ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md)).
+- **The executor for Functions and Sites.** It needs a Docker daemon, so it
+  runs on a Docker host next to the cluster; builds run in the cluster ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md)).
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
   ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md)).
@@ -92,7 +94,7 @@ See the [architecture guide](https://github.com/appwrite-labs/helm-chart/blob/ma
 | [Networking, TLS and domains](https://github.com/appwrite-labs/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
 | [External databases](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
 | [Storage](https://github.com/appwrite-labs/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md) | External executor and orchestrator |
+| [Functions and Sites](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
 | [Optional components](https://github.com/appwrite-labs/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
 | [Security](https://github.com/appwrite-labs/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
 | [Upgrading](https://github.com/appwrite-labs/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
@@ -324,17 +326,45 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | clickhouse.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | commonAnnotations | object | `{}` | Annotations added to every resource rendered by the chart. |
 | commonLabels | object | `{}` | Labels added to every resource rendered by the chart. |
-| compute.appwriteEndpoint | string | `""` | URL build containers use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Its host must be `appwrite.domain`. Defaults to `https://<domain>` (`http` when `forceHttps` is off). |
-| compute.enabled | bool | `false` | Enable Functions and Sites through an external executor and orchestrator. |
+| compute.appwriteEndpoint | string | `""` | URL build Jobs use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Defaults to the API Service in the cluster, or, with an external orchestrator, to `https://<domain>` (`http` when `forceHttps` is off), whose host must then be `appwrite.domain`. |
+| compute.builds.cpuOvercommit | int | `8` | Divides each build's CPU limit to get its CPU request (`KUBE_CPU_OVERCOMMIT`). Appwrite gives builds up to 8 CPUs; the default requests 1. |
+| compute.builds.createNamespace | bool | `true` | Create the namespace, labelled for the `baseline` Pod Security Standard. Set to false to create it yourself. |
+| compute.builds.memoryOvercommit | int | `8` | Divides each build's memory limit to get its memory request (`KUBE_MEMORY_OVERCOMMIT`). Appwrite gives builds up to 8 GiB; the default requests 1 GiB. |
+| compute.builds.namespace | string | `""` | Namespace for build Jobs. Defaults to `<release namespace>-builds`. Use a different one per release when several releases share a namespace. |
+| compute.builds.networkPolicy.enabled | bool | `true` | Restrict build pods' traffic: no incoming connections; outgoing only to DNS, the API, the orchestrator, the S3 endpoint and public addresses. Takes effect only with a CNI that enforces NetworkPolicies. |
+| compute.builds.networkPolicy.extraEgress | list | `[]` | Extra egress rules (NetworkPolicyEgressRule) for build pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a private package registry. |
+| compute.builds.nodeSelector | object | `{}` | Node selector for build pods. |
+| compute.builds.retention | string | `"15m"` | How long finished build Jobs are kept (`JOB_RETENTION`). |
+| compute.builds.sidecarImage.digest | string | `""` | Image digest. |
+| compute.builds.sidecarImage.registry | string | `"ghcr.io"` | Image registry. |
+| compute.builds.sidecarImage.repository | string | `"open-runtimes/orchestrator/job-sidecar"` | Image repository of the sidecar that moves sources, outputs and caches for each build. |
+| compute.builds.sidecarImage.tag | string | `"2.2.2"` | Image tag. |
+| compute.builds.tolerations | list | `[]` | Tolerations for build pods. |
+| compute.enabled | bool | `false` | Enable Functions and Sites. Needs `appwrite.storage.device: s3` and an external executor (`compute.executor.host`). |
 | compute.executor.host | string | `""` | URL of the open-runtimes executor API (`_APP_EXECUTOR_HOST`), e.g. `http://10.0.0.20:9900/v1`. |
 | compute.functionsRuntimes | list | `[]` | Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps Appwrite's default list. |
-| compute.orchestrator.host | string | `""` | URL of the open-runtimes orchestrator API that runs builds (`_APP_JOBS_HOST`), e.g. `http://10.0.0.20:8080`. |
+| compute.orchestrator.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
+| compute.orchestrator.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
+| compute.orchestrator.host | string | `""` | URL of an external orchestrator's API (`_APP_JOBS_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:8080`. |
+| compute.orchestrator.image.digest | string | `""` | Image digest. |
+| compute.orchestrator.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| compute.orchestrator.image.registry | string | `"ghcr.io"` | Image registry. |
+| compute.orchestrator.image.repository | string | `"open-runtimes/orchestrator/jobs-service"` | Image repository: the orchestrator's jobs service, with the Kubernetes backend. |
+| compute.orchestrator.image.tag | string | `"2.2.2"` | Image tag. |
+| compute.orchestrator.mode | string | `"cluster"` | Where builds run. `cluster`: the chart runs the orchestrator, which starts every build as a Kubernetes Job in `compute.builds.namespace`. `external`: an orchestrator you run on a Docker host, at `host`. |
+| compute.orchestrator.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
+| compute.orchestrator.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
+| compute.orchestrator.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
+| compute.orchestrator.podSecurityContext | object | `{"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. The image's `nonroot` user is UID 65532. |
+| compute.orchestrator.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| compute.orchestrator.resources | object | `{"limits":{"memory":"256Mi"},"requests":{"cpu":"20m","memory":"64Mi"}}` | Resource requests and limits. |
+| compute.orchestrator.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | compute.secrets.executorSecret | string | `""` | Explicit executor secret. |
 | compute.secrets.executorSecretKey | string | `"executor-secret"` | Key holding the executor secret (`_APP_EXECUTOR_SECRET`, `OPR_EXECUTOR_SECRET` on the executor). |
-| compute.secrets.existingSecret | string | `""` | Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the same values on the Docker host. |
+| compute.secrets.existingSecret | string | `""` | Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the executor (and an external orchestrator) with the same values. |
 | compute.secrets.orchestratorSecret | string | `""` | Explicit orchestrator API key. |
 | compute.secrets.orchestratorSecretKey | string | `"orchestrator-secret"` | Key holding the orchestrator API key (`_APP_JOBS_SECRET`, the file in `API_KEY_FILE` on the orchestrator). |
-| compute.sitesRuntimes | list | `[]` | Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list. |
+| compute.sitesRuntimes | list | `[]` | Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list. Sites build with `node-22`, so keep it in the list. |
 | console.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | console.autoscaling.behavior | object | `{}` | HPA scaling behaviour. |
 | console.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
