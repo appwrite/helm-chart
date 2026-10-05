@@ -1,4 +1,4 @@
-# Every optional component, used by the nightly workflow together with the
+# Every optional component but embedding, used by the nightly workflow together with the
 # compute values hack/compute-plane.sh writes (S3, executor, in-cluster
 # builds). Also linted and rendered on its own like the other scenarios.
 #
@@ -61,11 +61,9 @@ autogravity:
   resources:
     requests:
       cpu: 20m
-embedding:
-  enabled: true
-  resources:
-    requests:
-      cpu: 50m
+# embedding stays off: it downloads a ~550 MB model from Hugging Face at
+# start-up and wants ~3 GiB of memory, which a CI runner can't count on.
+# Its templates are covered by the unit tests.
 mqtt:
   enabled: true
   resources:
