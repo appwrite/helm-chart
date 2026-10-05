@@ -94,3 +94,19 @@ tests:
       - equal:
           path: spec.egress[2].ports[0].port
           value: 587
+
+  - it: leaves the browser out of restricted egress but keeps it a destination
+    template: templates/networkpolicy/egress.yaml
+    set:
+      networkPolicy.enabled: true
+      networkPolicy.egress.enabled: true
+    asserts:
+      - contains:
+          path: spec.podSelector.matchExpressions
+          content: {key: app.kubernetes.io/component, operator: NotIn, values: [browser]}
+      - contains:
+          path: spec.egress
+          content:
+            to:
+              - podSelector:
+                  matchLabels: {app.kubernetes.io/name: appwrite, app.kubernetes.io/instance: aw}

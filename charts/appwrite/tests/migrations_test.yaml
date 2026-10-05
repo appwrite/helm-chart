@@ -141,6 +141,10 @@ tests:
       - matchRegex:
           path: metadata.name
           pattern: ^aw-appwrite-migrate-2-3-0-[0-9a-f]{8}$
+      # Pinned so the rename test below compares against this exact render.
+      - equal:
+          path: metadata.name
+          value: aw-appwrite-migrate-2-3-0-eeb5e31e
       - notExists:
           path: metadata.annotations["helm.sh/hook"]
       - notExists:
@@ -154,7 +158,10 @@ tests:
     asserts:
       - notEqual:
           path: metadata.name
-          value: aw-appwrite-migrate-2-3-0-4d9a8998
+          value: aw-appwrite-migrate-2-3-0-eeb5e31e
+      - matchRegex:
+          path: metadata.name
+          pattern: ^aw-appwrite-migrate-2-3-0-[0-9a-f]{8}$
 
   - it: refuses to regenerate datastore passwords when the Secret is gone
     template: templates/api/deployment.yaml
