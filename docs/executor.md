@@ -88,12 +88,12 @@ kubectl -n appwrite get secret appwrite -o jsonpath='{.data.executor-secret}' | 
 
 ## 2. Run the executor
 
-[`examples/compute`](../examples/compute) has a Docker Compose file for the
+[`examples/executor`](../examples/executor) has a Docker Compose file for the
 Docker host:
 
 ```console
-cd examples/compute
-cp .env.example .env                      # fill in the secret, S3 and runtimes
+cd examples/executor
+cp .env.example .env                      # fill in the secret, storage DSN and runtimes
 docker compose up -d
 ```
 
@@ -230,8 +230,9 @@ Kubernetes API server and the S3 endpoint. Add both to
 ### Builds on a Docker host instead
 
 To build on the Docker host too, set `compute.orchestrator.mode: external`
-and run the orchestrator there with the `external-builds` profile of the
-Compose file:
+and run the orchestrator there with
+[`external-builds.yml`](../examples/executor/external-builds.yml), an override
+for the executor's Compose file:
 
 ```yaml
 compute:
@@ -242,7 +243,8 @@ compute:
 
 ```console
 printf '%s' '<orchestrator secret>' > orchestrator-api-key   # no trailing newline
-docker compose --profile external-builds up -d
+# add S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY and S3_SECRET_KEY to .env
+docker compose -f docker-compose.yml -f external-builds.yml up -d
 ```
 
 Build containers then download sources from Appwrite at

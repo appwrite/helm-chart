@@ -73,7 +73,7 @@ appwrite:
 
 With S3, uploads, deployment code and build output live in the bucket, which
 is what lets the API and workers scale across nodes without a ReadWriteMany
-volume, and what an external compute plane needs
+volume, and what builds and the executor need
 ([executor.md](executor.md)). Create the bucket before installing; Appwrite
 doesn't create it.
 

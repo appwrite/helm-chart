@@ -6,7 +6,7 @@ Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, cons
 
 > [!WARNING]
 > Pre-1.0: values and behaviour may still change between minor versions.
-> Read the [changelog](https://github.com/appwrite-labs/helm-chart/blob/main/CHANGELOG.md) before upgrading.
+> Read the [changelog](https://github.com/appwrite/helm-chart/blob/main/CHANGELOG.md) before upgrading.
 
 - Runs Appwrite under the `restricted` Pod Security Standard: non-root,
   read-only root filesystem, no capabilities, no ServiceAccount token.
@@ -35,7 +35,7 @@ With an ingress controller and a cert-manager `ClusterIssuer` named
 `letsencrypt`:
 
 ```console
-helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
+helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --namespace appwrite --create-namespace \
   --set appwrite.domain=appwrite.example.com \
   --set appwrite.certificatesEmail=ops@example.com \
@@ -53,7 +53,7 @@ kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}
 ```
 
 To try Appwrite on a laptop first, or for a step-by-step install, see
-[Getting started](https://github.com/appwrite-labs/helm-chart/blob/main/docs/getting-started.md).
+[Getting started](https://github.com/appwrite/helm-chart/blob/main/docs/getting-started.md).
 
 ## Architecture
 
@@ -73,35 +73,35 @@ flowchart LR
   api -. "executions" .-> executor[[executor\non a Docker host]]
 ```
 
-See the [architecture guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md).
+See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md).
 
 ## Not included
 
 - **The executor for Functions and Sites.** It needs a Docker daemon, so it
-  runs on a Docker host next to the cluster; builds run in the cluster ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md)).
+  runs on a Docker host next to the cluster; builds run in the cluster ([guide](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md)).
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
-  ([guide](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md)).
+  ([guide](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md)).
 - **Metrics.** Appwrite 2.3.0 exposes no Prometheus metrics.
 
 ## Documentation
 
 | Guide | |
 | --- | --- |
-| [Getting started](https://github.com/appwrite-labs/helm-chart/blob/main/docs/getting-started.md) | A local try-out and a first real install |
-| [Production checklist](https://github.com/appwrite-labs/helm-chart/blob/main/docs/production.md) | What to change before going live |
-| [Architecture](https://github.com/appwrite-labs/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
-| [Networking, TLS and domains](https://github.com/appwrite-labs/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
-| [External databases](https://github.com/appwrite-labs/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
-| [Storage](https://github.com/appwrite-labs/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/appwrite-labs/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
-| [Optional components](https://github.com/appwrite-labs/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
-| [Security](https://github.com/appwrite-labs/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
-| [Upgrading](https://github.com/appwrite-labs/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
-| [Backup and restore](https://github.com/appwrite-labs/helm-chart/blob/main/docs/backup-restore.md) | What to back up and how |
-| [Migrating from Docker](https://github.com/appwrite-labs/helm-chart/blob/main/docs/migrating-from-docker.md) | Moving an existing install |
-| [GitOps](https://github.com/appwrite-labs/helm-chart/blob/main/docs/gitops.md) | Argo CD and Flux |
-| [Troubleshooting](https://github.com/appwrite-labs/helm-chart/blob/main/docs/troubleshooting.md) | Common problems |
+| [Getting started](https://github.com/appwrite/helm-chart/blob/main/docs/getting-started.md) | A local try-out and a first real install |
+| [Production checklist](https://github.com/appwrite/helm-chart/blob/main/docs/production.md) | What to change before going live |
+| [Architecture](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
+| [Networking, TLS and domains](https://github.com/appwrite/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
+| [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
+| [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
+| [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
+| [Optional components](https://github.com/appwrite/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
+| [Security](https://github.com/appwrite/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
+| [Upgrading](https://github.com/appwrite/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
+| [Backup and restore](https://github.com/appwrite/helm-chart/blob/main/docs/backup-restore.md) | What to back up and how |
+| [Migrating from Docker](https://github.com/appwrite/helm-chart/blob/main/docs/migrating-from-docker.md) | Moving an existing install |
+| [GitOps](https://github.com/appwrite/helm-chart/blob/main/docs/gitops.md) | Argo CD and Flux |
+| [Troubleshooting](https://github.com/appwrite/helm-chart/blob/main/docs/troubleshooting.md) | Common problems |
 
 ## Uninstalling
 
@@ -126,7 +126,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 
 ## Source Code
 
-* <https://github.com/appwrite-labs/helm-chart>
+* <https://github.com/appwrite/helm-chart>
 * <https://github.com/appwrite/appwrite>
 
 ## Values
@@ -803,4 +803,4 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 
 ## License
 
-BSD 3-Clause. See [LICENSE](https://github.com/appwrite-labs/helm-chart/blob/main/LICENSE).
+BSD 3-Clause. See [LICENSE](https://github.com/appwrite/helm-chart/blob/main/LICENSE).

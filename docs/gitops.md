@@ -89,7 +89,7 @@ metadata:
 stringData:
   type: helm
   name: appwrite-charts
-  url: ghcr.io/appwrite-labs/charts
+  url: ghcr.io/appwrite/charts
   enableOCI: "true"
 ```
 
@@ -102,7 +102,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: ghcr.io/appwrite-labs/charts
+    repoURL: ghcr.io/appwrite/charts
     chart: appwrite
     targetRevision: 0.1.0
     helm:
@@ -135,7 +135,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 1h
-  url: oci://ghcr.io/appwrite-labs/charts/appwrite
+  url: oci://ghcr.io/appwrite/charts/appwrite
   ref:
     semver: "0.1.x"
 ---

@@ -3,7 +3,7 @@
 {{- $scheme := ternary "https" "http" $v.forceHttps }}
 {{- $consoleDomain := $v.consoleDomain | default $v.domain }}
 {{- $routed := or .Values.ingress.enabled .Values.httpRoute.enabled }}
-{{- $docs := "https://github.com/appwrite-labs/helm-chart/blob/main/docs" }}
+{{- $docs := "https://github.com/appwrite/helm-chart/blob/main/docs" }}
 Appwrite {{ include "appwrite.version" . }} has been {{ if .Release.IsUpgrade }}upgraded{{ else }}installed{{ end }} as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
 
 {{- if $routed }}

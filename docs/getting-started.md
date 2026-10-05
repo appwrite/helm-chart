@@ -49,7 +49,7 @@ helm install traefik traefik --repo https://traefik.github.io/charts \
 **3. Install Appwrite.**
 
 ```console
-helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
+helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --namespace appwrite --create-namespace \
   --set appwrite.domain=appwrite.localhost \
   --set appwrite.certificatesEmail=you@example.com \
@@ -131,7 +131,7 @@ appwrite:
 ### 2. Install
 
 ```console
-helm install appwrite oci://ghcr.io/appwrite-labs/charts/appwrite \
+helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --namespace appwrite --create-namespace \
   -f values.yaml --wait --timeout 15m
 ```
