@@ -54,7 +54,6 @@ cat > "$OUT" <<VALUES
 appwrite:
   domain: $domain
   certificatesEmail: ci@example.com
-  forceHttps: false
   storage:
     device: s3
     s3:

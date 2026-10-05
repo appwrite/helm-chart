@@ -1,0 +1,35 @@
+# Every optional component, used by the nightly workflow together with the
+# compute values hack/compute-plane.sh writes (S3, executor, in-cluster
+# builds). Also linted and rendered on its own like the other scenarios.
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  # Exercises force-HTTPS on internal traffic: probes, the smoke tests and
+  # build callbacks use the internal API host, which Appwrite exempts.
+  forceHttps: true
+  vectorsDb:
+    enabled: true
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+tasks:
+  scheduler:
+    mode: separate
+browser:
+  enabled: true
+assistant:
+  enabled: true
+  # Not a real key: the assistant only needs one to start.
+  openaiApiKey: sk-ci-placeholder
+autogravity:
+  enabled: true
+embedding:
+  enabled: true
+mqtt:
+  enabled: true
+migrations:
+  mode: job
+networkPolicy:
+  enabled: true
