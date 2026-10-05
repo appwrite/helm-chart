@@ -6,5 +6,5 @@
 
 - [ ] `make test` passes locally
 - [ ] `make generate` was run and the generated files are committed
-- [ ] Chart `version` bumped, `CHANGELOG.md` and `artifacthub.io/changes` updated (if user-facing)
+- [ ] User-facing changes added under `[Unreleased]` in `CHANGELOG.md` (the version bump and `artifacthub.io/changes` happen when a release is cut, see `RELEASING.md`)
 - [ ] Unit tests added or updated

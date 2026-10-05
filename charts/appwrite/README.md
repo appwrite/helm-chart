@@ -9,7 +9,8 @@ Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, cons
 > Read the [changelog](https://github.com/appwrite/helm-chart/blob/main/CHANGELOG.md) before upgrading.
 
 - Runs Appwrite under the `restricted` Pod Security Standard: non-root,
-  read-only root filesystem, no capabilities, no ServiceAccount token.
+  read-only root filesystem, no capabilities. Only the optional build
+  orchestrator gets a ServiceAccount token.
 - Built-in PostgreSQL, Redis and ClickHouse for a one-command install, or
   your own managed services.
 - Ingress or Gateway API routes for the API, console, realtime, function and
@@ -42,8 +43,12 @@ helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --set ingress.enabled=true \
   --set ingress.tls.enabled=true \
   --set 'ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt' \
+  --set ingress.wildcard.enabled=false \
   --wait --timeout 15m
 ```
+
+Function and site previews (`ingress.wildcard`) need a wildcard certificate
+from a DNS-01 issuer, so they're off here.
 
 Open `https://appwrite.example.com` and sign up: the first account becomes the
 console administrator. Then **back up the encryption key**:
@@ -69,8 +74,8 @@ flowchart LR
   redis -- queues --> workers[workers]
   tasks[scheduler, maintenance,\ninterval] --> redis
   workers --> pg
-  api -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
-  api -. "executions" .-> executor[[executor\non a Docker host]]
+  api & workers -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
+  api & workers -. "executions" .-> executor[[executor\non a Docker host]]
 ```
 
 See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md).
@@ -92,7 +97,7 @@ See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/do
 | [Production checklist](https://github.com/appwrite/helm-chart/blob/main/docs/production.md) | What to change before going live |
 | [Architecture](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
 | [Networking, TLS and domains](https://github.com/appwrite/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
-| [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
+| [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
 | [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
 | [Optional components](https://github.com/appwrite/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
@@ -140,7 +145,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | api.autoscaling.minReplicas | int | `2` | Minimum replicas. |
 | api.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
 | api.autoscaling.targetMemoryUtilizationPercentage | string | `""` | Target average memory utilisation, in percent. Empty disables the metric. |
-| api.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
+| api.containerSecurityContext | object | `{}` | Container security context, merged key by key over `containerSecurityContext`. |
 | api.cpuNum | string | `""` | CPUs Appwrite sizes its worker and connection pools for (`_APP_CPU_NUM`). Derived from the CPU limit, then the CPU request, when empty. |
 | api.extraContainers | list | `[]` | Extra sidecar containers. |
 | api.extraEnv | list | `[]` | Extra environment variables for this component. |
@@ -157,7 +162,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | api.pdb.minAvailable | string | `""` | Minimum available pods. Takes precedence over `maxUnavailable`. |
 | api.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | api.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
-| api.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
+| api.podSecurityContext | object | `{}` | Pod security context, merged key by key over `podSecurityContext`. |
 | api.preStopSleepSeconds | int | `5` | Seconds to sleep before shutdown so endpoints are removed first. |
 | api.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | api.readinessProbe.enabled | bool | `true` | Enable the readiness probe. |
@@ -181,13 +186,13 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | api.updateStrategy | object | `{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":0},"type":"RollingUpdate"}` | Deployment update strategy. |
 | appwrite.autoCertificates | bool | `false` | Have Appwrite issue Let's Encrypt certificates for function and site subdomains (`_APP_ROUTER_AUTO_CERTIFICATES`). Off by default: TLS for wildcard domains is expected to terminate at the ingress or Gateway. |
 | appwrite.certificatesEmail | string | `""` | Email used to register Let's Encrypt certificates (`_APP_EMAIL_CERTIFICATES`). Required. |
-| appwrite.config | object | `{}` | Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values, except variables set per container (credentials, `_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), which have their own values. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables. |
+| appwrite.config | object | `{}` | Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values, including those set per container (`_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), except credentials, which come from Secrets. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables. |
 | appwrite.console.whitelistEmails | list | `[]` | Emails allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_EMAILS`). |
 | appwrite.console.whitelistIPs | list | `[]` | IPs allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_IPS`). |
 | appwrite.console.whitelistRoot | bool | `true` | Only the first user can sign up to the console; everyone else needs an invite (`_APP_CONSOLE_WHITELIST_ROOT`). |
 | appwrite.consoleDomain | string | `""` | Hostname of the console (`_APP_CONSOLE_DOMAIN`). Defaults to `domain`. |
 | appwrite.database.connectionsMax | int | `151` | Total connections Appwrite may open to the database, shared by all pods (`_APP_CONNECTIONS_MAX`). Keep it below the database's `max_connections`. |
-| appwrite.database.poolClients | int | `15` | Number of Appwrite processes sharing `connectionsMax` (`_APP_POOL_CLIENTS`). Must be at least the number of Appwrite pods. |
+| appwrite.database.poolClients | int | `15` | Number of Appwrite processes sharing `connectionsMax` (`_APP_POOL_CLIENTS`): each pod opens `connectionsMax / poolClients` connections. Must be at least the number of Appwrite pods, counting autoscalers at `maxReplicas`; NOTES warns when it isn't. |
 | appwrite.documentsDb.database | string | `""` | Database name. Empty uses the main database name. |
 | appwrite.documentsDb.enabled | bool | `false` | Enable DocumentsDB databases (`_APP_DOCUMENTSDB`), backed by a MongoDB replica set. |
 | appwrite.documentsDb.existingSecret | string | `""` | Existing Secret holding the password. |
@@ -207,7 +212,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | appwrite.functionsDomain | string | `""` | Parent domain for function preview URLs (`_APP_DOMAIN_FUNCTIONS`). Defaults to `functions.<domain>`. |
 | appwrite.logFormat | string | `"json"` | Log format (`_APP_LOGGING_FORMAT`). |
 | appwrite.routerProtection | bool | `false` | Reject requests for hostnames Appwrite doesn't know (`_APP_OPTIONS_ROUTER_PROTECTION`). |
-| appwrite.secretConfig | object | `{}` | Extra sensitive `_APP_*` environment variables, stored in a Secret. |
+| appwrite.secretConfig | object | `{}` | Extra sensitive `_APP_*` environment variables, stored in a Secret. Same precedence as `config`; changing them restarts Appwrite pods. |
 | appwrite.secrets.allowKeyRotation | bool | `false` | Allow `opensslKey` to differ from the key already stored in the cluster. Appwrite can't re-encrypt data, so changing the key makes encrypted data unreadable. |
 | appwrite.secrets.existingSecret | string | `""` | Existing Secret holding the core secrets. When empty the chart generates them once and keeps them across upgrades and uninstalls. |
 | appwrite.secrets.generate | bool | `true` | Generate missing credentials (core secrets and built-in datastore passwords). Set to false with GitOps tools that render templates without cluster access (Argo CD, `helm template`), where generated values would change on every render. |
@@ -225,7 +230,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | appwrite.smtp.port | int | `587` | SMTP port (`_APP_SMTP_PORT`). |
 | appwrite.smtp.secure | string | `"tls"` | SMTP encryption (`_APP_SMTP_SECURE`). |
 | appwrite.smtp.username | string | `""` | SMTP username (`_APP_SMTP_USERNAME`). |
-| appwrite.storage.device | string | `"local"` | Where Appwrite stores files (`_APP_STORAGE_DEVICE`): `local` uses the `/storage` volume (see `persistence`), `s3` any S3-compatible object store. S3 is required with an external compute plane. |
+| appwrite.storage.device | string | `"local"` | Where Appwrite stores files (`_APP_STORAGE_DEVICE`): `local` uses the `/storage` volume (see `persistence`), `s3` any S3-compatible object store. S3 is required when `compute.enabled` is true. |
 | appwrite.storage.limit | int | `30000000` | Maximum file size in bytes (`_APP_STORAGE_LIMIT`). |
 | appwrite.storage.previewLimit | int | `20000000` | Maximum size in bytes of files Appwrite renders previews for (`_APP_STORAGE_PREVIEW_LIMIT`). |
 | appwrite.storage.s3.accessKey | string | `""` | Access key ID. Ignored when `existingSecret` is set. |
@@ -301,8 +306,8 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | browser.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | clickhouse.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | clickhouse.auth.database | string | `"appwrite"` | Database name. |
-| clickhouse.auth.existingSecret | string | `""` | Existing Secret holding the password. |
-| clickhouse.auth.password | string | `""` | Password. Generated and kept across upgrades when empty. |
+| clickhouse.auth.existingSecret | string | `""` | Existing Secret holding the password. The same URL-safety rule applies. |
+| clickhouse.auth.password | string | `""` | Password. Generated and kept across upgrades when empty. Must be URL-safe, or URL-encoded, because Appwrite reads it from a connection URL. |
 | clickhouse.auth.passwordKey | string | `"clickhouse-password"` | Key in the Secret holding the password. |
 | clickhouse.auth.username | string | `"appwrite"` | User. |
 | clickhouse.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
@@ -317,7 +322,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | clickhouse.persistence.annotations | object | `{}` | Annotations for the PersistentVolumeClaim. |
 | clickhouse.persistence.enabled | bool | `true` | Persist data in a PersistentVolumeClaim. |
 | clickhouse.persistence.size | string | `"10Gi"` | Volume size. |
-| clickhouse.persistence.storageClass | string | `""` | Storage class. Empty uses the cluster default. |
+| clickhouse.persistence.storageClass | string | `""` | Storage class. Empty uses `global.storageClass`, then the cluster default; `-` requests no class. |
 | clickhouse.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | clickhouse.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
 | clickhouse.podSecurityContext | object | `{"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":101,"runAsNonRoot":true,"runAsUser":101,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. The image's `clickhouse` user is UID 101. |
@@ -331,6 +336,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.builds.createNamespace | bool | `true` | Create the namespace, labelled for the `baseline` Pod Security Standard. Set to false to create it yourself. |
 | compute.builds.memoryOvercommit | int | `8` | Divides each build's memory limit to get its memory request (`KUBE_MEMORY_OVERCOMMIT`). Appwrite gives builds up to 8 GiB; the default requests 1 GiB. |
 | compute.builds.namespace | string | `""` | Namespace for build Jobs. Defaults to `<release namespace>-builds`. Use a different one per release when several releases share a namespace. |
+| compute.builds.networkPolicy.deniedCIDRs | list | `[]` | CIDRs build pods may not reach, on top of the private, link-local, CGNAT and special-purpose ranges always blocked. Add pod, Service and node ranges that aren't private addresses (GKE privately used public ranges, IPv6 clusters). |
 | compute.builds.networkPolicy.enabled | bool | `true` | Restrict build pods' traffic: no incoming connections; outgoing only to DNS, the API, the orchestrator, the S3 endpoint and public addresses. Takes effect only with a CNI that enforces NetworkPolicies. |
 | compute.builds.networkPolicy.extraEgress | list | `[]` | Extra egress rules (NetworkPolicyEgressRule) for build pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a private package registry. |
 | compute.builds.nodeSelector | object | `{}` | Node selector for build pods. |
@@ -342,7 +348,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.builds.tolerations | list | `[]` | Tolerations for build pods. |
 | compute.enabled | bool | `false` | Enable Functions and Sites. Needs `appwrite.storage.device: s3` and an external executor (`compute.executor.host`). |
 | compute.executor.host | string | `""` | URL of the open-runtimes executor API (`_APP_EXECUTOR_HOST`), e.g. `http://10.0.0.20:9900/v1`. |
-| compute.functionsRuntimes | list | `[]` | Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps Appwrite's default list. |
+| compute.functionsRuntimes | list | `[]` | Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps the Docker installer's list (node-16.0, php-8.0, python-3.9, ruby-3.0). |
 | compute.orchestrator.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | compute.orchestrator.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
 | compute.orchestrator.host | string | `""` | URL of an external orchestrator's API (`_APP_JOBS_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:8080`. |
@@ -433,7 +439,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | embedding.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | embedding.persistence.enabled | bool | `true` | Keep downloaded models in a PersistentVolumeClaim. |
 | embedding.persistence.size | string | `"5Gi"` | Volume size. |
-| embedding.persistence.storageClass | string | `""` | Storage class. Empty uses the cluster default. |
+| embedding.persistence.storageClass | string | `""` | Storage class. Empty uses `global.storageClass`, then the cluster default; `-` requests no class. |
 | embedding.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | embedding.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
 | embedding.podSecurityContext | object | `{"fsGroup":10001,"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10001,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
@@ -477,7 +483,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | geo.replicaCount | int | `1` | Number of replicas. |
 | geo.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"20m","memory":"128Mi"}}` | Resource requests and limits. |
 | geo.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
-| global.imagePullSecrets | list | `[]` | Image pull secrets added to every pod, as a list of Secret names. |
+| global.imagePullSecrets | list | `[]` | Image pull secrets added to every pod, as a list of Secret names (or `{name: ...}` objects). |
 | global.imageRegistry | string | `""` | Registry that replaces the registry of every image, e.g. a pull-through cache. |
 | global.storageClass | string | `""` | Storage class for every PersistentVolumeClaim that doesn't set one. `-` means no class. |
 | httpRoute.annotations | object | `{}` | Annotations for every HTTPRoute. |
@@ -509,16 +515,16 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | migrations.activeDeadlineSeconds | int | `7200` | Seconds the migration may run before it's stopped. |
 | migrations.allowDowngrade | bool | `false` | Allow upgrading to an older Appwrite version than the one installed. Appwrite can't migrate data backwards; restore a backup instead. |
 | migrations.backoffLimit | int | `1` | Retries after a failure. |
-| migrations.mode | string | `"hook"` | How to run it. `hook`: a Helm post-upgrade hook, only when the Appwrite version changes. `job`: a regular Job named after the version, for tools that don't run Helm hooks (Argo CD). `none`: run it yourself. |
+| migrations.mode | string | `"hook"` | How to run it. `hook`: a Helm post-upgrade hook, when the Appwrite version changes or the previous hook failed. `job`: a regular Job named after the version and a hash of its spec, for tools that don't run Helm hooks (Argo CD). `none`: run it yourself. |
 | migrations.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests and limits. |
 | mqtt.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
-| mqtt.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
+| mqtt.containerSecurityContext | object | `{}` | Container security context, merged key by key over `containerSecurityContext`. |
 | mqtt.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |
 | mqtt.enabled | bool | `false` | Deploy the MQTT broker. |
 | mqtt.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | mqtt.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | mqtt.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
-| mqtt.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
+| mqtt.podSecurityContext | object | `{}` | Pod security context, merged key by key over `podSecurityContext`. |
 | mqtt.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | mqtt.replicaCount | int | `1` | Number of replicas. |
 | mqtt.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests and limits. |
@@ -529,19 +535,19 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | mqtt.service.wsPort | int | `8083` | MQTT over WebSocket port. |
 | mqtt.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | nameOverride | string | `""` | Override the chart name used in resource names. |
-| networkPolicy.egress.dns | list | `[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]` | DNS servers to allow (NetworkPolicyPeer) when egress is restricted. |
-| networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor and other external services. |
+| networkPolicy.egress.dns | list | `[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]` | DNS servers to allow (NetworkPolicyPeer) when egress is restricted, on port 53. DNS on another port (OpenShift: 5353) or NodeLocal DNSCache (169.254.20.10) needs a rule in `extraRules`. |
+| networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor, S3, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`. |
 | networkPolicy.egress.extraRules | list | `[]` | Extra egress rules (NetworkPolicyEgressRule) when egress is restricted. |
 | networkPolicy.enabled | bool | `false` | Create NetworkPolicies. They only take effect with a CNI that enforces them. |
 | networkPolicy.ingress.from | list | `[]` | Sources (NetworkPolicyPeer) allowed to reach the API, console and realtime, typically your ingress controller or Gateway. Empty allows any source. Pods of this release can always reach them. |
-| persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. Use ReadWriteMany (or S3 storage) to spread API and worker pods across nodes. |
+| persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. Use ReadWriteMany to spread API and worker pods across nodes. They mount `/storage` even with S3 storage, so a ReadWriteOnce volume pins them to one node (and the API gets no PodDisruptionBudget, which would block drains). |
 | persistence.annotations | object | `{}` | Annotations for the PersistentVolumeClaim. |
 | persistence.colocateReadWriteOnce | bool | `true` | With a ReadWriteOnce volume, schedule every pod that mounts it on the same node so the volume can be attached. |
-| persistence.enabled | bool | `true` | Persist `/storage` in a PersistentVolumeClaim. When disabled every pod gets its own emptyDir, which only works with a single API and worker pod. |
+| persistence.enabled | bool | `true` | Persist `/storage` in a PersistentVolumeClaim. When disabled every pod gets its own emptyDir, which only works with a single API and worker pod (NOTES warns otherwise). |
 | persistence.existingClaim | string | `""` | Use an existing PersistentVolumeClaim instead of creating one. |
 | persistence.keep | bool | `true` | Keep the PersistentVolumeClaim when the release is uninstalled. |
 | persistence.size | string | `"20Gi"` | Volume size. |
-| persistence.storageClass | string | `""` | Storage class. Empty uses the cluster default. |
+| persistence.storageClass | string | `""` | Storage class. Empty uses `global.storageClass`, then the cluster default; `-` requests no class. |
 | podSecurityContext | object | `{"fsGroup":82,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":82,"runAsNonRoot":true,"runAsUser":82,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context for every pod running the Appwrite image. UID/GID 82 is `www-data`, which owns `/storage` in the image. |
 | postgresql.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | postgresql.auth.database | string | `"appwrite"` | Database name. |
@@ -563,7 +569,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | postgresql.persistence.annotations | object | `{}` | Annotations for the PersistentVolumeClaim. |
 | postgresql.persistence.enabled | bool | `true` | Persist data in a PersistentVolumeClaim. Data is lost on restart when disabled. |
 | postgresql.persistence.size | string | `"10Gi"` | Volume size. |
-| postgresql.persistence.storageClass | string | `""` | Storage class. Empty uses the cluster default. |
+| postgresql.persistence.storageClass | string | `""` | Storage class. Empty uses `global.storageClass`, then the cluster default; `-` requests no class. |
 | postgresql.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | postgresql.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
 | postgresql.podSecurityContext | object | `{"fsGroup":999,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":999,"runAsNonRoot":true,"runAsUser":999,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. The image's `postgres` user is UID 999. |
@@ -577,7 +583,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | realtime.autoscaling.minReplicas | int | `2` | Minimum replicas. |
 | realtime.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
 | realtime.autoscaling.targetMemoryUtilizationPercentage | string | `""` | Target average memory utilisation, in percent. Empty disables the metric. |
-| realtime.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
+| realtime.containerSecurityContext | object | `{}` | Container security context, merged key by key over `containerSecurityContext`. |
 | realtime.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |
 | realtime.enabled | bool | `true` | Deploy the realtime server. |
 | realtime.extraEnv | list | `[]` | Extra environment variables for this component. |
@@ -593,7 +599,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | realtime.pdb.minAvailable | string | `""` | Minimum available pods. Takes precedence over `maxUnavailable`. |
 | realtime.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | realtime.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
-| realtime.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
+| realtime.podSecurityContext | object | `{}` | Pod security context, merged key by key over `podSecurityContext`. |
 | realtime.preStopSleepSeconds | int | `5` | Seconds to sleep before shutdown so endpoints are removed first. |
 | realtime.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | realtime.processes | int | `1` | Swoole worker processes per pod (`_APP_WORKERS_NUM`). Prefer more replicas over more processes. |
@@ -625,7 +631,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | redis.image.digest | string | `""` | Image digest. |
 | redis.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | redis.image.registry | string | `"docker.io"` | Image registry. |
-| redis.image.repository | string | `"redis"` | Image repository. `valkey/valkey` works as a drop-in replacement. |
+| redis.image.repository | string | `"redis"` | Image repository. `valkey/valkey` works as a drop-in replacement, with a Valkey tag (e.g. `8-alpine`). |
 | redis.image.tag | string | `"7.4.7-alpine"` | Image tag. |
 | redis.maxmemory | string | `"512mb"` | `maxmemory`. Keep it below the memory limit. |
 | redis.maxmemoryPolicy | string | `"allkeys-lru"` | `maxmemory-policy`. Appwrite's Docker install uses `allkeys-lru`. |
@@ -634,7 +640,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | redis.persistence.annotations | object | `{}` | Annotations for the PersistentVolumeClaim. |
 | redis.persistence.enabled | bool | `true` | Persist data in a PersistentVolumeClaim. |
 | redis.persistence.size | string | `"2Gi"` | Volume size. |
-| redis.persistence.storageClass | string | `""` | Storage class. Empty uses the cluster default. |
+| redis.persistence.storageClass | string | `""` | Storage class. Empty uses `global.storageClass`, then the cluster default; `-` requests no class. |
 | redis.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | redis.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
 | redis.podSecurityContext | object | `{"fsGroup":999,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":999,"runAsNonRoot":true,"runAsUser":999,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. The image's `redis` user is UID 999. |
@@ -646,7 +652,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | serviceAccount.create | bool | `true` | Create a ServiceAccount for Appwrite pods. |
 | serviceAccount.name | string | `""` | Name of the ServiceAccount. Defaults to the fullname when `create` is true, `default` otherwise. |
 | tasks.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
-| tasks.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
+| tasks.containerSecurityContext | object | `{}` | Container security context, merged key by key over `containerSecurityContext`. |
 | tasks.extraEnv | list | `[]` | Extra environment variables for every task. |
 | tasks.interval.enabled | bool | `true` | Run the interval task (domain verification, stale execution cleanup). |
 | tasks.interval.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"20m","memory":"128Mi"}}` | Resource requests and limits. |
@@ -655,7 +661,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | tasks.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | tasks.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | tasks.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
-| tasks.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
+| tasks.podSecurityContext | object | `{}` | Pod security context, merged key by key over `podSecurityContext`. |
 | tasks.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | tasks.scheduler.enabled | bool | `true` | Run the scheduler for function, execution and message schedules. |
 | tasks.scheduler.mode | string | `"combined"` | `combined` runs one scheduler pod. `separate` runs the functions, executions and messages schedulers and the resource-usage task as separate pods, each with these resources. |
@@ -666,10 +672,10 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | workers.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | workers.combined.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |
 | workers.combined.maxCoroutines | int | `78` | Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default is the sum of every queue's concurrency in Appwrite's own combined worker. |
-| workers.combined.processes | int | `1` | Worker processes per pod (`_APP_WORKERS_NUM`). |
+| workers.combined.processes | int | `1` | Worker processes per pod (`_APP_WORKERS_NUM`). Must be 1: each process would consume the `databases` queue. |
 | workers.combined.replicaCount | int | `1` | Replicas. Capped at 1, because the `databases` queue must have a single consumer; use `separate` or `grouped` to scale other queues. |
 | workers.combined.resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"250m","memory":"512Mi"}}` | Resource requests and limits. |
-| workers.containerSecurityContext | object | `{}` | Container security context. Empty inherits `containerSecurityContext`. |
+| workers.containerSecurityContext | object | `{}` | Container security context, merged key by key over `containerSecurityContext`. |
 | workers.extraEnv | list | `[]` | Extra environment variables for every worker. |
 | workers.extraVolumeMounts | list | `[]` | Extra volume mounts for every worker. |
 | workers.extraVolumes | list | `[]` | Extra volumes for every worker. |
@@ -678,7 +684,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | workers.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | workers.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | workers.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
-| workers.podSecurityContext | object | `{}` | Pod security context. Empty inherits `podSecurityContext`. |
+| workers.podSecurityContext | object | `{}` | Pod security context, merged key by key over `podSecurityContext`. |
 | workers.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | workers.queues.builds.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
 | workers.queues.builds.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
@@ -737,7 +743,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | workers.queues.mails.autoscaling.minReplicas | int | `1` | Minimum replicas. |
 | workers.queues.mails.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
 | workers.queues.mails.enabled | bool | `true` | Consume the `mails` queue. Emails. |
-| workers.queues.mails.maxCoroutines | int | `6` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.mails.maxCoroutines | int | `1` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
 | workers.queues.mails.replicaCount | int | `1` | Replicas. |
 | workers.queues.mails.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
 | workers.queues.messaging.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |

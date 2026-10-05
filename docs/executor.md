@@ -77,6 +77,41 @@ are built with a Node.js runtime, and without it creating a site fails with
 
 This deploys the orchestrator in the release namespace and creates a
 namespace for builds, `<release namespace>-builds` (`compute.builds.namespace`).
+The build namespace must differ from the release namespace; the chart refuses
+to render otherwise.
+
+### Who creates the build namespace
+
+With `compute.builds.createNamespace: true` (the default) the chart creates
+the Namespace, labelled for the `baseline` Pod Security Standard. That has
+consequences:
+
+- A Namespace is cluster-scoped, so whoever runs Helm (or the GitOps tool)
+  needs permission to create Namespaces, and an Argo CD AppProject has to
+  allow the `Namespace` kind ([gitops.md](gitops.md#argo-cd)).
+- `helm uninstall` deletes the Namespace, and with it any build Jobs still in
+  it.
+
+To manage it yourself, create and label the namespace before installing, and
+set `createNamespace: false`:
+
+```console
+kubectl create namespace appwrite-builds
+kubectl label namespace appwrite-builds \
+  pod-security.kubernetes.io/enforce=baseline \
+  pod-security.kubernetes.io/warn=baseline
+```
+
+```yaml
+compute:
+  builds:
+    createNamespace: false
+    namespace: appwrite-builds
+```
+
+The `enforce` label matters ([security.md](security.md#functions-and-sites)).
+When the chart can read the namespace and its `enforce` label is missing or
+weaker than `baseline`, it prints a warning after install or upgrade.
 
 The chart generates the executor secret and keeps it in its Secret. To bring
 your own, set `compute.secrets.existingSecret` (key `executor-secret`) or
@@ -89,10 +124,12 @@ kubectl -n appwrite get secret appwrite -o jsonpath='{.data.executor-secret}' | 
 ## 2. Run the executor
 
 [`examples/executor`](../examples/executor) has a Docker Compose file for the
-Docker host:
+Docker host. Copy the directory to the host, for example from a clone of this
+repository:
 
 ```console
-cd examples/executor
+git clone --depth 1 https://github.com/appwrite/helm-chart
+cd helm-chart/examples/executor
 cp .env.example .env                      # fill in the secret, storage DSN and runtimes
 docker compose up -d
 ```
@@ -122,6 +159,11 @@ With AWS S3 (no endpoint in Appwrite), name the bucket in the hostname:
 ```text
 s3://ACCESS_KEY:SECRET_KEY@my-bucket.s3.eu-central-1.amazonaws.com?region=eu-central-1
 ```
+
+URL-encode the access key and secret key in the DSN: AWS secret keys often
+contain `/` or `+`, which otherwise break parsing (`/` becomes `%2F`, `+`
+becomes `%2B`). In `.env`, Docker Compose also interpolates `$`, so write a
+literal `$` as `$$`.
 
 A wrong DSN shows up as executions failing with "Timed out waiting for
 runtime": the executor can't find the build output.
@@ -166,9 +208,30 @@ be any code. The chart keeps builds apart from the rest of the installation:
 - **NetworkPolicy** (`compute.builds.networkPolicy.enabled`, on by default):
   nothing can connect to build pods, and they can reach only DNS, the API
   and orchestrator of the release, the S3 endpoint, and public addresses.
-  Private, link-local (including cloud metadata at `169.254.169.254`) and
-  CGNAT ranges are blocked. This only takes effect with a CNI that enforces
-  NetworkPolicies.
+  Private, loopback, link-local (including cloud metadata at
+  `169.254.169.254`), CGNAT, multicast and reserved ranges are blocked, as is
+  Azure's WireServer (`168.63.129.16`), plus anything in
+  `compute.builds.networkPolicy.deniedCIDRs`. This only takes effect with a
+  CNI that enforces NetworkPolicies.
+
+"Public addresses" means everything outside those ranges, which isn't always
+outside your cluster. Add to `deniedCIDRs` (empty by default) when cluster
+addresses aren't in the private ranges:
+
+- pod and Service ranges outside RFC 1918, for example GKE's privately used
+  public ranges or `240.0.0.0/4`,
+- node addresses, if nodes have public IPs (NodePorts are reachable on them),
+- IPv6 pod, Service and node ranges on IPv6 or dual-stack clusters; only
+  unique-local and link-local IPv6 is blocked by default.
+
+```yaml
+compute:
+  builds:
+    networkPolicy:
+      deniedCIDRs:
+        - 34.118.224.0/20        # GKE Service range
+        - 2600:1f14:abc::/56     # IPv6 pod range
+```
 
 The build's sidecar uploads the output straight to S3. When
 `appwrite.storage.s3.endpoint` is an IP address, the chart allows it; when
@@ -191,10 +254,12 @@ Add rules the same way for a private package registry.
 
 > [!NOTE]
 > The orchestrator passes its S3 credentials and the orchestrator secret to
-> each build's sidecar as environment variables, so they appear in the Job
-> objects in the build namespace. The build's own container doesn't get them.
-> Limit who can read Jobs and pods in the build namespace, and give Appwrite
-> S3 credentials that only reach its bucket.
+> each build's sidecar as environment variables, and the secret also lands in
+> the pod annotation `job.callback.key`, so both are readable from the Job and
+> pod objects in the build namespace. The build's own container doesn't get
+> them. Anyone with `view` on the build namespace can read them: limit access
+> as you would to the chart's Secret, and give Appwrite S3 credentials that
+> only reach its bucket ([security.md](security.md#functions-and-sites)).
 
 ### Build resources
 
@@ -222,10 +287,28 @@ Finished build Jobs are removed after `compute.builds.retention` (15 minutes).
 
 ### With restricted egress
 
-With `networkPolicy.egress.enabled`, the orchestrator also needs the
-Kubernetes API server and the S3 endpoint. Add both to
-`networkPolicy.egress.extraRules`; the API server's address is that of the
-`kubernetes` Service's endpoints (`kubectl get endpoints kubernetes`).
+`networkPolicy.egress.enabled` limits every pod of the release to DNS and the
+release itself, which cuts off the compute plane. Add rules to
+`networkPolicy.egress.extraRules` for:
+
+- **the executor**, which the API and workers call (port 9900 in the example),
+- **the S3 endpoint**, which the API, workers and orchestrator use,
+- **the Kubernetes API server**, which the orchestrator calls. Its address is
+  in the `kubernetes` Service's EndpointSlice
+  (`kubectl get endpointslice -l kubernetes.io/service-name=kubernetes`).
+
+```yaml
+networkPolicy:
+  egress:
+    enabled: true
+    extraRules:
+      - to: [{ipBlock: {cidr: 10.0.0.20/32}}]      # executor
+        ports: [{port: 9900}]
+      - to: [{ipBlock: {cidr: 10.0.0.30/32}}]      # S3
+        ports: [{port: 443}]
+      - to: [{ipBlock: {cidr: 172.18.0.2/32}}]     # Kubernetes API server
+        ports: [{port: 6443}]
+```
 
 ### Builds on a Docker host instead
 
@@ -278,4 +361,6 @@ through the wildcard and custom-domain routes
 | A site's preview URL redirects to `/auth/preview` | Expected: previews need a console login. Add a domain to publish the site. |
 
 Build logs: `kubectl -n appwrite-builds logs job/<job> -c worker` (the build
-itself) and `-c sidecar` (uploads).
+itself) and `-c sidecar` (uploads). The orchestrator names these containers;
+if they differ in your version, list them with
+`kubectl -n appwrite-builds get pod <pod> -o jsonpath='{.spec.containers[*].name}'`.

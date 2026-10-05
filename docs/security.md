@@ -22,7 +22,7 @@ What that means for each pod:
 | `capabilities` | drop `ALL` |
 | `seccompProfile` | `RuntimeDefault` |
 | `readOnlyRootFilesystem` | `true`; writable paths are `emptyDir` volumes |
-| ServiceAccount token | not mounted, except for the orchestrator (`compute.enabled`) |
+| ServiceAccount token | not mounted, except for the orchestrator (`compute.enabled` with `compute.orchestrator.mode: cluster`) |
 
 | Component | User | Notes |
 | --- | --- | --- |
@@ -50,6 +50,23 @@ pass `restricted`. The chart runs them in a namespace of their own under
 `baseline`, which still forbids privileged pods and host access, without
 ServiceAccount tokens and behind a NetworkPolicy.
 
+Treat the build namespace as holding secrets:
+
+- The orchestrator writes the key Appwrite uses for build callbacks
+  (`orchestrator-secret`) into every build Job, as the pod annotation
+  `job.callback.key` and in the sidecar's environment. The S3 access and
+  secret keys are in the sidecar's environment too. Anyone who can read
+  pods or Jobs there (the built-in `view` role is enough) gets both. With the
+  key they can call the orchestrator's API and send build callbacks to
+  Appwrite. Grant access to the build namespace as you would to the chart's
+  Secret.
+- The `baseline` enforcement label is load-bearing. With the orchestrator's
+  key, a caller can ask for build pods with privileged helper containers.
+  Only the namespace's Pod Security admission stops them. The chart labels the
+  namespace it creates; with `compute.builds.createNamespace: false`, label
+  yours `pod-security.kubernetes.io/enforce=baseline` (or `restricted`)
+  yourself ([executor.md](executor.md#isolation)).
+
 Executions need a Docker daemon: the
 [open-runtimes executor](https://github.com/open-runtimes/executor) starts a
 container per runtime. Mounting a node's Docker socket, or running
@@ -71,9 +88,16 @@ The chart keeps credentials in a Secret named after the release:
 | `s3-access-key`, `s3-secret-key` | S3 storage with inline keys. |
 | `smtp-password`, `openai-api-key` | SMTP and the assistant, when set inline. |
 
-Values you set inline (`password: ...`) are stored in this Secret too. Only
-the first group is generated; the rest exist when the matching feature is on
-and has no `existingSecret`.
+Values you set inline (`password: ...`) are stored in this Secret too. These
+are generated when they have no inline value and no `existingSecret`:
+
+- the three core keys (`_APP_OPENSSL_KEY_V1`, `_APP_NOTIFICATIONS_TRACKING_SECRET`,
+  `_APP_GEO_SECRET`),
+- the passwords of the built-in PostgreSQL, Redis and ClickHouse,
+- `executor-secret` and `orchestrator-secret` with `compute.enabled`.
+
+The others exist only when you set them inline. Generated values are 48
+random alphanumeric characters.
 
 Missing values are generated on install and reused on every upgrade: the chart
 reads the existing Secret back with `lookup`. The Secret has
@@ -135,7 +159,8 @@ Pods restart on their own when the chart's Secret changes through
 
 For the same reason, don't delete the chart's Secret while keeping the
 PostgreSQL volume: a new install would generate a password the existing
-database doesn't accept.
+database doesn't accept. Back up the whole Secret, not just the encryption
+key ([backup-restore.md](backup-restore.md)).
 
 ## Network policies
 
@@ -149,7 +174,7 @@ CNI that enforces them (Calico, Cilium, kindnet, and most managed offerings).
 | `<fullname>-datastores` | PostgreSQL, Redis, ClickHouse | Appwrite pods of the release (label `appwrite/datastore-client: "true"`) |
 | `<fullname>-background` | workers and tasks | nothing |
 | `<fullname>-mqtt` | MQTT broker (`mqtt.enabled`) | any source, on the MQTT ports |
-| `<fullname>-orchestrator` | orchestrator (`compute.enabled`) | pods of the release and build pods |
+| `<fullname>-orchestrator` | orchestrator (`compute.orchestrator.mode: cluster`) | pods of the release and build pods |
 
 With in-cluster builds, `<fullname>-edge` also admits build pods to the API.
 Build pods get their own policy in the build namespace, `<fullname>-build`,
@@ -165,6 +190,11 @@ Two more limit outgoing traffic:
 
 Policies add up: with `egress.enabled`, the browser may also reach the other
 pods of the release.
+
+With Functions and Sites, `networkPolicy.egress.enabled` also blocks traffic
+the compute plane needs, because the executor, the S3 endpoint and the
+Kubernetes API are outside the release. Add rules for them to `extraRules`
+([executor.md](executor.md#isolation)).
 
 Restrict the entry points to your ingress controller or Gateway:
 
@@ -208,7 +238,9 @@ networkPolicy:
 ## Verifying chart signatures
 
 Released charts are signed with [cosign](https://github.com/sigstore/cosign)
-keyless signing from GitHub Actions, and carry a build provenance attestation:
+keyless signing from GitHub Actions, and carry a build provenance attestation.
+The release workflow signs with cosign 3, which stores signatures in the new
+bundle format, so verify with cosign 3 or later:
 
 ```console
 cosign verify ghcr.io/appwrite/charts/appwrite:<version> \

@@ -1,7 +1,6 @@
 # Production checklist
 
-The defaults get Appwrite running with one command. Before real users depend
-on it, go through this list.
+Go through this list before real users depend on an install.
 
 ## Data
 
@@ -13,8 +12,12 @@ on it, go through this list.
       ([security.md](security.md)).
 - [ ] **Backups** of the database and files, with a tested restore
       ([backup-restore.md](backup-restore.md)).
-- [ ] **S3 storage**, or a ReadWriteMany volume, so API and worker pods can
-      spread across nodes ([storage.md](storage.md)).
+- [ ] **A ReadWriteMany volume** for `/storage`, so API and worker pods can
+      spread across nodes. With S3 the volume can be small, but it's still
+      mounted, and a ReadWriteOnce claim keeps those pods on one node
+      ([storage.md](storage.md#s3)).
+- [ ] **The whole chart Secret backed up**, not just the encryption key: the
+      built-in datastores' passwords are tied to their volumes.
 
 ## Traffic
 
@@ -35,10 +38,11 @@ on it, go through this list.
       limits.
 - [ ] **Replicas and autoscaling** for the API, console and realtime
       (`*.autoscaling.enabled`), with PodDisruptionBudgets (on by default when
-      more than one replica can run).
+      more than one replica can run, except for pods co-located on a
+      ReadWriteOnce volume).
 - [ ] **Connection budget:** `appwrite.database.connectionsMax` below the
       database's `max_connections`, and `appwrite.database.poolClients` at least
-      the number of Appwrite pods at peak.
+      the number of Appwrite pods at peak, counting HPA maximums.
 - [ ] **Worker topology:** `separate` or `grouped` when one queue (usage,
       builds) shouldn't slow down the others
       ([architecture.md](architecture.md#worker-topologies)).
@@ -58,7 +62,9 @@ on it, go through this list.
       default) lets only the first account sign up;
       `appwrite.console.whitelistEmails` and `whitelistIPs` narrow it further.
 - [ ] **NetworkPolicies** (`networkPolicy.enabled`), with the entry points
-      limited to your ingress controller.
+      limited to your ingress controller. With Functions and Sites, restrict
+      who can read pods and Jobs in the build namespace
+      ([security.md](security.md#functions-and-sites)).
 - [ ] **Upgrades** rehearsed on a copy of production
       ([upgrading.md](upgrading.md)).
 
@@ -129,7 +135,8 @@ externalClickhouse:
   existingSecret: appwrite-clickhouse
 
 persistence:
-  size: 5Gi        # certificates only, with S3
+  size: 5Gi                      # certificates and scratch files, with S3
+  accessModes: [ReadWriteMany]   # lets the API and workers spread across nodes
 
 ingress:
   enabled: true

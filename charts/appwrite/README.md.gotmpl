@@ -9,7 +9,8 @@
 > Read the [changelog](https://github.com/appwrite/helm-chart/blob/main/CHANGELOG.md) before upgrading.
 
 - Runs Appwrite under the `restricted` Pod Security Standard: non-root,
-  read-only root filesystem, no capabilities, no ServiceAccount token.
+  read-only root filesystem, no capabilities. Only the optional build
+  orchestrator gets a ServiceAccount token.
 - Built-in PostgreSQL, Redis and ClickHouse for a one-command install, or
   your own managed services.
 - Ingress or Gateway API routes for the API, console, realtime, function and
@@ -42,8 +43,12 @@ helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --set ingress.enabled=true \
   --set ingress.tls.enabled=true \
   --set 'ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt' \
+  --set ingress.wildcard.enabled=false \
   --wait --timeout 15m
 ```
+
+Function and site previews (`ingress.wildcard`) need a wildcard certificate
+from a DNS-01 issuer, so they're off here.
 
 Open `https://appwrite.example.com` and sign up: the first account becomes the
 console administrator. Then **back up the encryption key**:
@@ -69,8 +74,8 @@ flowchart LR
   redis -- queues --> workers[workers]
   tasks[scheduler, maintenance,\ninterval] --> redis
   workers --> pg
-  api -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
-  api -. "executions" .-> executor[[executor\non a Docker host]]
+  api & workers -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
+  api & workers -. "executions" .-> executor[[executor\non a Docker host]]
 ```
 
 See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md).
@@ -92,7 +97,7 @@ See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/do
 | [Production checklist](https://github.com/appwrite/helm-chart/blob/main/docs/production.md) | What to change before going live |
 | [Architecture](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md) | Components, configuration flow, worker topologies |
 | [Networking, TLS and domains](https://github.com/appwrite/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
-| [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, Redis, ClickHouse, MongoDB |
+| [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
 | [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
 | [Optional components](https://github.com/appwrite/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |

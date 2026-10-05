@@ -35,10 +35,22 @@ redis:
 clickhouse:
   auth:
     existingSecret: appwrite-clickhouse
+compute:                                   # with Functions and Sites
+  secrets:
+    existingSecret: appwrite-compute
 ```
 
 With `generate: false`, a missing credential fails the render instead of
-producing a random one.
+producing a random one, for example `No value for postgres-password`.
+
+| Secret | Keys (configurable) |
+| --- | --- |
+| `appwrite.secrets.existingSecret` | `_APP_OPENSSL_KEY_V1`, `_APP_NOTIFICATIONS_TRACKING_SECRET`, `_APP_GEO_SECRET` (`appwrite.secrets.keys.*`) |
+| `postgresql.auth.existingSecret` | `postgres-password` (`postgresql.auth.passwordKey`) |
+| `redis.auth.existingSecret` | `redis-password` (`redis.auth.passwordKey`) |
+| `clickhouse.auth.existingSecret` | `clickhouse-password` (`clickhouse.auth.passwordKey`) |
+| `compute.secrets.existingSecret` | `executor-secret`, `orchestrator-secret` (`compute.secrets.*Key`) |
+| `appwrite.storage.s3.existingSecret` | `s3-access-key`, `s3-secret-key` (`appwrite.storage.s3.accessKeyKey`, `secretKeyKey`) |
 
 The core Secret needs these keys (names configurable under
 `appwrite.secrets.keys`):
@@ -49,13 +61,14 @@ kind: Secret
 metadata:
   name: appwrite-core
 stringData:
-  _APP_OPENSSL_KEY_V1: <64 random characters, never changed>
+  _APP_OPENSSL_KEY_V1: <random, never changed>
   _APP_NOTIFICATIONS_TRACKING_SECRET: <random>
   _APP_GEO_SECRET: <random>
 ```
 
-Generate values with `openssl rand -hex 32`. Keep passwords URL-safe
-(letters and digits): Appwrite puts some of them into connection URLs.
+Generate values with `openssl rand -hex 32` (the chart itself generates 48
+random letters and digits). Keep passwords URL-safe (letters and digits):
+Appwrite puts some of them into connection URLs.
 
 ## Server-side apply
 
@@ -69,9 +82,26 @@ When the Appwrite version changes, its data migration has to run once
 ([upgrading.md](upgrading.md)). With the Helm CLI and Flux, a post-upgrade
 hook does that. Argo CD renders the chart with `helm template`, which never
 looks like an upgrade, so the hook doesn't run there. With Argo CD, set
-`migrations.mode: job`: the chart then renders a plain Job named after the
-Appwrite version, which runs once per version
+`migrations.mode: job`: the chart then renders a plain Job instead
 ([upgrading.md](upgrading.md#gitops)).
+
+The Job's name holds the Appwrite version and a short hash of its spec. A
+Job's pod template can't be changed, so a new name is what lets Argo CD sync
+when the spec changes:
+
+- A chart upgrade that leaves the Job's spec alone keeps the same Job, and
+  nothing runs again.
+- Changing the Job's spec (a new Appwrite version, but also its resources,
+  environment or scheduling) creates a new Job, which runs the migration
+  again. Appwrite's migration is idempotent, so that's safe, if slow on a
+  large database.
+- Deleting the current Job while auto-sync is on makes Argo CD recreate it,
+  which also runs the migration again. Delete Jobs of older versions
+  whenever you like.
+
+Two checks rely on `lookup` and so do nothing under Argo CD: the guard
+against downgrading Appwrite (`migrations.allowDowngrade`), and the retry of
+a failed hook migration.
 
 ## Argo CD
 
@@ -113,6 +143,24 @@ spec:
           secrets:
             generate: false
             existingSecret: appwrite-core
+          storage:
+            device: s3
+            s3:
+              endpoint: https://s3.example.com
+              bucket: appwrite
+              existingSecret: appwrite-s3
+        postgresql:
+          auth:
+            existingSecret: appwrite-postgresql
+        redis:
+          auth:
+            existingSecret: appwrite-redis
+        clickhouse:
+          auth:
+            existingSecret: appwrite-clickhouse
+        persistence:
+          annotations:
+            argocd.argoproj.io/sync-options: Prune=false,Delete=false
         migrations:
           mode: job
         # ...
@@ -123,6 +171,38 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+```
+
+Things that differ from the Helm CLI:
+
+- **Kept resources.** Argo CD ignores `helm.sh/resource-policy: keep`, so
+  deleting the Application (or pruning) deletes the `/storage` claim. The
+  `Prune=false,Delete=false` sync option above keeps it. The datastores'
+  claims belong to their StatefulSets and Argo CD leaves them alone. If the
+  chart's own Secret holds anything (it doesn't with `generate: false` and
+  existing Secrets for everything), back it up before deleting the
+  Application.
+- **The build namespace.** With Functions and Sites, the chart creates a
+  cluster-scoped Namespace, `<release namespace>-builds`, plus a Role and a
+  NetworkPolicy in it. A restricted AppProject must allow the `Namespace` kind
+  in `clusterResourceWhitelist` and the build namespace in `destinations`.
+  Or create the namespace yourself and set
+  `compute.builds.createNamespace: false`
+  ([executor.md](executor.md#who-creates-the-build-namespace)).
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: appwrite
+  namespace: argocd
+spec:
+  sourceRepos: [ghcr.io/appwrite/charts]
+  destinations:
+    - {server: https://kubernetes.default.svc, namespace: appwrite}
+    - {server: https://kubernetes.default.svc, namespace: appwrite-builds}
+  clusterResourceWhitelist:
+    - {group: "", kind: Namespace}
 ```
 
 ## Flux
@@ -138,6 +218,9 @@ spec:
   url: oci://ghcr.io/appwrite/charts/appwrite
   ref:
     semver: "0.1.x"
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -162,3 +245,16 @@ spec:
 
 Flux runs Helm, so generated credentials and upgrade hooks behave as with the
 Helm CLI.
+
+To have Flux check the chart's signature, add `verify` to the
+`OCIRepository`. The chart is signed with cosign 3, so this needs a Flux
+release that verifies cosign 3 bundles:
+
+```yaml
+spec:
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: ^https://token\.actions\.githubusercontent\.com$
+        subject: ^https://github\.com/appwrite/helm-chart/\.github/workflows/release\.yaml@refs/heads/main$
+```

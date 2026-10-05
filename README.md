@@ -10,12 +10,16 @@ helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
   --set appwrite.certificatesEmail=ops@example.com \
   --set ingress.enabled=true \
   --set ingress.tls.enabled=true \
-  --set 'ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt'
+  --set 'ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt' \
+  --set ingress.wildcard.enabled=false \
+  --wait --timeout 15m
 ```
 
 This assumes an ingress controller and a cert-manager `ClusterIssuer` named
-`letsencrypt`. New here? [Getting started](docs/getting-started.md) covers a
-local install you can try in ten minutes, and a real one step by step.
+`letsencrypt`. Function and site previews (`ingress.wildcard`) need a wildcard
+certificate from a DNS-01 issuer, so they're off here. New here?
+[Getting started](docs/getting-started.md) covers a local install you can try
+in ten minutes, a real one step by step, and installing from a clone.
 
 | | |
 | --- | --- |

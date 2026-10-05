@@ -6,7 +6,7 @@
 | [Production checklist](production.md) | What to change before going live, with an example values file |
 | [Architecture](architecture.md) | Components, startup order, configuration flow, worker topologies |
 | [Networking, TLS and domains](networking.md) | Ingress, Gateway API, cert-manager, custom domains |
-| [External databases](external-databases.md) | PostgreSQL, MariaDB, MongoDB, Redis, ClickHouse |
+| [External databases](external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](storage.md) | Volumes, ReadWriteMany, S3 |
 | [Functions and Sites](executor.md) | In-cluster builds and the external executor |
 | [Optional components](optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
