@@ -88,6 +88,20 @@ jobs:
           kubectl -n external-dbs rollout status statefulset/postgres --timeout=5m
           kubectl -n external-dbs rollout status deployment/redis --timeout=5m
           kubectl -n external-dbs rollout status deployment/clickhouse --timeout=5m
+      - name: Resolve the external datastores from the release namespace
+        if: matrix.external-dbs
+        # Same image and resolver (musl) as Appwrite's wait-for-datastores
+        # init container, so a DNS problem fails here in seconds with details
+        # instead of as a 15-minute install timeout.
+        run: |
+          # shellcheck disable=SC2016 # expanded inside the pod
+          kubectl -n appwrite run dns-check --rm -i --restart=Never --image=docker.io/appwrite/appwrite:2.3.0 --command -- sh -c '
+            cat /etc/resolv.conf
+            ok=0
+            for host in postgres.external-dbs.svc.cluster.local postgres.external-dbs.svc postgres.external-dbs; do
+              if getent hosts "$host"; then echo "resolved $host"; else echo "FAILED $host"; ok=1; fi
+            done
+            exit $ok'
       - name: Install Appwrite ${{ matrix.upgrade-from }}
         if: matrix.upgrade-from
         run: |
@@ -118,6 +132,11 @@ jobs:
       - name: Diagnostics
         if: failure()
         run: |
+          echo "::group::DNS"
+          kubectl -n kube-system get pods,svc -o wide || true
+          kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}' || true
+          kubectl -n kube-system logs -l k8s-app=kube-dns --tail=100 || true
+          echo "::endgroup::"
           kubectl -n appwrite get all,pvc,events -o wide || true
           for pod in $(kubectl -n appwrite get pods -o name); do
             echo "::group::$pod"

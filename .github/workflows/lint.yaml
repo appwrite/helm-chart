@@ -79,9 +79,13 @@ jobs:
         run: helm unittest --strict --output-type JUnit --output-file test-results/unittest.xml charts/appwrite
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
+        # The JUnit report is a convenience: a full artifact quota (shared by
+        # the organisation) must not fail a job whose tests passed.
+        continue-on-error: true
         with:
           name: unittest-results-${{ matrix.helm }}
           path: test-results/
+          retention-days: 7
 
   kubeconform:
     name: kubeconform
