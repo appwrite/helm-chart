@@ -59,6 +59,13 @@ jobs:
             kubectl -n appwrite logs "$pod" --all-containers --tail=200 || true
             echo "::endgroup::"
           done
+          echo "::group::builds namespace"
+          kubectl -n appwrite-builds get jobs,pods,networkpolicies,events -o wide || true
+          for pod in $(kubectl -n appwrite-builds get pods -o name); do
+            kubectl -n appwrite-builds describe "$pod" || true
+            kubectl -n appwrite-builds logs "$pod" --all-containers --prefix --tail=200 || true
+          done
+          echo "::endgroup::"
           for c in aw-executor aw-s3; do
             echo "::group::$c"
             docker logs "$c" --tail=200 || true
