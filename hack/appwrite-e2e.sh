@@ -13,7 +13,8 @@
 #      API their compose names in the release namespace,
 #   3. upgrades the release with hack/fixtures/appwrite-e2e/values.yaml
 #      (development mode, catchers, open console sign-up, no abuse limits, no
-#      forced HTTPS, port 80 on the API), which isn't fit for production,
+#      forced HTTPS, port 80 on the API, runtimes allowed to call the API),
+#      which isn't fit for production,
 #   4. runs PHPUnit in a pod built from the API's pod template, so it gets the
 #      same configuration and credentials, and streams its output.
 # Remove what it added with: kubectl delete namespace appwrite-e2e, and
@@ -100,8 +101,14 @@ kubectl -n appwrite-e2e rollout status deploy --timeout=5m >/dev/null
 
 if [[ "${E2E_SKIP_UPGRADE:-}" != 1 ]]; then
   log "Upgrade $RELEASE with the e2e values"
+  # Function code calls Appwrite at _APP_DOMAIN, appwrite.test in compose:
+  # here the appwrite Service, which runtimes may reach.
   helm upgrade "$RELEASE" "$ROOT/charts/appwrite" -n "$NAMESPACE" --reuse-values \
-    -f "$FIXTURES/values.yaml" --wait --timeout 15m >/dev/null
+    -f "$FIXTURES/values.yaml" \
+    --set "appwrite.config._APP_DOMAIN=appwrite.$NAMESPACE.svc" \
+    --set-json "compute.executor.networkPolicy.extraEgress=$(jq -c --arg ns "$NAMESPACE" \
+      '[{to: [{namespaceSelector: {matchLabels: {"kubernetes.io/metadata.name": $ns}}, podSelector: {matchLabels: .spec.selector.matchLabels}}], ports: [{port: 8080}]}]' <<<"$api")" \
+    --wait --timeout 15m >/dev/null
 fi
 
 log "Run: phpunit $*"

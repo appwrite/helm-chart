@@ -22,10 +22,10 @@ appwrite:
     # which the console only accepts from its own domain. These override the
     # variables only: the routes keep using appwrite.domain and friends.
     _APP_CONSOLE_WHITELIST_ROOT: disabled
-    # Domains as Appwrite's CI sets them: tests fetch from http://localhost
-    # and address previews as <id>.functions.localhost, which resolve to the
-    # runner's own proxy.
-    _APP_DOMAIN: localhost
+    # Preview domains as in Appwrite's .env: tests address previews as
+    # <id>.functions.localhost, which resolve to the runner's own proxy.
+    # hack/appwrite-e2e.sh sets _APP_DOMAIN: compose's appwrite.test, which
+    # runtimes call back on, is the appwrite Service here.
     _APP_DOMAIN_FUNCTIONS: functions.localhost
     _APP_DOMAIN_SITES: sites.localhost
     _APP_CONSOLE_DOMAIN: localhost
