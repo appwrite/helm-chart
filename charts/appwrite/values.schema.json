@@ -1398,6 +1398,10 @@
             "dind": {
               "type": "object",
               "properties": {
+                "addressPool": {
+                  "description": "Addresses of the Docker daemon's networks, split into /24s: its bridge and the runtimes' network. They shadow anything the executor and runtimes would reach in the same range, so it must not overlap the S3 endpoint, the cluster or your networks. Docker's own default, 172.17.0.0/16 onwards, often does; this one is reserved for benchmarking (RFC 2544) and routed nowhere.",
+                  "type": "string"
+                },
                 "extraArgs": {
                   "description": "Extra arguments for `dockerd`, e.g. `--registry-mirror=https://mirror.example.com`.",
                   "type": "array",

@@ -359,3 +359,10 @@ tests:
       - notMatchRegex:
           path: spec.template.spec.initContainers[0].command[2]
           pattern: tcp://
+
+  - it: keeps the Docker daemon's networks out of Docker's default ranges
+    template: templates/executor/deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].command[2]
+          pattern: --default-address-pool=base=198.18.0.0/15,size=24

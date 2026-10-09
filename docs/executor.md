@@ -186,6 +186,15 @@ executor pulls the runtime images of `functionsRuntimes` and
 only becomes ready once they're there: an execution that had to wait for an
 image would run into the function's timeout.
 
+The daemon's networks (its bridge and the runtimes' network) take their
+addresses from `compute.executor.dind.addressPool`, `198.18.0.0/15` by
+default, a range reserved for benchmarking that nothing routes. Whatever
+those networks use, the executor and the runtimes can't reach elsewhere: a
+pool that overlaps the S3 endpoint, the cluster or your network cuts them
+off from it. Docker's own default, `172.17.0.0/16` and up, overlaps often
+(the AWS default VPC is `172.31.0.0/16`), so change the pool only to another
+range nothing in your network uses.
+
 On updates a new pod takes over before the old one stops. The old one leaves
 the Service, gives executions in flight 15 seconds to finish, and stops; its
 runtimes stop with it.
@@ -543,7 +552,7 @@ through the wildcard and custom-domain routes
 | Builds fail installing dependencies | Build pods can't reach the package registry, for example a private one: add it to `extraEgress`. |
 | The executor pod isn't created: `violates PodSecurity "baseline"` (or `restricted`) | The executor namespace doesn't admit privileged pods. Label it `pod-security.kubernetes.io/enforce=privileged`, or let the chart create it. |
 | The executor pod isn't ready | Check `kubectl -n appwrite-executor logs deploy/appwrite-executor -c executor` and `-c dind`. The daemon pulls the executor image from Docker Hub when the pod starts: a blocked or rate-limited registry stops it ([registries](#registries)). |
-| Executions fail with "Timed out waiting for runtime" | The executor can't find the build output: S3 is unreachable from the executor namespace (a private hostname needs `compute.executor.networkPolicy.extraEgress`), or, on a Docker host, its storage DSN is wrong ([above](#the-executors-storage-dsn)). Or the runtime image can't be pulled. |
+| Executions fail with "Timed out waiting for runtime" | The executor can't find the build output: S3 is unreachable from the executor namespace (a private hostname needs `compute.executor.networkPolicy.extraEgress`), S3 is in `compute.executor.dind.addressPool` ([above](#the-executor-in-the-cluster)), or, on a Docker host, its storage DSN is wrong ([above](#the-executors-storage-dsn)). Or the runtime image can't be pulled. |
 | Executions fail with 401 | On a Docker host: `EXECUTOR_SECRET` differs from the chart's executor secret. In the cluster: `compute.executor.existingSecret` holds a different `executor-secret` than Appwrite's. |
 | Creating a site fails with `Runtime "node-22" is not supported` | Add `node-22` to `compute.sitesRuntimes` (and to `RUNTIMES` on the Docker host). |
 | A site's preview URL redirects to `/auth/preview` | Expected: previews need a console login. Add a domain to publish the site. |

@@ -50,7 +50,7 @@ spec:
         # The Docker daemon, as a sidecar: it starts before the executor and
         # stops after it. Runtimes run inside it, and so count against its
         # resources. Its bridge networks get the pod's MTU, which overlay
-        # networks keep below 1500.
+        # networks keep below 1500, and addresses from dind.addressPool.
         - name: dind
           image: {{ include "appwrite.image" (dict "root" . "image" $e.dind.image) }}
           imagePullPolicy: {{ $e.dind.image.pullPolicy }}
@@ -63,6 +63,7 @@ spec:
             - |
               mtu=$(cat /sys/class/net/eth0/mtu)
               exec dockerd-entrypoint.sh dockerd --host=unix:///run/dind/docker.sock \
+                --default-address-pool=base={{ $e.dind.addressPool }},size=24 \
                 --mtu="$mtu" --default-network-opt=bridge=com.docker.network.driver.mtu="$mtu" "$@"
             - dind
             {{- range $e.dind.extraArgs }}
@@ -111,6 +112,7 @@ spec:
                   | docker login --username "$OPR_EXECUTOR_DOCKER_HUB_USERNAME" --password-stdin >/dev/null
               fi
               docker rm -f executor >/dev/null 2>&1 || true
+              docker pull --quiet "$EXECUTOR_IMAGE" >/dev/null
               # --init: the executor doesn't handle signals, which PID 1 would ignore.
               docker run -d --init --name executor --hostname executor \
                 -p 9900:80 -v /run/dind/docker.sock:/var/run/docker.sock -v /tmp:/tmp \

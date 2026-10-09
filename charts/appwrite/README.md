@@ -348,6 +348,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.enabled | bool | `false` | Enable Functions and Sites. Needs `appwrite.storage.device: s3`, and with the in-cluster executor `compute.executor.privileged` (see docs/executor.md). |
 | compute.executor.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | compute.executor.createNamespace | bool | `true` | Create the namespace, labelled for the `privileged` Pod Security Standard. Set to false to create it yourself. |
+| compute.executor.dind.addressPool | string | `"198.18.0.0/15"` | Addresses of the Docker daemon's networks, split into /24s: its bridge and the runtimes' network. They shadow anything the executor and runtimes would reach in the same range, so it must not overlap the S3 endpoint, the cluster or your networks. Docker's own default, 172.17.0.0/16 onwards, often does; this one is reserved for benchmarking (RFC 2544) and routed nowhere. |
 | compute.executor.dind.extraArgs | list | `[]` | Extra arguments for `dockerd`, e.g. `--registry-mirror=https://mirror.example.com`. |
 | compute.executor.dind.image.digest | string | `""` | Image digest. |
 | compute.executor.dind.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |

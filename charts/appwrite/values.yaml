@@ -323,6 +323,13 @@ compute:
         digest: ""
         # -- Image pull policy.
         pullPolicy: IfNotPresent # @schema enum: [Always, IfNotPresent, Never]
+      # -- Addresses of the Docker daemon's networks, split into /24s: its
+      # bridge and the runtimes' network. They shadow anything the executor
+      # and runtimes would reach in the same range, so it must not overlap the
+      # S3 endpoint, the cluster or your networks. Docker's own default,
+      # 172.17.0.0/16 onwards, often does; this one is reserved for
+      # benchmarking (RFC 2544) and routed nowhere.
+      addressPool: 198.18.0.0/15
       # -- Extra arguments for `dockerd`, e.g. `--registry-mirror=https://mirror.example.com`.
       extraArgs: [] # @schema item: string
       # -- Volume for the Docker daemon's images and containers. Runtime images
