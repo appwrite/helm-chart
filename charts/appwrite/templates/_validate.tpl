@@ -95,8 +95,27 @@ configmap-env.yaml so it also runs under `helm template`.
 {{- end }}
 {{- end }}
 {{- if $v.compute.enabled }}
-{{- if not $v.compute.executor.host }}
-{{- $errors = append $errors "compute.executor.host is required when compute.enabled is true." }}
+{{- $e := $v.compute.executor }}
+{{- if eq $e.mode "external" }}
+{{- if not $e.host }}
+{{- $errors = append $errors "compute.executor.host is required when compute.executor.mode is external." }}
+{{- end }}
+{{- else }}
+{{- if $e.host }}
+{{- $errors = append $errors "compute.executor.host is set, but compute.executor.mode is cluster, where the chart runs the executor itself. Set compute.executor.mode=external to use the executor at that host." }}
+{{- end }}
+{{- if not (or $e.privileged $e.runtimeClassName) }}
+{{- $errors = append $errors "The in-cluster executor runs Docker-in-Docker, which needs a privileged container: root on its node. Set compute.executor.privileged=true to accept that (and give the executor nodes of its own), set compute.executor.runtimeClassName to a runtime that runs Docker without it (Sysbox), or set compute.executor.mode=external to run the executor on a Docker host. See docs/executor.md." }}
+{{- end }}
+{{- $ns := include "appwrite.executor.namespace" . }}
+{{- if eq $ns .Release.Namespace }}
+{{- $errors = append $errors "compute.executor.namespace must differ from the release namespace: the executor needs the privileged Pod Security Standard, so it gets a namespace of its own." }}
+{{- else if and (include "appwrite.builds.inCluster" .) (eq $ns (include "appwrite.builds.namespace" .)) }}
+{{- $errors = append $errors "compute.executor.namespace must differ from compute.builds.namespace: build pods are kept to the baseline Pod Security Standard, the executor needs privileged." }}
+{{- end }}
+{{- if and (not $e.existingSecret) (or $v.compute.secrets.existingSecret $v.appwrite.storage.s3.existingSecret) }}
+{{- $errors = append $errors "compute.executor.existingSecret is required when compute.secrets.existingSecret or appwrite.storage.s3.existingSecret is set: the executor runs in another namespace and can't read them. Create a Secret there with the keys executor-secret, s3-access-key and s3-secret-key." }}
+{{- end }}
 {{- end }}
 {{- if eq $v.compute.orchestrator.mode "external" }}
 {{- if not $v.compute.orchestrator.host }}

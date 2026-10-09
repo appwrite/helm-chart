@@ -1,6 +1,6 @@
 # Every optional component but embedding, used by the nightly workflow together with the
-# compute values hack/compute-plane.sh writes (S3, executor, in-cluster
-# builds). Also linted and rendered on its own like the other scenarios.
+# compute values hack/compute-plane.sh writes (S3, the executor in the cluster
+# or on a Docker host, in-cluster builds). Also linted and rendered on its own like the other scenarios.
 #
 # CPU requests are cut down so everything fits on a single kind node on a
 # 2-vCPU GitHub-hosted runner, next to the control plane and Traefik.

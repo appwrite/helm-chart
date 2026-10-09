@@ -31,7 +31,7 @@ flowchart LR
   worker --- storage
 
   api & worker -. "builds (optional)" .-> orchestrator[orchestrator] -.-> builds[[build Jobs\nin their own namespace]]
-  api & worker -. "executions (optional)" .-> executor[[open-runtimes executor\non a Docker host]]
+  api & worker -. "executions (optional)" .-> executor[[executor on Docker-in-Docker\nin its own namespace]]
 ```
 
 | Component | Image | Command | Scales | Notes |
@@ -48,6 +48,7 @@ flowchart LR
 | `redis` | `redis` | `redis-server` | One replica | Cache, queues, pub/sub and locks. Optional. |
 | `clickhouse` | `clickhouse/clickhouse-server` | image default | One replica | Usage statistics and execution logs. Optional. |
 | `orchestrator` | `open-runtimes/orchestrator/jobs-service` | image default | One replica | Runs builds of functions and sites as Jobs in the build namespace. With `compute.enabled` and `compute.orchestrator.mode: cluster`. |
+| `executor` | `openruntimes/executor` on `docker:dind` | see [executor.md](executor.md#the-executor-in-the-cluster) | `compute.executor.replicaCount` | Runs functions and sites in runtime containers of its own Docker daemon, in the executor namespace. With `compute.enabled` and `compute.executor.mode: cluster`. |
 
 The builds worker starts builds through the orchestrator, and the API cancels
 them. The functions worker and the API (synchronous executions, function and
@@ -217,7 +218,8 @@ All pods in the Appwrite namespace run as non-root with a read-only root
 filesystem, no capabilities and the `RuntimeDefault` seccomp profile, so
 they're admitted under the Pod Security Standard `restricted` profile.
 Writable paths are `emptyDir`s. Build Jobs run in their own namespace under
-`baseline` ([executor.md](executor.md#isolation)).
+`baseline`, and the executor in its own namespace under `privileged`
+([executor.md](executor.md#isolation)).
 
 - The Appwrite image runs as `www-data` (UID 82). The API and realtime listen
   on 8080 instead of 80.

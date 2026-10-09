@@ -38,6 +38,8 @@ clickhouse:
 compute:                                   # with Functions and Sites
   secrets:
     existingSecret: appwrite-compute
+  executor:
+    existingSecret: appwrite-executor-credentials   # in the executor namespace
 ```
 
 With `generate: false`, a missing credential fails the render instead of
@@ -50,6 +52,7 @@ producing a random one, for example `No value for postgres-password`.
 | `redis.auth.existingSecret` | `redis-password` (`redis.auth.passwordKey`) |
 | `clickhouse.auth.existingSecret` | `clickhouse-password` (`clickhouse.auth.passwordKey`) |
 | `compute.secrets.existingSecret` | `executor-secret`, `orchestrator-secret` (`compute.secrets.*Key`) |
+| `compute.executor.existingSecret`, in the executor namespace | `executor-secret`, `s3-access-key`, `s3-secret-key` ([executor.md](executor.md#existing-secrets)) |
 | `appwrite.storage.s3.existingSecret` | `s3-access-key`, `s3-secret-key` (`appwrite.storage.s3.accessKeyKey`, `secretKeyKey`) |
 
 The core Secret needs these keys (names configurable under
@@ -182,13 +185,15 @@ Things that differ from the Helm CLI:
   chart's own Secret holds anything (it doesn't with `generate: false` and
   existing Secrets for everything), back it up before deleting the
   Application.
-- **The build namespace.** With Functions and Sites, the chart creates a
-  cluster-scoped Namespace, `<release namespace>-builds`, plus a Role and a
-  NetworkPolicy in it. A restricted AppProject must allow the `Namespace` kind
-  in `clusterResourceWhitelist` and the build namespace in `destinations`.
-  Or create the namespace yourself and set
-  `compute.builds.createNamespace: false`
-  ([executor.md](executor.md#who-creates-the-build-namespace)).
+- **The build and executor namespaces.** With Functions and Sites, the chart
+  creates two cluster-scoped Namespaces, `<release namespace>-builds` (with a
+  Role and a NetworkPolicy in it) and `<release namespace>-executor` (with the
+  executor, its Secret and a NetworkPolicy). A restricted AppProject must
+  allow the `Namespace` kind in `clusterResourceWhitelist` and both
+  namespaces in `destinations`. Or create them yourself and set
+  `compute.builds.createNamespace: false` and
+  `compute.executor.createNamespace: false`
+  ([executor.md](executor.md#who-creates-the-namespaces)).
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -201,6 +206,7 @@ spec:
   destinations:
     - {server: https://kubernetes.default.svc, namespace: appwrite}
     - {server: https://kubernetes.default.svc, namespace: appwrite-builds}
+    - {server: https://kubernetes.default.svc, namespace: appwrite-executor}
   clusterResourceWhitelist:
     - {group: "", kind: Namespace}
 ```

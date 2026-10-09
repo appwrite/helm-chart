@@ -21,6 +21,7 @@ set:
   appwrite.storage.s3.bucket: files
   appwrite.storage.s3.existingSecret: s3
   compute.enabled: true
+  compute.executor.mode: external
   compute.executor.host: http://10.0.0.20:9900/v1
 tests:
   - it: points Appwrite at the orchestrator and gives builds the API Service

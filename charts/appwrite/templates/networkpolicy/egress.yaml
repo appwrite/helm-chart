@@ -23,6 +23,18 @@ spec:
           protocol: TCP
     - to:
         - {{- include "appwrite.networkPolicy.releasePeer" . | nindent 10 }}
+    {{- if include "appwrite.executor.inCluster" . }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ include "appwrite.executor.namespace" . }}
+          podSelector:
+            matchLabels:
+              {{- include "appwrite.componentSelectorLabels" (dict "root" . "component" "executor") | nindent 14 }}
+      ports:
+        - port: 9900
+          protocol: TCP
+    {{- end }}
     {{- with $np.egress.extraRules }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

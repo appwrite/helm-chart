@@ -161,7 +161,7 @@
   ],
   "packageRules": [
     {
-      "description": "Appwrite, its console, its services and the orchestrator it drives change together and need the chart reviewed against the release: group them and wait for approval",
+      "description": "Appwrite, its console, its services and the orchestrator and executor it drives change together and need the chart reviewed against the release: group them and wait for approval",
       "matchPackageNames": [
         "docker.io/appwrite/appwrite",
         "docker.io/appwrite/new",
@@ -172,7 +172,8 @@
         "docker.io/appwrite/postgres",
         "ghcr.io/appwrite/autogravity",
         "ghcr.io/open-runtimes/orchestrator/jobs-service",
-        "ghcr.io/open-runtimes/orchestrator/job-sidecar"
+        "ghcr.io/open-runtimes/orchestrator/job-sidecar",
+        "docker.io/openruntimes/executor"
       ],
       "groupName": "appwrite",
       "dependencyDashboardApproval": true

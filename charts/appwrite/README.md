@@ -17,8 +17,9 @@ Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, cons
   site previews and custom domains.
 - Worker topologies from one combined worker to one Deployment per queue.
 - Functions and Sites: builds run in the cluster as unprivileged Jobs in their
-  own namespace, executions on an executor on a Docker host, so the cluster
-  never runs privileged pods.
+  own namespace, executions on an executor with its own Docker-in-Docker
+  daemon in another namespace (a privileged pod you opt into), or on a Docker
+  host.
 - Credentials generated once and kept, data migrations on upgrade, and guards
   against changing the encryption key or downgrading.
 
@@ -75,15 +76,13 @@ flowchart LR
   tasks[scheduler, maintenance,\ninterval] --> redis
   workers --> pg
   api & workers -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
-  api & workers -. "executions" .-> executor[[executor\non a Docker host]]
+  api & workers -. "executions" .-> executor[[executor on\nDocker-in-Docker]]
 ```
 
 See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md).
 
 ## Not included
 
-- **The executor for Functions and Sites.** It needs a Docker daemon, so it
-  runs on a Docker host next to the cluster; builds run in the cluster ([guide](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md)).
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
   ([guide](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md)).
@@ -99,7 +98,7 @@ See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/do
 | [Networking, TLS and domains](https://github.com/appwrite/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
 | [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
+| [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | Builds and the executor, in the cluster or on a Docker host |
 | [Optional components](https://github.com/appwrite/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
 | [Security](https://github.com/appwrite/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
 | [Upgrading](https://github.com/appwrite/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
@@ -346,8 +345,41 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.builds.sidecarImage.repository | string | `"open-runtimes/orchestrator/job-sidecar"` | Image repository of the sidecar that moves sources, outputs and caches for each build. |
 | compute.builds.sidecarImage.tag | string | `"2.2.2"` | Image tag. |
 | compute.builds.tolerations | list | `[]` | Tolerations for build pods. |
-| compute.enabled | bool | `false` | Enable Functions and Sites. Needs `appwrite.storage.device: s3` and an external executor (`compute.executor.host`). |
-| compute.executor.host | string | `""` | URL of the open-runtimes executor API (`_APP_EXECUTOR_HOST`), e.g. `http://10.0.0.20:9900/v1`. |
+| compute.enabled | bool | `false` | Enable Functions and Sites. Needs `appwrite.storage.device: s3`, and with the in-cluster executor `compute.executor.privileged` (see docs/executor.md). |
+| compute.executor.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
+| compute.executor.createNamespace | bool | `true` | Create the namespace, labelled for the `privileged` Pod Security Standard. Set to false to create it yourself. |
+| compute.executor.dind.extraArgs | list | `[]` | Extra arguments for `dockerd`, e.g. `--registry-mirror=https://mirror.example.com`. |
+| compute.executor.dind.image.digest | string | `""` | Image digest. |
+| compute.executor.dind.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| compute.executor.dind.image.registry | string | `"docker.io"` | Image registry. |
+| compute.executor.dind.image.repository | string | `"library/docker"` | Image repository of the Docker daemon, also used to start the executor. |
+| compute.executor.dind.image.tag | string | `"29.9.0-dind"` | Image tag. |
+| compute.executor.dind.volume | object | `{"emptyDir":{"sizeLimit":"20Gi"}}` | Volume for the Docker daemon's images and containers. Runtime images are pulled again when the pod is replaced. |
+| compute.executor.existingSecret | string | `""` | Secret in the executor namespace with the keys `executor-secret`, `s3-access-key` and `s3-secret-key`. Pods can't read Secrets in other namespaces, so it's required when `compute.secrets.existingSecret` or `appwrite.storage.s3.existingSecret` is set. Otherwise the chart creates it. |
+| compute.executor.extraEnv | list | `[]` | Extra environment variables for the executor. Variables named `OPR_EXECUTOR_*` are passed on to it, e.g. `OPR_EXECUTOR_DOCKER_HUB_USERNAME` and `OPR_EXECUTOR_DOCKER_HUB_PASSWORD` to pull runtime images as a Docker Hub user. |
+| compute.executor.host | string | `""` | URL of an external executor's API (`_APP_EXECUTOR_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:9900/v1`. |
+| compute.executor.image.digest | string | `""` | Image digest. |
+| compute.executor.image.registry | string | `"docker.io"` | Image registry. The executor image is pulled by the Docker daemon in the pod, not by the kubelet, so image pull secrets don't apply to it. |
+| compute.executor.image.repository | string | `"openruntimes/executor"` | Image repository. |
+| compute.executor.image.tag | string | `"0.29.0"` | Image tag. |
+| compute.executor.images | list | `[]` | Runtime images to pull when the executor starts (`OPR_EXECUTOR_IMAGES`). Empty derives them from `functionsRuntimes` and `sitesRuntimes`, e.g. `node-22` becomes `openruntimes/node:v5-22`. |
+| compute.executor.inactiveThreshold | int | `60` | Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). |
+| compute.executor.mode | string | `"cluster"` | Where executions run. `cluster`: the chart runs the executor on Docker-in-Docker in `compute.executor.namespace`. `external`: an executor you run on a Docker host, at `host`. |
+| compute.executor.namespace | string | `""` | Namespace of the executor. Defaults to `<release namespace>-executor`. Use a different one per release when several releases share a namespace. |
+| compute.executor.networkPolicy.deniedCIDRs | list | `[]` | CIDRs executor pods may not reach, on top of the private, link-local, CGNAT and special-purpose ranges always blocked. |
+| compute.executor.networkPolicy.enabled | bool | `true` | Restrict executor pods' traffic: incoming only from Appwrite pods of this release; outgoing (which includes every runtime) only to DNS, the S3 endpoint and public addresses. Takes effect only with a CNI that enforces NetworkPolicies. |
+| compute.executor.networkPolicy.extraEgress | list | `[]` | Extra egress rules (NetworkPolicyEgressRule) for executor pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a registry mirror. |
+| compute.executor.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
+| compute.executor.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
+| compute.executor.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
+| compute.executor.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| compute.executor.privileged | bool | `false` | Run the Docker daemon as a privileged container, which makes it root on its node. Required in `cluster` mode unless `runtimeClassName` names a runtime that runs Docker without it, such as Sysbox. Give the executor nodes of its own (`nodeSelector`, `tolerations`). |
+| compute.executor.replicaCount | int | `1` | Executor replicas. Each has its own Docker daemon: a runtime starts on the replica an execution reaches and stays there until it's idle. |
+| compute.executor.resources | object | `{"limits":{"memory":"4Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}` | Resources of the Docker daemon container, which runs the executor and every runtime: size it for the executions you expect. |
+| compute.executor.runtimeClassName | string | `""` | RuntimeClass of executor pods, e.g. `sysbox-runc`. |
+| compute.executor.terminationGracePeriodSeconds | int | `60` | Seconds to wait on shutdown. |
+| compute.executor.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
+| compute.executor.topologySpreadConstraints | list | `[]` | Topology spread constraints. Empty spreads replicas across nodes. |
 | compute.functionsRuntimes | list | `[]` | Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps the Docker installer's list (node-16.0, php-8.0, python-3.9, ruby-3.0). |
 | compute.orchestrator.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | compute.orchestrator.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
@@ -536,7 +568,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | mqtt.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | nameOverride | string | `""` | Override the chart name used in resource names. |
 | networkPolicy.egress.dns | list | `[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]` | DNS servers to allow (NetworkPolicyPeer) when egress is restricted, on port 53. DNS on another port (OpenShift: 5353) or NodeLocal DNSCache (169.254.20.10) needs a rule in `extraRules`. |
-| networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor, S3, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`. |
+| networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, an external executor, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`; the in-cluster executor is allowed already. |
 | networkPolicy.egress.extraRules | list | `[]` | Extra egress rules (NetworkPolicyEgressRule) when egress is restricted. |
 | networkPolicy.enabled | bool | `false` | Create NetworkPolicies. They only take effect with a CNI that enforces them. |
 | networkPolicy.ingress.from | list | `[]` | Sources (NetworkPolicyPeer) allowed to reach the API, console and realtime, typically your ingress controller or Gateway. Empty allows any source. Pods of this release can always reach them. |

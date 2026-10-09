@@ -1,0 +1,225 @@
+{{- if include "appwrite.executor.inCluster" . }}
+{{- $e := .Values.compute.executor }}
+{{- $s3 := .Values.appwrite.storage.s3 }}
+{{- $name := include "appwrite.componentName" (dict "root" . "component" "executor") }}
+{{- $secret := $e.existingSecret | default $name }}
+{{- /* Where the executor finds build output. With an endpoint, Appwrite's paths start with the bucket; on AWS the bucket is in the hostname (docs/executor.md). */}}
+{{- $location := printf "%s.s3.%s.amazonaws.com?region=%s" $s3.bucket $s3.region $s3.region }}
+{{- with $s3.endpoint }}
+{{- $u := urlParse . }}
+{{- $location = printf "%s?region=%s%s" $u.host $s3.region (ternary "&insecure=true" "" (eq $u.scheme "http")) }}
+{{- end }}
+{{- $images := include "appwrite.executor.images" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "appwrite.executor.namespace" . }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "executor") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+spec:
+  replicas: {{ $e.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      {{- include "appwrite.componentSelectorLabels" (dict "root" . "component" "executor") | nindent 6 }}
+  template:
+    metadata:
+      {{- $annotations := dict }}
+      {{- if not $e.existingSecret }}
+      {{- $_ := set $annotations "checksum/secret" (include "appwrite.executor.secret.data" . | sha256sum) }}
+      {{- end }}
+      {{- include "appwrite.pod.metadata" (dict "root" . "values" $e "component" "executor" "annotations" $annotations) | trim | nindent 6 }}
+    spec:
+      serviceAccountName: {{ $name }}
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      {{- with $e.runtimeClassName }}
+      runtimeClassName: {{ . }}
+      {{- end }}
+      {{- with include "appwrite.imagePullSecrets" . | trim }}{{ . | nindent 6 }}{{ end }}
+      terminationGracePeriodSeconds: {{ $e.terminationGracePeriodSeconds }}
+      {{- with include "appwrite.pod.scheduling" (dict "root" . "values" $e "component" "executor" "spread" true) | trim }}{{ . | nindent 6 }}{{ end }}
+      initContainers:
+        # The Docker daemon, as a sidecar: it starts before the executor and
+        # stops after it. Runtimes run inside it, and so count against its
+        # resources. Its bridge networks get the pod's MTU, which overlay
+        # networks keep below 1500.
+        - name: dind
+          image: {{ include "appwrite.image" (dict "root" . "image" $e.dind.image) }}
+          imagePullPolicy: {{ $e.dind.image.pullPolicy }}
+          restartPolicy: Always
+          command:
+            - sh
+            - -c
+            # Naming dockerd keeps the entrypoint from adding its default
+            # TCP listener: the daemon is only reachable through the socket.
+            - |
+              mtu=$(cat /sys/class/net/eth0/mtu)
+              exec dockerd-entrypoint.sh dockerd --host=unix:///run/dind/docker.sock \
+                --mtu="$mtu" --default-network-opt=bridge=com.docker.network.driver.mtu="$mtu" "$@"
+            - dind
+            {{- range $e.dind.extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+          env:
+            # For `docker` commands run in this container.
+            - name: DOCKER_HOST
+              value: unix:///run/dind/docker.sock
+          startupProbe:
+            exec:
+              command: [docker, info]
+            periodSeconds: 2
+            timeoutSeconds: 5
+            failureThreshold: 90
+          securityContext:
+            privileged: {{ $e.privileged }}
+          {{- with $e.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /run/dind
+            - name: docker
+              mountPath: /var/lib/docker
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        # Starts the executor as a container of the Docker daemon: it looks up
+        # its own container by hostname and reaches runtimes by name on the
+        # network it creates, so it can't run beside the daemon.
+        - name: executor
+          image: {{ include "appwrite.image" (dict "root" . "image" $e.dind.image) }}
+          imagePullPolicy: {{ $e.dind.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              # Percent-encode every byte: access keys may hold / or +.
+              enc() { printf '%s' "$1" | od -An -tx1 -v | tr -d ' \n' | sed 's/../%&/g'; }
+              export OPR_EXECUTOR_CONNECTION_STORAGE="s3://$(enc "$S3_ACCESS_KEY"):$(enc "$S3_SECRET_KEY")@$S3_LOCATION"
+              if [ -n "${OPR_EXECUTOR_DOCKER_HUB_USERNAME:-}" ]; then
+                printf '%s' "${OPR_EXECUTOR_DOCKER_HUB_PASSWORD:-}" \
+                  | docker login --username "$OPR_EXECUTOR_DOCKER_HUB_USERNAME" --password-stdin >/dev/null
+              fi
+              docker rm -f executor >/dev/null 2>&1 || true
+              # --init: the executor doesn't handle signals, which PID 1 would ignore.
+              docker run -d --init --name executor --hostname executor \
+                -p 9900:80 -v /run/dind/docker.sock:/var/run/docker.sock -v /tmp:/tmp \
+                $(env | sed -n 's/^\(OPR_EXECUTOR_[A-Z0-9_]*\)=.*/-e \1/p') \
+                "$EXECUTOR_IMAGE" >/dev/null
+              term=0
+              trap 'term=1; docker stop -t 30 executor >/dev/null 2>&1 || true' TERM INT
+              docker logs -f executor &
+              docker wait executor >/dev/null &
+              waiter=$!
+              # wait returns early when a signal arrives; the trap stops the executor.
+              wait "$waiter" || true
+              wait "$waiter" 2>/dev/null || true
+              [ "$term" = 1 ] && exit 0
+              echo "The executor exited." >&2
+              exit 1
+          ports:
+            - name: http
+              containerPort: 9900
+              protocol: TCP
+          env:
+            - name: DOCKER_HOST
+              value: unix:///run/dind/docker.sock
+            - name: DOCKER_CONFIG
+              value: /tmp/docker
+            - name: EXECUTOR_IMAGE
+              value: {{ include "appwrite.image" (dict "root" . "image" $e.image) }}
+            - name: S3_LOCATION
+              value: {{ $location | quote }}
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: s3-access-key
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: s3-secret-key
+            - name: OPR_EXECUTOR_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: executor-secret
+            - name: OPR_EXECUTOR_ENV
+              value: production
+            - name: OPR_EXECUTOR_NETWORK
+              value: openruntimes-runtimes
+            - name: OPR_EXECUTOR_RUNTIME_VERSIONS
+              value: v5
+            - name: OPR_EXECUTOR_IMAGES
+              value: {{ $images | quote }}
+            - name: OPR_EXECUTOR_INACTIVE_THRESHOLD
+              value: {{ include "appwrite.envValue" $e.inactiveThreshold | quote }}
+            - name: OPR_EXECUTOR_MAINTENANCE_INTERVAL
+              value: "3600"
+            {{- with $e.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- $health := "wget -q -O /dev/null --header \"Authorization: Bearer $OPR_EXECUTOR_SECRET\" http://127.0.0.1:9900/v1/health" }}
+          {{- /* Ready once the runtime images are pulled too: a runtime started before then waits for its image and the first executions time out. */}}
+          {{- $ready := printf "%s && { [ -z \"$OPR_EXECUTOR_IMAGES\" ] || docker image inspect $(echo \"$OPR_EXECUTOR_IMAGES\" | tr , ' ') >/dev/null; }" $health }}
+          # The executor pulls its image and the runtime images before it's ready.
+          startupProbe:
+            exec:
+              command: [sh, -c, {{ $ready | quote }}]
+            periodSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 180
+          readinessProbe:
+            exec:
+              command: [sh, -c, {{ $ready | quote }}]
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: [sh, -c, {{ $health | quote }}]
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          # Executions in flight finish once the pod is out of the Service.
+          lifecycle:
+            preStop:
+              exec:
+                command: [sleep, "15"]
+          # Root without capabilities: enough to use the daemon's socket.
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {{- include "appwrite.initContainer.resources" . | nindent 12 }}
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /run/dind
+            - name: client-tmp
+              mountPath: /tmp
+      volumes:
+        - name: docker-socket
+          emptyDir: {}
+        - name: docker
+          {{- toYaml $e.dind.volume | nindent 10 }}
+        - name: tmp
+          emptyDir: {}
+        - name: client-tmp
+          emptyDir: {}
+{{- end }}

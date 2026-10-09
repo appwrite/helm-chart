@@ -228,6 +228,48 @@ Namespace build Jobs run in.
 {{- end }}
 
 {{/*
+"true" when executions run in the cluster: compute is on and the chart runs
+the executor.
+*/}}
+{{- define "appwrite.executor.inCluster" -}}
+{{- if and .Values.compute.enabled (eq .Values.compute.executor.mode "cluster") }}true{{ end }}
+{{- end }}
+
+{{/*
+Namespace the executor runs in.
+*/}}
+{{- define "appwrite.executor.namespace" -}}
+{{- .Values.compute.executor.namespace | default (printf "%s-executor" .Release.Namespace) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+URL Appwrite calls the executor at (_APP_EXECUTOR_HOST).
+*/}}
+{{- define "appwrite.executor.url" -}}
+{{- if include "appwrite.executor.inCluster" . }}
+{{- printf "http://%s.%s.svc:9900/v1" (include "appwrite.componentName" (dict "root" . "component" "executor")) (include "appwrite.executor.namespace" .) }}
+{{- else }}
+{{- .Values.compute.executor.host }}
+{{- end }}
+{{- end }}
+
+{{/*
+Runtime images the executor pulls on start, comma-separated: the explicit
+list, else one per enabled runtime (`python-ml-3.11` is
+`openruntimes/python-ml:v5-3.11`).
+*/}}
+{{- define "appwrite.executor.images" -}}
+{{- $c := .Values.compute }}
+{{- $images := $c.executor.images }}
+{{- if not $images }}
+{{- range concat $c.functionsRuntimes $c.sitesRuntimes | uniq }}
+{{- $images = append $images (printf "openruntimes/%s:v5-%s" (regexReplaceAll "-[^-]+$" . "") (regexFind "[^-]+$" .)) }}
+{{- end }}
+{{- end }}
+{{- join "," $images }}
+{{- end }}
+
+{{/*
 Internal hostname of the API Service, resolvable from any namespace. It is
 _APP_MIGRATION_HOST, which Appwrite treats like localhost (exempt from
 force-HTTPS and router protection), so it is also the Host header of probes

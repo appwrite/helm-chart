@@ -17,8 +17,9 @@
   site previews and custom domains.
 - Worker topologies from one combined worker to one Deployment per queue.
 - Functions and Sites: builds run in the cluster as unprivileged Jobs in their
-  own namespace, executions on an executor on a Docker host, so the cluster
-  never runs privileged pods.
+  own namespace, executions on an executor with its own Docker-in-Docker
+  daemon in another namespace (a privileged pod you opt into), or on a Docker
+  host.
 - Credentials generated once and kept, data migrations on upgrade, and guards
   against changing the encryption key or downgrading.
 
@@ -75,15 +76,13 @@ flowchart LR
   tasks[scheduler, maintenance,\ninterval] --> redis
   workers --> pg
   api & workers -. "builds" .-> orchestrator[orchestrator] -.-> builds[[build Jobs]]
-  api & workers -. "executions" .-> executor[[executor\non a Docker host]]
+  api & workers -. "executions" .-> executor[[executor on\nDocker-in-Docker]]
 ```
 
 See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/docs/architecture.md).
 
 ## Not included
 
-- **The executor for Functions and Sites.** It needs a Docker daemon, so it
-  runs on a Docker host next to the cluster; builds run in the cluster ([guide](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md)).
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
   ([guide](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md)).
@@ -99,7 +98,7 @@ See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/do
 | [Networking, TLS and domains](https://github.com/appwrite/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
 | [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | In-cluster builds and the external executor |
+| [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | Builds and the executor, in the cluster or on a Docker host |
 | [Optional components](https://github.com/appwrite/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
 | [Security](https://github.com/appwrite/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
 | [Upgrading](https://github.com/appwrite/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |

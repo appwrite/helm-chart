@@ -1381,15 +1381,253 @@
           "additionalProperties": false
         },
         "enabled": {
-          "description": "Enable Functions and Sites. Needs `appwrite.storage.device: s3` and an external executor (`compute.executor.host`).",
+          "description": "Enable Functions and Sites. Needs `appwrite.storage.device: s3`, and with the in-cluster executor `compute.executor.privileged` (see docs/executor.md).",
           "type": "boolean"
         },
         "executor": {
           "type": "object",
           "properties": {
-            "host": {
-              "description": "URL of the open-runtimes executor API (`_APP_EXECUTOR_HOST`), e.g. `http://10.0.0.20:9900/v1`.",
+            "affinity": {
+              "type": "object",
+              "description": "Affinity. Empty inherits `defaults.affinity`."
+            },
+            "createNamespace": {
+              "description": "Create the namespace, labelled for the `privileged` Pod Security Standard. Set to false to create it yourself.",
+              "type": "boolean"
+            },
+            "dind": {
+              "type": "object",
+              "properties": {
+                "extraArgs": {
+                  "description": "Extra arguments for `dockerd`, e.g. `--registry-mirror=https://mirror.example.com`.",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "image": {
+                  "type": "object",
+                  "properties": {
+                    "digest": {
+                      "type": "string",
+                      "pattern": "^$|^sha256:[a-f0-9]{64}$",
+                      "description": "Image digest."
+                    },
+                    "pullPolicy": {
+                      "description": "Image pull policy.",
+                      "type": "string",
+                      "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                      ]
+                    },
+                    "registry": {
+                      "description": "Image registry.",
+                      "type": "string"
+                    },
+                    "repository": {
+                      "description": "Image repository of the Docker daemon, also used to start the executor.",
+                      "type": "string"
+                    },
+                    "tag": {
+                      "description": "Image tag.",
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "volume": {
+                  "description": "Volume for the Docker daemon's images and containers. Runtime images are pulled again when the pod is replaced.",
+                  "type": "object",
+                  "properties": {
+                    "emptyDir": {
+                      "type": "object",
+                      "properties": {
+                        "sizeLimit": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            "existingSecret": {
+              "description": "Secret in the executor namespace with the keys `executor-secret`, `s3-access-key` and `s3-secret-key`. Pods can't read Secrets in other namespaces, so it's required when `compute.secrets.existingSecret` or `appwrite.storage.s3.existingSecret` is set. Otherwise the chart creates it.",
               "type": "string"
+            },
+            "extraEnv": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Extra environment variables for the executor. Variables named `OPR_EXECUTOR_*` are passed on to it, e.g. `OPR_EXECUTOR_DOCKER_HUB_USERNAME` and `OPR_EXECUTOR_DOCKER_HUB_PASSWORD` to pull runtime images as a Docker Hub user."
+            },
+            "host": {
+              "description": "URL of an external executor's API (`_APP_EXECUTOR_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:9900/v1`.",
+              "type": "string"
+            },
+            "image": {
+              "type": "object",
+              "properties": {
+                "digest": {
+                  "type": "string",
+                  "pattern": "^$|^sha256:[a-f0-9]{64}$",
+                  "description": "Image digest."
+                },
+                "registry": {
+                  "description": "Image registry. The executor image is pulled by the Docker daemon in the pod, not by the kubelet, so image pull secrets don't apply to it.",
+                  "type": "string"
+                },
+                "repository": {
+                  "description": "Image repository.",
+                  "type": "string"
+                },
+                "tag": {
+                  "description": "Image tag.",
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "images": {
+              "description": "Runtime images to pull when the executor starts (`OPR_EXECUTOR_IMAGES`). Empty derives them from `functionsRuntimes` and `sitesRuntimes`, e.g. `node-22` becomes `openruntimes/node:v5-22`.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "inactiveThreshold": {
+              "description": "Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`).",
+              "type": "integer"
+            },
+            "mode": {
+              "description": "Where executions run. `cluster`: the chart runs the executor on Docker-in-Docker in `compute.executor.namespace`. `external`: an executor you run on a Docker host, at `host`.",
+              "type": "string",
+              "enum": [
+                "cluster",
+                "external"
+              ]
+            },
+            "namespace": {
+              "description": "Namespace of the executor. Defaults to `<release namespace>-executor`. Use a different one per release when several releases share a namespace.",
+              "type": "string"
+            },
+            "networkPolicy": {
+              "type": "object",
+              "properties": {
+                "deniedCIDRs": {
+                  "description": "CIDRs executor pods may not reach, on top of the private, link-local, CGNAT and special-purpose ranges always blocked.",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "enabled": {
+                  "description": "Restrict executor pods' traffic: incoming only from Appwrite pods of this release; outgoing (which includes every runtime) only to DNS, the S3 endpoint and public addresses. Takes effect only with a CNI that enforces NetworkPolicies.",
+                  "type": "boolean"
+                },
+                "extraEgress": {
+                  "description": "Extra egress rules (NetworkPolicyEgressRule) for executor pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a registry mirror.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "nodeSelector": {
+              "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "podAnnotations": {
+              "description": "Pod annotations, merged over `defaults.podAnnotations`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "podLabels": {
+              "description": "Pod labels, merged over `defaults.podLabels`.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "priorityClassName": {
+              "description": "Priority class. Empty inherits `defaults.priorityClassName`.",
+              "type": "string"
+            },
+            "privileged": {
+              "description": "Run the Docker daemon as a privileged container, which makes it root on its node. Required in `cluster` mode unless `runtimeClassName` names a runtime that runs Docker without it, such as Sysbox. Give the executor nodes of its own (`nodeSelector`, `tolerations`).",
+              "type": "boolean"
+            },
+            "replicaCount": {
+              "description": "Executor replicas. Each has its own Docker daemon: a runtime starts on the replica an execution reaches and stays there until it's idle.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  }
+                },
+                "claims": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "additionalProperties": false,
+              "description": "Resources of the Docker daemon container, which runs the executor and every runtime: size it for the executions you expect."
+            },
+            "runtimeClassName": {
+              "description": "RuntimeClass of executor pods, e.g. `sysbox-runc`.",
+              "type": "string"
+            },
+            "terminationGracePeriodSeconds": {
+              "description": "Seconds to wait on shutdown.",
+              "type": "integer"
+            },
+            "tolerations": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Tolerations. Empty inherits `defaults.tolerations`."
+            },
+            "topologySpreadConstraints": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Topology spread constraints. Empty spreads replicas across nodes."
             }
           },
           "additionalProperties": false
@@ -2761,7 +2999,7 @@
               "description": "DNS servers to allow (NetworkPolicyPeer) when egress is restricted, on port 53. DNS on another port (OpenShift: 5353) or NodeLocal DNSCache (169.254.20.10) needs a rule in `extraRules`."
             },
             "enabled": {
-              "description": "Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, the executor, S3, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`.",
+              "description": "Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, an external executor, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`; the in-cluster executor is allowed already.",
               "type": "boolean"
             },
             "extraRules": {

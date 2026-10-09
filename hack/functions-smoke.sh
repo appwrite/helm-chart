@@ -6,6 +6,7 @@
 # build it, then executes it through the executor and checks the response.
 #
 # Usage: hack/functions-smoke.sh [release] [namespace] [runtime]
+# FUNCTIONS_EXECUTIONS executes the function that many times (default 1).
 # Requires: kubectl, curl, jq, tar.
 set -euo pipefail
 # shellcheck source=lib/api.sh
@@ -15,6 +16,7 @@ RELEASE="${1:-appwrite}"
 NAMESPACE="${2:-appwrite}"
 RUNTIME="${3:-node-22}"
 TIMEOUT="${FUNCTIONS_TIMEOUT:-600}"
+EXECUTIONS="${FUNCTIONS_EXECUTIONS:-1}"
 
 api_connect "$RELEASE" "$NAMESPACE"
 api_login
@@ -47,10 +49,13 @@ until status=$(call GET "/functions/hello/deployments/$deployment" "" "$project"
 done
 echo "deployment is ready"
 
-log "Execute"
-response=$(call POST /functions/hello/executions '{"async":false}' "$project")
-jq '{status, responseStatusCode, responseBody, duration}' <<<"$response"
-jq -e '.responseStatusCode == 200 and (.responseBody | fromjson | .hello == "from kubernetes")' <<<"$response" >/dev/null \
-  || fail "unexpected execution result"
+# Several executions reach several executor replicas, each starting its own runtime.
+for i in $(seq 1 "$EXECUTIONS"); do
+  log "Execute ($i/$EXECUTIONS)"
+  response=$(call POST /functions/hello/executions '{"async":false}' "$project")
+  jq '{status, responseStatusCode, responseBody, duration}' <<<"$response"
+  jq -e '.responseStatusCode == 200 and (.responseBody | fromjson | .hello == "from kubernetes")' <<<"$response" >/dev/null \
+    || fail "unexpected execution result"
+done
 
 log "OK"

@@ -1,0 +1,56 @@
+{{- if and (include "appwrite.executor.inCluster" .) .Values.compute.executor.networkPolicy.enabled }}
+{{- $np := .Values.compute.executor.networkPolicy }}
+{{- $s3 := urlParse (.Values.appwrite.storage.s3.endpoint | default "https://s3.amazonaws.com") }}
+{{- $s3Host := regexReplaceAll ":[0-9]+$" $s3.host "" }}
+{{- $s3Port := regexFind "[0-9]+$" (regexFind ":[0-9]+$" $s3.host) | default (ternary "443" "80" (eq $s3.scheme "https")) }}
+{{- /*
+The executor runs your functions and sites. Only Appwrite pods of this
+release may call it; it and its runtimes may only reach DNS, the S3 endpoint
+and public addresses (runtime images, and whatever your code calls).
+Private, link-local (cloud metadata), CGNAT and special-purpose ranges are
+blocked, plus compute.executor.networkPolicy.deniedCIDRs.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "appwrite.componentName" (dict "root" . "component" "executor") }}
+  namespace: {{ include "appwrite.executor.namespace" . }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "executor") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - ports:
+        - port: http
+      from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Release.Namespace }}
+          podSelector:
+            matchLabels:
+              {{- include "appwrite.selectorLabels" . | nindent 14 }}
+              appwrite/datastore-client: "true"
+  egress:
+    - to:
+        {{- toYaml .Values.networkPolicy.egress.dns | nindent 8 }}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- if regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" $s3Host }}
+    - to:
+        - ipBlock:
+            cidr: {{ $s3Host }}/32
+      ports:
+        - port: {{ $s3Port }}
+          protocol: TCP
+    {{- end }}
+    - to:
+        {{- include "appwrite.networkPolicy.publicPeers" (dict "denied" $np.deniedCIDRs "ipv6" true) | nindent 8 }}
+    {{- with $np.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

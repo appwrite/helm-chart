@@ -1,6 +1,7 @@
 # S3 storage with Functions and Sites (in-cluster builds, external executor),
 # rendered and linted only: the kind scenarios with S3 run in the nightly
-# workflow, which starts an S3 server and an executor next to the cluster.
+# workflow, which starts an S3 server next to the cluster. The in-cluster
+# executor is rendered by executor-values.yaml.
 appwrite:
   domain: appwrite.ci.local
   certificatesEmail: ci@example.com
@@ -14,6 +15,7 @@ appwrite:
 compute:
   enabled: true
   executor:
+    mode: external
     host: http://10.0.0.20:9900/v1
   functionsRuntimes: [node-22]
   sitesRuntimes: [static-1, node-22]

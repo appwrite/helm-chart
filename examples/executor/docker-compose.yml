@@ -1,8 +1,9 @@
-# The executor for Appwrite's Functions and Sites on a Kubernetes install.
+# The executor for Appwrite's Functions and Sites on a Kubernetes install, for
+# when it shouldn't run in the cluster (compute.executor.mode: external).
 #
 # Run this on a Docker host that the Appwrite pods can reach over a private
 # network. The executor runs function and site runtimes as containers through
-# the host's Docker socket, which is why it doesn't run inside Kubernetes.
+# the host's Docker socket.
 # Builds run in the cluster as Kubernetes Jobs; to run them here instead, see
 # external-builds.yml. The executor reads build output from the S3 bucket
 # Appwrite uses (appwrite.storage.device: s3).
@@ -12,6 +13,7 @@
 #
 # Then set in the chart:
 #   compute.enabled: true
+#   compute.executor.mode: external
 #   compute.executor.host: http://<this-host>:${EXECUTOR_PORT}/v1
 # and use the same executor secret (compute.secrets).
 

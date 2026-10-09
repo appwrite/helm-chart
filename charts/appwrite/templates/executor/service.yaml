@@ -1,0 +1,19 @@
+{{- if include "appwrite.executor.inCluster" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "appwrite.componentName" (dict "root" . "component" "executor") }}
+  namespace: {{ include "appwrite.executor.namespace" . }}
+  labels:
+    {{- include "appwrite.componentLabels" (dict "root" . "component" "executor") | nindent 4 }}
+  {{- with include "appwrite.annotations" (dict "root" .) | trim }}{{ . | nindent 2 }}{{ end }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9900
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "appwrite.componentSelectorLabels" (dict "root" . "component" "executor") | nindent 4 }}
+{{- end }}

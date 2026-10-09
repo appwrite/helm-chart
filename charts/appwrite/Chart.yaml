@@ -42,7 +42,7 @@ annotations:
     - kind: added
       description: Ingress and Gateway API routes, including function and site previews and custom domains
     - kind: added
-      description: S3 storage, and Functions and Sites with builds as Kubernetes Jobs and an external executor
+      description: S3 storage, and Functions and Sites with builds as Kubernetes Jobs and the executor on Docker-in-Docker in its own namespace (opt-in privileged pod) or on a Docker host
     - kind: added
       description: Optional browser, assistant, autogravity, embedding and MQTT components
     - kind: added
@@ -66,8 +66,12 @@ annotations:
       image: docker.io/clickhouse/clickhouse-server:26.4.3-alpine
     - name: console
       image: docker.io/appwrite/new:1.1.159-self-hosted
+    - name: dind
+      image: docker.io/library/docker:29.9.0-dind
     - name: embedding
       image: docker.io/appwrite/embedding:0.3.1
+    - name: executor
+      image: docker.io/openruntimes/executor:0.29.0
     - name: geo
       image: docker.io/appwrite/geo:0.3.1
     - name: orchestrator

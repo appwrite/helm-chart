@@ -1,0 +1,32 @@
+# Functions and Sites with the executor in the cluster on Docker-in-Docker,
+# on nodes of its own, with NetworkPolicies. Rendered and linted only: the
+# nightly workflow installs it with an S3 server next to the cluster.
+appwrite:
+  domain: appwrite.ci.local
+  certificatesEmail: ci@example.com
+  storage:
+    device: s3
+    s3:
+      endpoint: http://10.0.0.30:8333
+      bucket: appwrite
+      accessKey: appwrite
+      secretKey: appwrite-s3-secret
+compute:
+  enabled: true
+  executor:
+    privileged: true
+    replicaCount: 2
+    nodeSelector:
+      workload: executor
+    tolerations:
+      - key: workload
+        value: executor
+        effect: NoSchedule
+    dind:
+      extraArgs: [--registry-mirror=https://mirror.example.com]
+  functionsRuntimes: [node-22, python-3.12]
+  sitesRuntimes: [static-1, node-22]
+networkPolicy:
+  enabled: true
+  egress:
+    enabled: true

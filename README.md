@@ -37,8 +37,9 @@ in ten minutes, a real one step by step, and installing from a clone.
   custom domains.
 - Combined, per-queue or grouped workers.
 - Functions and Sites: builds run in the cluster as unprivileged Kubernetes
-  Jobs in their own namespace; executions run on an executor on a Docker host,
-  so no pod gets a Docker socket.
+  Jobs in their own namespace; executions run on an executor with its own
+  Docker-in-Docker daemon, in a namespace of its own (privileged, opt-in), or
+  on a Docker host.
 - Credentials generated once and kept; data migrations on upgrade.
 
 ## Repository layout
@@ -46,7 +47,7 @@ in ten minutes, a real one step by step, and installing from a clone.
 ```text
 charts/appwrite/   the chart: templates, values, unit tests, CI scenarios
 docs/              operator guides
-examples/executor/ Docker Compose for the executor host (Functions and Sites)
+examples/executor/ Docker Compose for an executor on a Docker host (Functions and Sites)
 hack/              scripts used by CI and local development
 ```
 
@@ -64,7 +65,7 @@ installs on kind in a namespace that enforces the `restricted` profile:
 | `separate-workers`, `grouped-workers` | Worker topologies |
 | `external-dbs` | PostgreSQL, Redis and ClickHouse outside the release |
 | `ingress`, `gateway-api` | Routing through Traefik |
-| nightly | Every optional component, S3, and a function built and executed on an external executor |
+| nightly | Every optional component, S3, and a function built and executed on the in-cluster executor, and on an external one |
 
 Each install runs `helm test` and an end-to-end smoke test
 ([`hack/smoke.sh`](hack/smoke.sh)).

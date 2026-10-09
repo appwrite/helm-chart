@@ -8,7 +8,7 @@
 | [Networking, TLS and domains](networking.md) | Ingress, Gateway API, cert-manager, custom domains |
 | [External databases](external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](storage.md) | Volumes, ReadWriteMany, S3 |
-| [Functions and Sites](executor.md) | In-cluster builds and the external executor |
+| [Functions and Sites](executor.md) | Builds and the executor, in the cluster or on a Docker host |
 | [Optional components](optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
 | [Security](security.md) | Pod security, credentials, NetworkPolicies, chart signatures |
 | [Upgrading](upgrading.md) | Versions, migrations, rollbacks, Helm 4 |

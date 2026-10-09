@@ -93,3 +93,16 @@ value already stored in the cluster, else a new random value.
 {{- randAlphaNum 48 | b64enc }}
 {{- end }}
 {{- end }}
+
+{{/*
+Data of the executor's Secret in its own namespace, as YAML (key: base64
+value): the executor secret and the S3 credentials from the chart Secret.
+*/}}
+{{- define "appwrite.executor.secret.data" -}}
+{{- $data := include "appwrite.secret.data" . | fromYaml }}
+{{- dict
+  "executor-secret" (get $data "executor-secret")
+  "s3-access-key" (get $data "s3-access-key")
+  "s3-secret-key" (get $data "s3-secret-key")
+  | toYaml }}
+{{- end }}

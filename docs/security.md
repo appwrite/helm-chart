@@ -4,7 +4,9 @@
 
 Every pod in the Appwrite namespace passes the Kubernetes
 [`restricted` Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted),
-and CI installs the chart into a namespace that enforces it. You can do the same:
+and CI installs the chart into a namespace that enforces it. (Functions and
+Sites add two namespaces of their own: builds under `baseline`, the executor
+under `privileged`; see [below](#functions-and-sites).) You can do the same:
 
 ```console
 kubectl create namespace appwrite
@@ -37,6 +39,7 @@ What that means for each pod:
 | Autogravity | 65532 | |
 | Embedding | 10001 | Models are kept on their own PersistentVolumeClaim. |
 | Orchestrator | `nonroot` (65532) | The only pod with a ServiceAccount token, for its Role in the build namespace. |
+| Executor | root | In its own namespace. The Docker daemon is privileged; the container that starts the executor is root without capabilities. |
 
 Every security context is a value you can override per component
 (`<component>.podSecurityContext`, `<component>.containerSecurityContext`). For
@@ -69,9 +72,27 @@ Treat the build namespace as holding secrets:
 
 Executions need a Docker daemon: the
 [open-runtimes executor](https://github.com/open-runtimes/executor) starts a
-container per runtime. Mounting a node's Docker socket, or running
-Docker-in-Docker, gives that pod root on the node, so the chart runs neither.
-The executor runs on a separate Docker host; see [executor.md](executor.md).
+container per runtime. In the cluster the chart gives each executor pod its
+own daemon (Docker-in-Docker), which runs as a **privileged container: root
+on its node**, and it runs your users' code. That is the one exception to the
+standards above, and the chart only renders it when you accept it
+(`compute.executor.privileged: true`, or `runtimeClassName` for Sysbox):
+
+- The executor gets a namespace of its own, the only one labelled for the
+  `privileged` standard. The Appwrite namespace stays `restricted` and the
+  build namespace `baseline`.
+- No ServiceAccount token, and a Secret in its namespace holding only the
+  executor secret and the S3 credentials.
+- The Docker daemon listens only on a socket inside the pod.
+- A NetworkPolicy, on by default, lets only Appwrite pods of the release in,
+  and the executor and its runtimes out only to DNS, S3 and public addresses.
+- Put it on nodes of its own, with a taint nothing else tolerates: a runtime
+  that escapes its container is root on that node, and can read anything
+  running there.
+
+If a privileged pod is unacceptable, run the executor on a separate Docker
+host (`compute.executor.mode: external`). See
+[executor.md](executor.md#executor-isolation).
 
 ## Credentials
 
@@ -84,7 +105,7 @@ The chart keeps credentials in a Secret named after the release:
 | `_APP_GEO_SECRET` | Authenticating Appwrite to the geo service. |
 | `postgres-password`, `redis-password`, `clickhouse-password` | Built-in datastores, or an external Redis or ClickHouse with an inline password. |
 | `db-password`, `documentsdb-password`, `vectorsdb-password` | External databases with an inline password. |
-| `executor-secret`, `orchestrator-secret` | The executor and the orchestrator (`compute.enabled`). |
+| `executor-secret`, `orchestrator-secret` | The executor and the orchestrator (`compute.enabled`). The in-cluster executor gets a copy of `executor-secret` and the S3 keys in a Secret in its namespace. |
 | `s3-access-key`, `s3-secret-key` | S3 storage with inline keys. |
 | `smtp-password`, `openai-api-key` | SMTP and the assistant, when set inline. |
 
@@ -178,7 +199,9 @@ CNI that enforces them (Calico, Cilium, kindnet, and most managed offerings).
 
 With in-cluster builds, `<fullname>-edge` also admits build pods to the API.
 Build pods get their own policy in the build namespace, `<fullname>-build`,
-on by default (`compute.builds.networkPolicy.enabled`); see
+on by default (`compute.builds.networkPolicy.enabled`), and so does the
+executor in its namespace, `<fullname>-executor`
+(`compute.executor.networkPolicy.enabled`); see
 [executor.md](executor.md#isolation).
 
 Two more limit outgoing traffic:
@@ -192,9 +215,10 @@ Policies add up: with `egress.enabled`, the browser may also reach the other
 pods of the release.
 
 With Functions and Sites, `networkPolicy.egress.enabled` also blocks traffic
-the compute plane needs, because the executor, the S3 endpoint and the
-Kubernetes API are outside the release. Add rules for them to `extraRules`
-([executor.md](executor.md#isolation)).
+the compute plane needs, because the S3 endpoint, the Kubernetes API and an
+executor on a Docker host are outside the release. Add rules for them to
+`extraRules` ([executor.md](executor.md#with-restricted-egress)). The
+in-cluster executor is allowed already.
 
 Restrict the entry points to your ingress controller or Gateway:
 
