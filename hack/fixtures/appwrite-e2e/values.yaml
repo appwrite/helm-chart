@@ -4,10 +4,14 @@
 appwrite:
   # The tests call http://appwrite/v1, which Appwrite would redirect to HTTPS.
   forceHttps: false
+  # The mail catcher authenticates with the credentials the tests default
+  # to, as in compose.
   smtp:
     host: maildev
     port: 1025
     secure: ""
+    username: user
+    password: password
   config:
     # Outside production, Appwrite lets webhooks and SMS reach the catchers'
     # hostnames, as in its own CI.
@@ -15,9 +19,15 @@ appwrite:
     _APP_OPTIONS_ABUSE: disabled
     _APP_CONSOLE_SESSION_ALERTS: enabled
     # The tests sign up a console user per class, from Origin http://localhost,
-    # which the console only accepts from its own domain. This overrides the
-    # variable only: the routes keep using appwrite.consoleDomain.
+    # which the console only accepts from its own domain. These override the
+    # variables only: the routes keep using appwrite.domain and friends.
     _APP_CONSOLE_WHITELIST_ROOT: disabled
+    # Domains as Appwrite's CI sets them: tests fetch from http://localhost
+    # and address previews as <id>.functions.localhost, which resolve to the
+    # runner's own proxy.
+    _APP_DOMAIN: localhost
+    _APP_DOMAIN_FUNCTIONS: functions.localhost
+    _APP_DOMAIN_SITES: sites.localhost
     _APP_CONSOLE_DOMAIN: localhost
     _APP_CONSOLE_HOSTNAMES: localhost
     # The tests' own host, http://appwrite (a Service hack/appwrite-e2e.sh

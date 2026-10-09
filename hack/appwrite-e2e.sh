@@ -46,19 +46,23 @@ api=$(kubectl -n "$NAMESPACE" get deploy -l "$selector" -o json | jq '.items[0]'
 version=$(jq -r '.spec.template.spec.containers[0].image | sub(".*:"; "") | sub("@.*"; "")' <<<"$api")
 ref="${APPWRITE_REF:-$version}"
 
+# Compose bind-mounts the tests, writable (some write fixtures next to
+# themselves); the image needs them inside, owned by www-data (82).
+recipe=$(printf 'FROM appwrite-e2e-base:%s\nCOPY --chown=82:82 phpunit.xml /usr/src/code/phpunit.xml\nCOPY --chown=82:82 tests /usr/src/code/tests\nWORKDIR /usr/src/code\n' "$ref")
 image="${E2E_IMAGE:-}"
 if [[ -z "$image" ]]; then
-  image="appwrite-e2e:$ref"
+  # Tagged by the recipe too, so changing it rebuilds the image.
+  image="appwrite-e2e:$ref-$(printf '%s' "$recipe" | git hash-object --stdin | cut -c1-7)"
   if ! docker image inspect "$image" >/dev/null 2>&1; then
     log "Build $image from $CHECKOUT at $ref"
     src=$(mktemp -d)
     trap 'rm -rf "$src"' EXIT
     git -C "$CHECKOUT" archive "$ref" | tar -x -C "$src"
-    docker build -q --target development --build-arg TESTING=true --build-arg VERSION="$ref" \
-      -t "appwrite-e2e-base:$ref" "$src" >/dev/null
-    # Compose bind-mounts the tests; the image needs them inside.
-    printf 'FROM appwrite-e2e-base:%s\nCOPY phpunit.xml /usr/src/code/phpunit.xml\nCOPY tests /usr/src/code/tests\nWORKDIR /usr/src/code\n' "$ref" \
-      | docker build -q -t "$image" -f - "$src" >/dev/null
+    if ! docker image inspect "appwrite-e2e-base:$ref" >/dev/null 2>&1; then
+      docker build -q --target development --build-arg TESTING=true --build-arg VERSION="$ref" \
+        -t "appwrite-e2e-base:$ref" "$src" >/dev/null
+    fi
+    printf '%s' "$recipe" | docker build -q -t "$image" -f - "$src" >/dev/null
   fi
   if [[ -n "$KIND_CLUSTER" ]]; then
     log "Load $image into kind cluster $KIND_CLUSTER"
@@ -137,6 +141,7 @@ jq --arg pod "$pod" --arg image "$image" --argjson args "$args" '
         | .containers = [$c
             | del(.ports, .startupProbe, .readinessProbe, .livenessProbe, .lifecycle)
             | .name = "phpunit" | .image = $image | .imagePullPolicy = "IfNotPresent"
+            | .securityContext.readOnlyRootFilesystem = false
             # Empty catchers per run, as in Appwrite CI: some tests reuse
             # addresses and would read mail from an earlier run. Restarting
             # the catchers instead loses mail on open SMTP connections.

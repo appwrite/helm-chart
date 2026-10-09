@@ -1,5 +1,6 @@
 # What Appwrite's e2e tests expect next to Appwrite: a mail catcher and two
-# request catchers (webhooks, SMS). Used by hack/appwrite-e2e.sh.
+# request catchers (webhooks, SMS). Used by hack/appwrite-e2e.sh. Service
+# links are off: MailDev reads its options from MAILDEV_* variables.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -19,9 +20,14 @@ spec:
     metadata:
       labels: {app: maildev}
     spec:
+      enableServiceLinks: false
       containers:
         - name: maildev
           image: appwrite/mailcatcher:1.1.1
+          # The tests' SMTP providers authenticate with these, as in compose.
+          env:
+            - {name: MAILDEV_INCOMING_USER, value: user}
+            - {name: MAILDEV_INCOMING_PASS, value: password}
           ports:
             - {name: smtp, containerPort: 1025}
             - {name: http, containerPort: 1080}
@@ -49,6 +55,7 @@ spec:
     metadata:
       labels: {app: request-catcher-webhook}
     spec:
+      enableServiceLinks: false
       containers:
         - name: catcher
           image: appwrite/requestcatcher:1.1.0
@@ -77,6 +84,7 @@ spec:
     metadata:
       labels: {app: request-catcher-sms}
     spec:
+      enableServiceLinks: false
       containers:
         - name: catcher
           image: appwrite/requestcatcher:1.1.0
