@@ -41,7 +41,7 @@ jobs:
           helm upgrade --install traefik traefik --repo https://traefik.github.io/charts --version "${TRAEFIK_CHART_VERSION}" \
             -n traefik --create-namespace -f hack/fixtures/traefik-values.yaml --wait --timeout 5m
       - name: Start the compute plane
-        run: hack/compute-plane.sh "${RUNNER_TEMP}/compute-values.yaml" appwrite
+        run: hack/compute-plane.sh "${RUNNER_TEMP}/compute-values.yaml"
       - name: Install with every optional component
         run: make install VALUES="charts/appwrite/ci/full-values.yaml ${RUNNER_TEMP}/compute-values.yaml"
       - name: helm test

@@ -3,12 +3,11 @@
 # container on the kind network, and writes chart values that point Appwrite
 # at it and run builds and the executor in the cluster.
 #
-# Usage: hack/compute-plane.sh <values-file-to-write> [kind-cluster]
+# Usage: hack/compute-plane.sh <values-file-to-write>
 # Requires: docker.
 set -euo pipefail
 
 OUT="$1"
-CLUSTER="${2:-appwrite}"
 NETWORK=kind
 FIXTURES="$(cd "$(dirname "$0")/fixtures/compute" && pwd)"
 S3_KEY=appwrite
@@ -32,14 +31,11 @@ for _ in $(seq 1 60); do
   sleep 2
 done
 
-node_ip=$(ip "$CLUSTER-control-plane")
-# nip.io resolves <ip>.nip.io to <ip>, so the domain is reachable from the
-# kind network.
-domain="$node_ip.nip.io"
-
 cat > "$OUT" <<VALUES
 appwrite:
-  domain: $domain
+  # Reached through port-forwards (hack/smoke.sh) and in-cluster Services;
+  # with kubectl -n traefik port-forward svc/traefik 80:80 also in a browser.
+  domain: appwrite.localhost
   certificatesEmail: ci@example.com
   storage:
     device: s3

@@ -67,15 +67,28 @@ unreleased change, install it from a clone instead
 **4. Open it.**
 
 ```console
-kubectl -n traefik port-forward svc/traefik 8080:80
+kubectl -n traefik port-forward svc/traefik 80:80
 ```
 
-Browse to <http://appwrite.localhost:8080>. Browsers resolve any
-`*.localhost` name to your own machine, so no DNS setup is needed. Sign up:
-the first account becomes the console's administrator, and nobody else can
-sign up without an invitation from it.
+Browse to <http://appwrite.localhost>. Browsers resolve any `*.localhost`
+name to your own machine, so no DNS setup is needed. Sign up: the first
+account becomes the console's administrator, and nobody else can sign up
+without an invitation from it.
 
-Create a project, and point an SDK at `http://appwrite.localhost:8080/v1`.
+Create a project, and point an SDK at `http://appwrite.localhost/v1`.
+
+Forward port 80 rather than another one: Appwrite writes `appwrite.domain`
+without a port into the links it generates (emails, OAuth redirects,
+previews). Binding port 80 needs `sudo` on Linux; macOS and Windows allow
+it. With another port the console works, but those links don't.
+
+Functions and Sites work locally too once you add S3 storage and
+`compute.enabled` ([below](#functions-and-sites)), with two limits: previews
+at `*.functions.appwrite.localhost` open in Chrome and Firefox, which resolve
+`*.localhost` themselves, but not in every browser; and function code can't
+call Appwrite back at `appwrite.localhost`, which inside a runtime is the
+runtime itself. For that, give the install a domain that resolves to your
+ingress controller from inside the cluster too.
 
 **Clean up** when you're done:
 
