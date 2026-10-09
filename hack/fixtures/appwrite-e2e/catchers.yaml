@@ -1,0 +1,94 @@
+# What Appwrite's e2e tests expect next to Appwrite: a mail catcher and two
+# request catchers (webhooks, SMS). Used by hack/appwrite-e2e.sh.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: appwrite-e2e
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maildev
+  namespace: appwrite-e2e
+spec:
+  selector:
+    matchLabels: {app: maildev}
+  template:
+    metadata:
+      labels: {app: maildev}
+    spec:
+      containers:
+        - name: maildev
+          image: appwrite/mailcatcher:1.1.1
+          ports:
+            - {name: smtp, containerPort: 1025}
+            - {name: http, containerPort: 1080}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maildev
+  namespace: appwrite-e2e
+spec:
+  selector: {app: maildev}
+  ports:
+    - {name: smtp, port: 1025}
+    - {name: http, port: 1080}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: request-catcher-webhook
+  namespace: appwrite-e2e
+spec:
+  selector:
+    matchLabels: {app: request-catcher-webhook}
+  template:
+    metadata:
+      labels: {app: request-catcher-webhook}
+    spec:
+      containers:
+        - name: catcher
+          image: appwrite/requestcatcher:1.1.0
+          ports:
+            - {name: http, containerPort: 5000}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: request-catcher-webhook
+  namespace: appwrite-e2e
+spec:
+  selector: {app: request-catcher-webhook}
+  ports:
+    - {name: http, port: 5000}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: request-catcher-sms
+  namespace: appwrite-e2e
+spec:
+  selector:
+    matchLabels: {app: request-catcher-sms}
+  template:
+    metadata:
+      labels: {app: request-catcher-sms}
+    spec:
+      containers:
+        - name: catcher
+          image: appwrite/requestcatcher:1.1.0
+          ports:
+            - {name: http, containerPort: 5000}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: request-catcher-sms
+  namespace: appwrite-e2e
+spec:
+  selector: {app: request-catcher-sms}
+  ports:
+    - {name: http, port: 5000}

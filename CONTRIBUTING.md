@@ -59,6 +59,26 @@ yet, listing the environment variables that changed. To follow it:
 5. Run `make generate test`, then the kind install including the upgrade
    scenario, and add a CHANGELOG entry.
 
+## Running Appwrite's own end-to-end tests
+
+[`hack/appwrite-e2e.sh`](hack/appwrite-e2e.sh) runs the PHPUnit e2e suites of
+a checkout of [appwrite/appwrite](https://github.com/appwrite/appwrite)
+against a release, at the release's Appwrite version:
+
+```console
+make kind-up install VALUES="charts/appwrite/ci/full-values.yaml <compute values>"
+hack/appwrite-e2e.sh ~/source/appwrite appwrite appwrite tests/e2e/Services/Account
+hack/appwrite-e2e.sh ~/source/appwrite appwrite appwrite --filter testCreateUser tests/e2e/Services/Users
+```
+
+It reconfigures the release for testing (development mode, open console
+sign-up, mail and request catchers), so only point it at a throwaway install.
+Functions and Sites suites need the compute plane
+(`hack/compute-plane.sh` writes the values) and the runtimes they use in
+`compute.functionsRuntimes`. Suites that need a fresh instance (the first
+organization in Teams), GitHub or Gitea, or ClamAV don't pass against a shared
+install.
+
 ## Conventions
 
 - Values are camelCase. Prefer maps to lists for things users add to or

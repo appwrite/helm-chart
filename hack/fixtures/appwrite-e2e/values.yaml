@@ -1,0 +1,51 @@
+# Chart values for running Appwrite's e2e tests against a release, layered
+# over the release's own values by hack/appwrite-e2e.sh. Mirrors what
+# Appwrite's CI sets for its compose stack.
+appwrite:
+  # The tests call http://appwrite/v1, which Appwrite would redirect to HTTPS.
+  forceHttps: false
+  smtp:
+    host: maildev
+    port: 1025
+    secure: ""
+  config:
+    # Outside production, Appwrite lets webhooks and SMS reach the catchers'
+    # hostnames, as in its own CI.
+    _APP_ENV: development
+    _APP_OPTIONS_ABUSE: disabled
+    _APP_CONSOLE_SESSION_ALERTS: enabled
+    # The tests sign up a console user per class, from Origin http://localhost,
+    # which the console only accepts from its own domain. This overrides the
+    # variable only: the routes keep using appwrite.consoleDomain.
+    _APP_CONSOLE_WHITELIST_ROOT: disabled
+    _APP_CONSOLE_DOMAIN: localhost
+    _APP_CONSOLE_HOSTNAMES: localhost
+    # The tests' own host, http://appwrite (a Service hack/appwrite-e2e.sh
+    # creates), as compose names it: the console trusts this host, and
+    # OAuth2 redirects to it.
+    _APP_MIGRATION_HOST: appwrite
+    # Appwrite's mock SMS provider posts to http://request-catcher-sms:5000.
+    _APP_SMS_PROVIDER: sms://username:password@mock
+    _APP_SMS_FROM: "+123456789"
+
+# Appwrite's mock OAuth2 provider calls http://localhost/v1/mock/... from the
+# API itself, which compose serves on port 80; the chart's API listens on
+# 8080. Forward port 80 to it.
+api:
+  podSecurityContext:
+    sysctls:
+      - {name: net.ipv4.ip_unprivileged_port_start, value: "0"}
+  extraContainers:
+    - name: localhost-80
+      image: alpine/socat:1.8.1.3
+      args: ["TCP-LISTEN:80,fork,reuseaddr", "TCP:127.0.0.1:8080"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: {drop: [ALL]}
+        seccompProfile: {type: RuntimeDefault}
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {memory: 64Mi}
