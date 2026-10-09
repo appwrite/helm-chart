@@ -1,0 +1,113 @@
+# A production install: managed datastores, S3, Secrets you manage yourself,
+# several replicas, grouped workers and NetworkPolicies. Adjust the hosts,
+# sizes and Secret names; docs/production.md explains each choice.
+#
+# Secrets this file expects in the namespace (create them with kubectl or
+# External Secrets; see docs/security.md#bringing-your-own-secrets):
+#
+#   appwrite-core        _APP_OPENSSL_KEY_V1, _APP_NOTIFICATIONS_TRACKING_SECRET, _APP_GEO_SECRET
+#   appwrite-db-app      password             (created by CloudNativePG)
+#   appwrite-redis       redis-password
+#   appwrite-clickhouse  clickhouse-password
+#   appwrite-s3          s3-access-key, s3-secret-key
+#   appwrite-smtp        smtp-password
+#
+#   helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
+#     --namespace appwrite -f production.yaml --wait --timeout 15m
+
+appwrite:
+  domain: appwrite.example.com
+  certificatesEmail: ops@example.com
+  domainTargets:
+    cname: lb.example.com             # what custom domains CNAME to
+  secrets:
+    existingSecret: appwrite-core
+    generate: false                   # fail instead of generating anything
+  smtp:
+    host: email-smtp.eu-west-1.amazonaws.com
+    username: AKIAEXAMPLE
+    existingSecret: appwrite-smtp
+  system:
+    emailAddress: noreply@example.com
+  storage:
+    device: s3
+    s3:
+      endpoint: https://s3.example.com
+      region: us-east-1
+      bucket: appwrite
+      existingSecret: appwrite-s3
+  database:
+    connectionsMax: 270               # the database allows 300
+    poolClients: 20                   # Appwrite pods at peak: 8 API, 2 realtime, 4 workers, 3 tasks, headroom
+
+api:
+  resources:
+    requests: {cpu: "1", memory: 1Gi}
+    limits: {memory: 2Gi}
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+console:
+  replicaCount: 2
+realtime:
+  replicaCount: 2
+
+# Separate Deployments so a burst of usage or build jobs doesn't hold up
+# emails and webhooks. docs/architecture.md#worker-topologies
+workers:
+  mode: grouped
+  groups:
+    core:
+      queues: [databases, deletes, mails, messaging, notifications, certificates, migrations, webhooks]
+      resources:
+        requests: {cpu: 500m, memory: 1Gi}
+    usage:
+      queues: [stats-usage, stats-resources]
+      replicaCount: 2
+    compute:
+      queues: [builds, jobs, functions, executions, screenshots]
+
+# CloudNativePG in the same namespace; docs/external-databases.md#managed-postgresql
+postgresql:
+  enabled: false
+externalDatabase:
+  host: appwrite-db-rw
+  existingSecret: appwrite-db-app
+  passwordKey: password
+redis:
+  enabled: false
+externalRedis:
+  host: appwrite-redis.example.internal
+  existingSecret: appwrite-redis
+clickhouse:
+  enabled: false
+externalClickhouse:
+  url: https://clickhouse.example.com:8443
+  existingSecret: appwrite-clickhouse
+
+persistence:
+  size: 5Gi                           # certificates and scratch files, with S3
+  accessModes: [ReadWriteMany]        # lets the API and workers spread across nodes
+  storageClass: efs-sc                # any class that supports ReadWriteMany
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  tls:
+    enabled: true
+  wildcard:
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-dns01
+    tls:
+      enabled: true
+
+networkPolicy:
+  enabled: true
+  ingress:
+    from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: traefik

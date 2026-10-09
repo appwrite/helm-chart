@@ -8,7 +8,8 @@ path that fits:
 - [**Install on a real cluster**](#install-on-a-real-cluster): your own
   domain, HTTPS through cert-manager.
 
-Both use the chart's built-in PostgreSQL, Redis and ClickHouse. Functions and
+Both use the chart's built-in PostgreSQL, Redis and ClickHouse; you can
+[switch to your own](external-databases.md) at any point. Functions and
 Sites need extra infrastructure and come [afterwards](#functions-and-sites).
 
 ## What you need
@@ -110,6 +111,9 @@ kind delete cluster --name appwrite
 
 ### 1. Write a values file
 
+Start from [`examples/minimal.yaml`](../examples/minimal.yaml), or write it
+yourself:
+
 ```yaml
 # values.yaml
 appwrite:
@@ -131,7 +135,9 @@ ingress:
 generates `https://` links. Keep `ingress.tls.enabled` on with it, otherwise
 the redirect points at an HTTPS endpoint nothing serves.
 
-To send emails (verification, password recovery, invitations), add SMTP:
+To send emails (verification, password recovery, invitations), add SMTP.
+[Integrations](integrations.md#email-smtp) lists the settings for SES,
+SendGrid, Postmark, Mailgun and others.
 
 ```yaml
 appwrite:
@@ -206,7 +212,9 @@ ingress:
       enabled: true
 ```
 
-[networking.md](networking.md#cert-manager) has the details.
+[networking.md](networking.md#cert-manager) has the details, and
+[`examples/functions.yaml`](../examples/functions.yaml) has all of it in one
+file.
 
 ## Installing from source
 
@@ -226,6 +234,10 @@ helm install appwrite ./charts/appwrite \
 
 - [Production checklist](production.md): what to change before real users
   depend on it, such as managed databases, S3, replicas and backups.
+- [External databases](external-databases.md) and [storage](storage.md#s3):
+  moving PostgreSQL, Redis, ClickHouse and files to managed services.
+- [Integrations](integrations.md): email, deploying from GitHub, SMS and
+  error tracking.
 - [Configuration](../charts/appwrite/README.md#values): every value.
   Appwrite settings without a dedicated value go in `appwrite.config`.
 - [Upgrading](upgrading.md) and [backup and restore](backup-restore.md).

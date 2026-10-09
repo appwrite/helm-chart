@@ -10,6 +10,9 @@ VALUES           ?= $(CHART)/ci/default-values.yaml
 HELM_UNITTEST    ?= v1.2.1
 HELM_SCHEMA      ?= v2.6.0
 CRD_SCHEMAS      ?= https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json
+# Values files in examples/, each a space-free list of files joined with "+"
+# (applied in order with -f). Overlays are checked on top of a base file.
+EXAMPLES         ?= local minimal production minimal+external-services minimal+aws minimal+functions
 
 .DEFAULT_GOAL := help
 
@@ -70,10 +73,20 @@ kubeconform: ## Validate rendered manifests against several Kubernetes versions
 	@for f in $(CHART)/ci/*-values.yaml; do \
 		for v in $(KUBE_VERSIONS); do \
 			echo "==> kubeconform $$f (k8s $$v)"; \
-			helm template $(RELEASE) $(CHART) -n $(NAMESPACE) -f $$f --kube-version $$v \
-				| kubeconform -strict -summary -kubernetes-version $$v \
-					-schema-location default -schema-location '$(CRD_SCHEMAS)' || exit 1; \
+			out=$$(helm template $(RELEASE) $(CHART) -n $(NAMESPACE) -f $$f --kube-version $$v) || exit 1; \
+			printf '%s\n' "$$out" | kubeconform -strict -summary -kubernetes-version $$v \
+				-schema-location default -schema-location '$(CRD_SCHEMAS)' || exit 1; \
 		done; \
+	done
+
+.PHONY: examples
+examples: ## Lint the files in examples/ and validate what they render
+	@for e in $(EXAMPLES); do \
+		args=$$(echo "$$e" | tr '+' '\n' | sed 's|.*|-f examples/&.yaml|' | tr '\n' ' '); \
+		echo "==> examples: $$e"; \
+		helm lint --strict $(CHART) $$args >/dev/null || { helm lint --strict $(CHART) $$args; exit 1; }; \
+		out=$$(helm template $(RELEASE) $(CHART) -n $(NAMESPACE) $$args) || exit 1; \
+		printf '%s\n' "$$out" | kubeconform -strict -summary -kubernetes-version $(lastword $(KUBE_VERSIONS)) -schema-location default || exit 1; \
 	done
 
 .PHONY: template
@@ -81,7 +94,7 @@ template: ## Render the chart with default values
 	helm template $(RELEASE) $(CHART) -n $(NAMESPACE)
 
 .PHONY: test
-test: lint unittest kubeconform check-generated ## Run every static check
+test: lint unittest kubeconform examples check-generated ## Run every static check
 
 .PHONY: kind-up
 kind-up: ## Create a local kind cluster

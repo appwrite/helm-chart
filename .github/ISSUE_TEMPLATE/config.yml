@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Documentation
+    url: https://github.com/appwrite/helm-chart/blob/main/docs/README.md
+    about: Guides for installing, connecting your own services and troubleshooting.
   - name: Appwrite questions
     url: https://github.com/appwrite/appwrite/discussions
     about: Questions about Appwrite itself, rather than this chart.

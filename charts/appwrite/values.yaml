@@ -153,7 +153,8 @@ appwrite:
     # autoscalers at `maxReplicas`; NOTES warns when it isn't.
     poolClients: 15 # @schema minimum: 1
   smtp:
-    # -- SMTP server (`_APP_SMTP_HOST`). Empty disables email.
+    # -- SMTP server (`_APP_SMTP_HOST`). Empty disables email. Settings for
+    # SES, SendGrid, Postmark and others: docs/integrations.md#email-smtp.
     host: ""
     # -- SMTP port (`_APP_SMTP_PORT`).
     port: 587 # @schema type: [integer, string]
@@ -177,7 +178,9 @@ appwrite:
     # -- Maximum size in bytes of files Appwrite renders previews for (`_APP_STORAGE_PREVIEW_LIMIT`).
     previewLimit: 20000000 # @schema minimum: 0
     s3:
-      # -- Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com`. Empty uses AWS S3.
+      # -- Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com`
+      # or `https://<account>.r2.cloudflarestorage.com`. Empty uses AWS S3.
+      # Endpoints and regions per provider: docs/storage.md#s3.
       endpoint: ""
       # -- Region.
       region: us-east-1
@@ -252,7 +255,8 @@ appwrite:
     existingSecret: ""
     # -- Key in the Secret holding the password.
     passwordKey: vectorsdb-password
-  # -- Extra `_APP_*` environment variables for every Appwrite pod. They
+  # -- Extra `_APP_*` environment variables for every Appwrite pod, e.g. Git
+  # deployments, SMS or console sign-in (docs/integrations.md). They
   # override the chart's defaults and computed values, including those set
   # per container (`_APP_CPU_NUM`, `_APP_WORKERS_NUM`,
   # `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), except
@@ -266,6 +270,11 @@ appwrite:
   extraEnv: [] # @schema item: object
   # -- Extra `envFrom` sources for every Appwrite container.
   extraEnvFrom: [] # @schema item: object
+  # -- Extra volumes for every Appwrite pod, e.g. a CA certificate for
+  # verifying the database's TLS certificate.
+  extraVolumes: [] # @schema item: object
+  # -- Extra volume mounts for every Appwrite container.
+  extraVolumeMounts: [] # @schema item: object
 
 # Functions and Sites run on Open Runtimes services, both deployed by the
 # chart: the orchestrator starts each build as a Kubernetes Job in a namespace
@@ -1631,7 +1640,9 @@ postgresql:
 
 # External database, used when `postgresql.enabled` is false. PostgreSQL is
 # recommended; it needs the pgvector, PostGIS and pg_trgm extensions that
-# Appwrite's own image ships. MongoDB needs a replica set.
+# Appwrite's own image ships, and uses TLS when the server offers it. MongoDB
+# needs a replica set. Provider notes (RDS, Cloud SQL, Azure, CloudNativePG):
+# docs/external-databases.md.
 externalDatabase:
   # -- Database engine (`_APP_DB_ADAPTER`).
   adapter: postgresql # @schema enum: [postgresql, mariadb, mysql, mongodb]
@@ -1728,7 +1739,9 @@ redis:
   priorityClassName: ""
 
 # External Redis, used when `redis.enabled` is false. Appwrite 2.3.0 doesn't
-# support TLS, Sentinel or Cluster connections.
+# support TLS, Sentinel or Cluster connections. Leave `password` and
+# `existingSecret` empty for a Redis without AUTH. Provider notes
+# (ElastiCache, Memorystore, Azure): docs/external-databases.md#redis.
 externalRedis:
   # -- Hostname.
   host: ""
@@ -1820,7 +1833,8 @@ clickhouse:
   priorityClassName: ""
 
 # External ClickHouse, used when `clickhouse.enabled` is false. Appwrite
-# talks to ClickHouse over HTTP(S).
+# talks to ClickHouse over HTTP(S) and creates its tables on start. See
+# docs/external-databases.md#clickhouse.
 externalClickhouse:
   # -- HTTP(S) endpoint, e.g. `https://abc.clickhouse.cloud:8443`.
   url: ""

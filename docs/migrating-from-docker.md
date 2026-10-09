@@ -28,14 +28,16 @@ From the Docker install's `.env`:
 | `_APP_STORAGE_LIMIT`, `_APP_STORAGE_PREVIEW_LIMIT` | `appwrite.storage.limit`, `.previewLimit` |
 | `_APP_STORAGE_ANTIVIRUS*` | `appwrite.config` ([storage.md](storage.md#antivirus)) |
 | `_APP_EXECUTOR_SECRET`, `_APP_JOBS_SECRET` | `compute.secrets.*` ([executor.md](executor.md)) |
-| other secrets you set (OAuth, VCS and SMS keys, `_APP_LOGGING_CONFIG`) | `appwrite.secretConfig` |
+| other secrets you set (OAuth, VCS and SMS keys, `_APP_LOGGING_CONFIG`) | `appwrite.secretConfig` or `appwrite.extraEnvFrom` ([integrations.md](integrations.md)) |
 | anything else you changed | `appwrite.config` |
 
 The chart supports the `local` and `s3` storage devices. Appwrite's other
-devices (`dospaces`, `backblaze`, `linode`, `wasabi`) have no chart values;
-set `_APP_STORAGE_DEVICE` and the device's `_APP_STORAGE_<DEVICE>_*`
-variables through `appwrite.config` and `appwrite.secretConfig`, which take
-precedence over what the chart computes. We haven't tested that.
+devices (`dospaces`, `backblaze`, `linode`, `wasabi`) are S3-compatible
+stores, and Appwrite has deprecated their own variables in favour of
+`_APP_STORAGE_S3_*`, which the build orchestrator also needs. Configure them
+as `s3` with the provider's endpoint ([storage.md](storage.md#s3)). Check
+that existing files are still readable after switching before you rely on it;
+we haven't tested it.
 
 **Functions and Sites need S3.** The chart's compute plane exchanges code and
 build output through a bucket and refuses `compute.enabled` with `local`

@@ -31,6 +31,9 @@ First release of the chart, for Appwrite 2.3.0.
 - Optional browser, assistant, autogravity, embedding and MQTT components.
 - PodDisruptionBudgets and topology spread by default; opt-in
   NetworkPolicies and HorizontalPodAutoscalers.
+- `appwrite.extraVolumes` and `appwrite.extraVolumeMounts` for every Appwrite
+  pod, including tasks and the migration Job, for example to mount the CA that
+  verifies the database's TLS certificate.
 - Credentials generated once, kept across upgrades and uninstalls, with guards
   against changing the encryption key or regenerating datastore passwords.
 - Data migrations as a post-upgrade hook (retried after a failure) or a Job
@@ -38,5 +41,10 @@ First release of the chart, for Appwrite 2.3.0.
 - `values.schema.json` that also accepts a parent chart's `global` values,
   validation of worker topologies and connection limits, `helm test` pods,
   and documentation: getting started, architecture, executor, production,
-  networking, security, storage, external databases, optional components,
-  migrating from Docker, upgrades, backups, GitOps and troubleshooting.
+  networking, security, storage, external databases with provider notes,
+  integrations (SMTP, Git deployments, console sign-in, SMS, Sentry),
+  optional components, migrating from Docker, upgrades, backups, GitOps and
+  troubleshooting.
+- `examples/`: values files for a local try-out, a first install,
+  production, external services, AWS, and Functions and Sites, rendered and
+  validated in CI.

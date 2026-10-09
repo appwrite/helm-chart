@@ -1,0 +1,34 @@
+# A first real install: your own domain, HTTPS from cert-manager, and the
+# built-in PostgreSQL, Redis and ClickHouse.
+#
+# Needs an ingress controller, cert-manager with a ClusterIssuer named
+# `letsencrypt`, and a DNS record for the domain pointing at the ingress
+# controller. See docs/getting-started.md#install-on-a-real-cluster.
+#
+#   helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
+#     --namespace appwrite --create-namespace -f minimal.yaml --wait --timeout 15m
+
+appwrite:
+  domain: appwrite.example.com
+  certificatesEmail: ops@example.com  # Let's Encrypt account for custom domains
+
+  # Email for verification, password recovery and invitations.
+  # Other providers: docs/integrations.md#email-smtp
+  # smtp:
+  #   host: smtp.example.com
+  #   username: appwrite
+  #   password: <password>            # or existingSecret: <Secret with key smtp-password>
+  # system:
+  #   emailAddress: noreply@example.com
+
+ingress:
+  enabled: true
+  className: traefik                  # your IngressClass
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  tls:
+    enabled: true                     # certificate in Secret appwrite-tls
+  wildcard:
+    # Function and site previews need a wildcard certificate, which takes a
+    # DNS-01 issuer. Turn this on with Functions and Sites (functions.yaml).
+    enabled: false

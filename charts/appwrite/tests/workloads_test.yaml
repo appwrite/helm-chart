@@ -46,6 +46,19 @@ tests:
           path: spec.template.spec.containers[0].env
           content: {name: FOO, value: bar}
 
+  - it: mounts appwrite.extraVolumes in every task
+    template: templates/tasks/deployment.yaml
+    set:
+      appwrite.extraVolumes: [{name: db-ca, secret: {secretName: db-ca}}]
+      appwrite.extraVolumeMounts: [{name: db-ca, mountPath: /etc/appwrite/db-ca, readOnly: true}]
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content: {name: db-ca, secret: {secretName: db-ca}}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: {name: db-ca, mountPath: /etc/appwrite/db-ca, readOnly: true}
+
   - it: runs every task as a single recreated pod
     template: templates/tasks/deployment.yaml
     asserts:

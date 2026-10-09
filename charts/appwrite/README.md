@@ -60,6 +60,53 @@ kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}
 To try Appwrite on a laptop first, or for a step-by-step install, see
 [Getting started](https://github.com/appwrite/helm-chart/blob/main/docs/getting-started.md).
 
+Ready-made values files for a local try-out, a first install, production,
+AWS and Functions and Sites are in
+[`examples/`](https://github.com/appwrite/helm-chart/tree/main/examples).
+
+## Using your own services
+
+Everything Appwrite needs runs in the release by default. Turn off a built-in
+service and fill in its `external*` block to use your own instead; each one
+is independent:
+
+```yaml
+postgresql:
+  enabled: false
+externalDatabase:              # PostgreSQL with postgis, vector and pg_trgm
+  host: appwrite-db.example.internal
+  existingSecret: appwrite-external     # key db-password
+redis:
+  enabled: false
+externalRedis:                 # one endpoint, no TLS
+  host: appwrite-redis.example.internal
+  existingSecret: appwrite-external     # key redis-password
+clickhouse:
+  enabled: false
+externalClickhouse:            # HTTP(S) interface
+  url: https://abc123.eu-west-1.aws.clickhouse.cloud:8443
+  existingSecret: appwrite-external     # key clickhouse-password
+appwrite:
+  storage:
+    device: s3                 # any S3-compatible store
+    s3:
+      bucket: appwrite
+      region: eu-west-1
+      existingSecret: appwrite-external # keys s3-access-key, s3-secret-key
+  smtp:
+    host: smtp.example.com
+    username: appwrite
+    existingSecret: appwrite-external   # key smtp-password
+```
+
+| Service | Works with | Guide |
+| --- | --- | --- |
+| PostgreSQL, MariaDB, MySQL, MongoDB | RDS, Cloud SQL, Azure, CloudNativePG | [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) |
+| Redis | ElastiCache, Memorystore, Azure Cache, Valkey | [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md#redis) |
+| ClickHouse | ClickHouse Cloud, Altinity operator | [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md#clickhouse) |
+| S3 | AWS S3, R2, GCS, Spaces, MinIO, ... | [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md#s3) |
+| SMTP, GitHub App, OAuth, SMS, Sentry | SES, SendGrid, Postmark, GitHub, Twilio, ... | [Integrations](https://github.com/appwrite/helm-chart/blob/main/docs/integrations.md) |
+
 ## Architecture
 
 ```mermaid
@@ -97,6 +144,7 @@ See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/do
 | [Networking, TLS and domains](https://github.com/appwrite/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
 | [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
+| [Email, Git and other integrations](https://github.com/appwrite/helm-chart/blob/main/docs/integrations.md) | SMTP, GitHub App, console sign-in, SMS, Sentry |
 | [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | Builds as Jobs and the executor on Docker-in-Docker |
 | [Optional components](https://github.com/appwrite/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
 | [Security](https://github.com/appwrite/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
@@ -184,7 +232,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | api.updateStrategy | object | `{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":0},"type":"RollingUpdate"}` | Deployment update strategy. |
 | appwrite.autoCertificates | bool | `false` | Have Appwrite issue Let's Encrypt certificates for function and site subdomains (`_APP_ROUTER_AUTO_CERTIFICATES`). Off by default: TLS for wildcard domains is expected to terminate at the ingress or Gateway. |
 | appwrite.certificatesEmail | string | `""` | Email used to register Let's Encrypt certificates (`_APP_EMAIL_CERTIFICATES`). Required. |
-| appwrite.config | object | `{}` | Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values, including those set per container (`_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), except credentials, which come from Secrets. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables. |
+| appwrite.config | object | `{}` | Extra `_APP_*` environment variables for every Appwrite pod, e.g. Git deployments, SMS or console sign-in (docs/integrations.md). They override the chart's defaults and computed values, including those set per container (`_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), except credentials, which come from Secrets. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables. |
 | appwrite.console.whitelistEmails | list | `[]` | Emails allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_EMAILS`). |
 | appwrite.console.whitelistIPs | list | `[]` | IPs allowed to sign up to the console (`_APP_CONSOLE_WHITELIST_IPS`). |
 | appwrite.console.whitelistRoot | bool | `true` | Only the first user can sign up to the console; everyone else needs an invite (`_APP_CONSOLE_WHITELIST_ROOT`). |
@@ -206,6 +254,8 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | appwrite.domainTargets.cname | string | `""` | Hostname custom domains must CNAME to (`_APP_DOMAIN_TARGET_CNAME`). Defaults to `domain`. |
 | appwrite.extraEnv | list | `[]` | Extra environment variables for every Appwrite container, as a list of EnvVar objects. |
 | appwrite.extraEnvFrom | list | `[]` | Extra `envFrom` sources for every Appwrite container. |
+| appwrite.extraVolumeMounts | list | `[]` | Extra volume mounts for every Appwrite container. |
+| appwrite.extraVolumes | list | `[]` | Extra volumes for every Appwrite pod, e.g. a CA certificate for verifying the database's TLS certificate. |
 | appwrite.forceHttps | bool | `true` | Redirect HTTP to HTTPS and generate HTTPS URLs (`_APP_OPTIONS_FORCE_HTTPS` and `_APP_OPTIONS_ROUTER_FORCE_HTTPS`). Turn it off only when TLS isn't terminated in front of Appwrite. |
 | appwrite.functionsDomain | string | `""` | Parent domain for function preview URLs (`_APP_DOMAIN_FUNCTIONS`). Defaults to `functions.<domain>`. |
 | appwrite.logFormat | string | `"json"` | Log format (`_APP_LOGGING_FORMAT`). |
@@ -222,7 +272,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | appwrite.secrets.trackingSecret | string | `""` | Explicit `_APP_NOTIFICATIONS_TRACKING_SECRET`. |
 | appwrite.sitesDomain | string | `""` | Parent domain for site preview URLs (`_APP_DOMAIN_SITES`). Defaults to `sites.<domain>`. |
 | appwrite.smtp.existingSecret | string | `""` | Existing Secret holding the SMTP password. |
-| appwrite.smtp.host | string | `""` | SMTP server (`_APP_SMTP_HOST`). Empty disables email. |
+| appwrite.smtp.host | string | `""` | SMTP server (`_APP_SMTP_HOST`). Empty disables email. Settings for SES, SendGrid, Postmark and others: docs/integrations.md#email-smtp. |
 | appwrite.smtp.password | string | `""` | SMTP password (`_APP_SMTP_PASSWORD`). Ignored when `existingSecret` is set. |
 | appwrite.smtp.passwordKey | string | `"smtp-password"` | Key in `existingSecret` holding the SMTP password. |
 | appwrite.smtp.port | int | `587` | SMTP port (`_APP_SMTP_PORT`). |
@@ -234,7 +284,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | appwrite.storage.s3.accessKey | string | `""` | Access key ID. Ignored when `existingSecret` is set. |
 | appwrite.storage.s3.accessKeyKey | string | `"s3-access-key"` | Key in `existingSecret` holding the access key ID. |
 | appwrite.storage.s3.bucket | string | `""` | Bucket. |
-| appwrite.storage.s3.endpoint | string | `""` | Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com`. Empty uses AWS S3. |
+| appwrite.storage.s3.endpoint | string | `""` | Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com` or `https://<account>.r2.cloudflarestorage.com`. Empty uses AWS S3. Endpoints and regions per provider: docs/storage.md#s3. |
 | appwrite.storage.s3.existingSecret | string | `""` | Existing Secret holding the access key ID and secret access key. |
 | appwrite.storage.s3.region | string | `"us-east-1"` | Region. |
 | appwrite.storage.s3.secretKey | string | `""` | Secret access key. Ignored when `existingSecret` is set. |

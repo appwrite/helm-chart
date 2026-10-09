@@ -1,0 +1,86 @@
+# Appwrite with every datastore outside the release: your own PostgreSQL,
+# Redis, ClickHouse and S3, and an SMTP server. Each block is independent;
+# keep any built-in service by leaving its `enabled: true` and dropping its
+# `external*` block. Use it on top of minimal.yaml or production.yaml:
+#
+#   helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
+#     --namespace appwrite --create-namespace \
+#     -f minimal.yaml -f external-services.yaml --wait --timeout 15m
+#
+# Create the Secret first. The key names are the chart's defaults:
+#
+#   kubectl -n appwrite create secret generic appwrite-external \
+#     --from-literal=db-password='...' \
+#     --from-literal=redis-password='...' \
+#     --from-literal=clickhouse-password='...' \
+#     --from-literal=s3-access-key='...' \
+#     --from-literal=s3-secret-key='...' \
+#     --from-literal=smtp-password='...'
+#
+# Requirements and provider notes: docs/external-databases.md, docs/storage.md#s3
+
+# PostgreSQL with the postgis, vector and pg_trgm extensions, connected to
+# directly (no transaction-mode pooler). TLS is used when the server offers it.
+postgresql:
+  enabled: false
+externalDatabase:
+  adapter: postgresql
+  host: appwrite-db.example.internal
+  port: 5432
+  database: appwrite
+  username: appwrite
+  existingSecret: appwrite-external
+  passwordKey: db-password
+
+# A single Redis or Valkey endpoint without TLS. Drop existingSecret for a
+# Redis without AUTH.
+redis:
+  enabled: false
+externalRedis:
+  host: appwrite-redis.example.internal
+  port: 6379
+  existingSecret: appwrite-external
+  passwordKey: redis-password
+
+# ClickHouse over HTTP(S). The password must be URL-safe (letters, digits,
+# - _ . ~), e.g. from `openssl rand -hex 32`.
+clickhouse:
+  enabled: false
+externalClickhouse:
+  url: https://clickhouse.example.com:8443
+  database: appwrite
+  username: appwrite
+  existingSecret: appwrite-external
+  passwordKey: clickhouse-password
+
+appwrite:
+  # Any S3-compatible store. Leave endpoint empty for AWS S3. Create the
+  # bucket first; Appwrite doesn't.
+  storage:
+    device: s3
+    s3:
+      endpoint: https://s3.example.com
+      region: us-east-1
+      bucket: appwrite
+      existingSecret: appwrite-external
+      accessKeyKey: s3-access-key
+      secretKeyKey: s3-secret-key
+
+  smtp:
+    host: smtp.example.com
+    port: 587
+    secure: tls
+    username: appwrite
+    existingSecret: appwrite-external
+    passwordKey: smtp-password
+  system:
+    emailAddress: noreply@example.com
+
+  database:
+    # Total connections Appwrite opens, shared by all pods. Keep it below the
+    # server's max_connections.
+    connectionsMax: 151
+
+# With S3, /storage only holds certificates and scratch files.
+persistence:
+  size: 5Gi

@@ -62,22 +62,68 @@ yourself once you no longer need the data.
 
 ## S3
 
+Object storage takes files off the volume, lets pods share them without a
+ReadWriteMany claim, and is required for [Functions and Sites](executor.md).
+
+**1. Create a bucket** and an access key that can read, write, list and
+delete objects in it. Appwrite doesn't create the bucket.
+
+**2. Store the key in a Secret:**
+
+```console
+kubectl -n appwrite create secret generic appwrite-s3 \
+  --from-literal=s3-access-key='<access key ID>' \
+  --from-literal=s3-secret-key='<secret access key>'
+```
+
+**3. Point the chart at it:**
+
 ```yaml
 appwrite:
   storage:
     device: s3
     s3:
       endpoint: https://fsn1.your-objectstorage.com   # empty for AWS S3
-      region: eu-central
+      region: fsn1
       bucket: appwrite
-      existingSecret: appwrite-s3                     # or accessKey / secretKey
+      existingSecret: appwrite-s3                     # or accessKey / secretKey inline
       accessKeyKey: s3-access-key
       secretKeyKey: s3-secret-key
 ```
 
-With S3, uploads, deployment code and build output live in the bucket. Builds
-and the executor need that ([executor.md](executor.md)). Create the bucket
-before installing; Appwrite doesn't create it.
+With `endpoint` empty, Appwrite talks to AWS S3 with virtual-hosted URLs
+(`<bucket>.s3.<region>.amazonaws.com`). With an endpoint, it uses path-style
+URLs (`<endpoint>/<bucket>/...`), which every S3-compatible store accepts.
+
+| Provider | `endpoint` | `region` |
+| --- | --- | --- |
+| AWS S3 | *(empty)* | the bucket's region, e.g. `eu-central-1` |
+| Cloudflare R2 | `https://<account id>.r2.cloudflarestorage.com` | `auto` |
+| Google Cloud Storage | `https://storage.googleapis.com`, with an [HMAC key](https://cloud.google.com/storage/docs/authentication/hmackeys) | `auto` |
+| DigitalOcean Spaces | `https://<region>.digitaloceanspaces.com` | e.g. `fra1` |
+| Hetzner Object Storage | `https://<location>.your-objectstorage.com` | e.g. `fsn1` |
+| Backblaze B2 | `https://s3.<region>.backblazeb2.com` | e.g. `eu-central-003` |
+| Wasabi | `https://s3.<region>.wasabisys.com` | e.g. `eu-central-1` |
+| MinIO, SeaweedFS, Garage, Ceph RGW | the S3 API's URL, e.g. `http://minio.minio.svc:9000` | whatever the server expects, often `us-east-1` |
+
+CI tests with SeaweedFS. The other rows come from each provider's
+documentation.
+
+Things to know:
+
+- **Static keys only.** Appwrite signs requests with the access key in the
+  Secret. IAM roles for service accounts (IRSA, EKS Pod Identity, GKE Workload
+  Identity) aren't supported.
+- **Everything goes in one bucket**, under one prefix per kind of file. Keep
+  the bucket private: Appwrite serves files itself and checks permissions on
+  every download.
+- **Lifecycle rules.** Don't expire objects; Appwrite deletes what it no
+  longer needs. A rule that aborts incomplete multipart uploads after a few
+  days is fine.
+- **Choose before going live.** Changing `device` later doesn't move files
+  that are already stored; they stay where they were written.
+
+### The volume with S3
 
 `/storage` is still used for certificates, ACME challenges and some scratch
 files, so the API and the storage workers mount the volume with S3 too. Keep
@@ -95,9 +141,6 @@ persistence:
 With `persistence.enabled: false` every pod gets its own `emptyDir` at
 `/storage`. That works only with a single API pod and the `combined` worker,
 and certificates for custom domains are lost on every restart.
-
-Tested with SeaweedFS; any S3-compatible store that supports path-style
-requests should work (Ceph RGW, Garage, Hetzner, Cloudflare R2, AWS S3, ...).
 
 ## Datastore volumes
 

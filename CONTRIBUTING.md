@@ -32,7 +32,10 @@ plugins by hand without that flag.
    isn't enough.
 2. Run `make generate` to refresh `values.schema.json` and the chart README.
    Never edit those two files by hand.
-3. Add or update unit tests under `charts/appwrite/tests/`.
+3. Add or update unit tests under `charts/appwrite/tests/`. When a change
+   affects how people configure the chart, update the matching file in
+   `examples/` and the guide in `docs/`; `make examples` renders every
+   example (add new ones to `EXAMPLES` in the Makefile).
 4. Run `make test`.
 5. Add an entry under `[Unreleased]` in `CHANGELOG.md`. Releases are cut as
    described in [RELEASING.md](RELEASING.md).

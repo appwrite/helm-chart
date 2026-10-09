@@ -1,0 +1,81 @@
+# Appwrite on EKS with AWS services: RDS for PostgreSQL, ElastiCache, S3,
+# SES for email, EFS for /storage, and ClickHouse Cloud. Layer it over
+# minimal.yaml or production.yaml:
+#
+#   helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
+#     --namespace appwrite --create-namespace \
+#     -f minimal.yaml -f aws.yaml --wait --timeout 15m
+#
+# Before installing:
+#
+# - RDS for PostgreSQL in the cluster's VPC, with a security group that lets
+#   the nodes in on 5432. Connect as the master user once and run
+#     CREATE EXTENSION postgis; CREATE EXTENSION vector; CREATE EXTENSION pg_trgm;
+#   rds.force_ssl can stay on: Appwrite connects with TLS when offered.
+# - ElastiCache for Valkey or Redis OSS, node-based, cluster mode disabled,
+#   in-transit encryption off (Appwrite 2.3.0 has no Redis TLS). ElastiCache
+#   only allows an AUTH token with in-transit encryption, so there's no
+#   password: restrict it with a security group.
+# - An S3 bucket and an IAM user with an access key for it. Appwrite doesn't
+#   support IRSA or EKS Pod Identity.
+# - SES SMTP credentials (SES console > SMTP settings) and a verified domain.
+# - A ClickHouse Cloud service whose IP access list includes the cluster's
+#   NAT gateway addresses, with a URL-safe password.
+# - The EFS CSI driver and a StorageClass for it (here efs-sc).
+#
+# And the Secret:
+#
+#   kubectl -n appwrite create secret generic appwrite-external \
+#     --from-literal=db-password='...' \
+#     --from-literal=clickhouse-password='...' \
+#     --from-literal=s3-access-key='AKIA...' \
+#     --from-literal=s3-secret-key='...' \
+#     --from-literal=smtp-password='...'
+#
+# Provider notes: docs/external-databases.md, docs/storage.md#s3,
+# docs/integrations.md#email-smtp
+
+postgresql:
+  enabled: false
+externalDatabase:
+  host: appwrite.abcdefghijkl.eu-west-1.rds.amazonaws.com
+  database: appwrite
+  username: appwrite
+  existingSecret: appwrite-external
+
+redis:
+  enabled: false
+externalRedis:
+  host: appwrite.abcdef.ng.0001.euw1.cache.amazonaws.com   # primary endpoint
+
+clickhouse:
+  enabled: false
+externalClickhouse:
+  url: https://abc123.eu-west-1.aws.clickhouse.cloud:8443
+  database: appwrite
+  username: appwrite
+  existingSecret: appwrite-external
+
+appwrite:
+  storage:
+    device: s3
+    s3:
+      endpoint: ""                    # empty: AWS S3
+      region: eu-west-1
+      bucket: appwrite-example-com
+      existingSecret: appwrite-external
+  smtp:
+    host: email-smtp.eu-west-1.amazonaws.com
+    port: 587
+    secure: tls
+    username: AKIAEXAMPLESMTPUSER     # the SMTP user name, not an IAM access key
+    existingSecret: appwrite-external
+  system:
+    emailAddress: noreply@example.com # on a domain verified in SES
+  database:
+    connectionsMax: 400               # below the instance's max_connections
+
+persistence:
+  size: 5Gi
+  accessModes: [ReadWriteMany]        # EFS lets the API and workers spread across nodes
+  storageClass: efs-sc

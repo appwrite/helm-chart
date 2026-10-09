@@ -156,6 +156,10 @@ clickhouse:
 ```
 
 Key names are configurable (`appwrite.secrets.keys.*`, `*.auth.passwordKey`).
+External databases, S3 and SMTP take an `existingSecret` the same way
+([external-databases.md](external-databases.md#credentials) lists their
+keys), and integrations can read a Secret through `appwrite.extraEnvFrom`
+([integrations.md](integrations.md#passing-settings-and-secrets)).
 
 > [!IMPORTANT]
 > Tools that render templates without cluster access (Argo CD, `helm template`)

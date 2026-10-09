@@ -15,6 +15,22 @@ body:
       placeholder: Kubernetes 1.32, Helm 4.3.0
     validations:
       required: true
+  - type: checkboxes
+    id: external
+    attributes:
+      label: Services outside the release
+      description: Tick what you run yourself instead of the chart's built-in services.
+      options:
+        - label: PostgreSQL, MariaDB, MySQL or MongoDB
+        - label: Redis
+        - label: ClickHouse
+        - label: S3 storage
+  - type: input
+    id: providers
+    attributes:
+      label: Providers
+      description: Which managed services, if any.
+      placeholder: RDS for PostgreSQL 17, ElastiCache for Valkey, Cloudflare R2
   - type: textarea
     id: values
     attributes:

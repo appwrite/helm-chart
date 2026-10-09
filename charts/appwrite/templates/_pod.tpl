@@ -132,6 +132,9 @@ Usage: include "appwrite.volumes" (dict "root" $ "storage" true "certbot" true)
 - name: letsencrypt
   emptyDir: {}
 {{- end }}
+{{- with .root.Values.appwrite.extraVolumes }}
+{{ toYaml . }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -164,6 +167,9 @@ Usage: include "appwrite.volumeMounts" (dict "root" $ "storage" true "certbot" t
 - name: letsencrypt
   mountPath: /var/log/letsencrypt
   subPath: log
+{{- end }}
+{{- with .root.Values.appwrite.extraVolumeMounts }}
+{{ toYaml . }}
 {{- end }}
 {{- end }}
 

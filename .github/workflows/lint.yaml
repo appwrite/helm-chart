@@ -104,6 +104,8 @@ jobs:
             | sudo tar -xz -C /usr/local/bin kubeconform
       - name: Validate rendered manifests
         run: make kubeconform
+      - name: Validate examples/
+        run: make examples
 
   generated:
     name: Generated files are up to date

@@ -47,6 +47,16 @@ First steps
      kubectl -n {{ .Release.Namespace }} get secret {{ include "appwrite.secretName" . }} \
        -o jsonpath='{.data._APP_OPENSSL_KEY_V1}' | base64 -d
 {{- end }}
+{{- $builtin := list }}
+{{- if .Values.postgresql.enabled }}{{ $builtin = append $builtin "PostgreSQL" }}{{ end }}
+{{- if .Values.redis.enabled }}{{ $builtin = append $builtin "Redis" }}{{ end }}
+{{- if .Values.clickhouse.enabled }}{{ $builtin = append $builtin "ClickHouse" }}{{ end }}
+{{- with $builtin }}
+
+The built-in {{ if eq (len .) 1 }}{{ first . }} is a single replica{{ else }}{{ join ", " (initial .) }} and {{ last . }} are single replicas{{ end }}, fine for trying Appwrite.
+Before real users depend on this install, move to replicated services:
+{{ $docs }}/external-databases.md
+{{- end }}
 {{- end }}
 
 {{- if .Values.compute.enabled }}
@@ -60,7 +70,7 @@ Functions and Sites are off. To turn them on: {{ $docs }}/executor.md
 {{- end }}
 {{- if not $v.smtp.host }}
 
-Email is off until appwrite.smtp.host is set.
+Email is off until appwrite.smtp.host is set: {{ $docs }}/integrations.md
 {{- end }}
 
 {{- with include "appwrite.workers.unconsumed" . }}

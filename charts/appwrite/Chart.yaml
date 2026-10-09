@@ -28,6 +28,10 @@ annotations:
   artifacthub.io/links: |
     - name: Chart source
       url: https://github.com/appwrite/helm-chart
+    - name: Documentation
+      url: https://github.com/appwrite/helm-chart/blob/main/docs/README.md
+    - name: Example values
+      url: https://github.com/appwrite/helm-chart/tree/main/examples
     - name: Appwrite
       url: https://appwrite.io
     - name: support
@@ -51,6 +55,8 @@ annotations:
       description: Credentials generated once and kept across upgrades, with guards against losing the encryption key or datastore passwords
     - kind: added
       description: Data migrations on upgrade and a downgrade guard
+    - kind: added
+      description: Guides for external databases, S3 and integrations, and example values files for local, production, AWS and Functions and Sites installs
   artifacthub.io/images: |
     - name: appwrite
       image: docker.io/appwrite/appwrite:2.3.0

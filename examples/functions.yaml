@@ -1,0 +1,46 @@
+# Functions and Sites, layered on top of another values file:
+#
+#   helm upgrade --install appwrite oci://ghcr.io/appwrite/charts/appwrite \
+#     --namespace appwrite --create-namespace \
+#     -f minimal.yaml -f functions.yaml --wait --timeout 15m
+#
+# Builds run as unprivileged Jobs in the namespace appwrite-builds. Executions
+# run on the executor, which starts runtime containers through its own
+# Docker-in-Docker daemon in the namespace appwrite-executor: a privileged
+# pod, so keep it on nodes of its own. See docs/executor.md.
+
+appwrite:
+  # Builds and the executor exchange code through S3. The chart copies these
+  # keys into the executor's namespace. To keep them in a Secret you manage
+  # instead, see docs/executor.md#existing-secrets.
+  storage:
+    device: s3
+    s3:
+      endpoint: https://s3.example.com  # empty for AWS S3
+      region: us-east-1
+      bucket: appwrite
+      accessKey: <access key>
+      secretKey: <secret key>
+
+compute:
+  enabled: true
+  executor:
+    privileged: true                    # acknowledges Docker-in-Docker: root on the node
+    nodeSelector:
+      workload: executor
+    tolerations:
+      - key: workload
+        value: executor
+        effect: NoSchedule
+  functionsRuntimes: [node-22, python-3.12, php-8.3]
+  sitesRuntimes: [static-1, node-22]    # sites build with node-22, keep it
+
+# Preview URLs (*.functions.<domain>, *.sites.<domain>) need a wildcard
+# certificate from a DNS-01 issuer.
+ingress:
+  wildcard:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-dns01
+    tls:
+      enabled: true

@@ -37,6 +37,45 @@ namespace pass `restricted`; build Jobs run in their own `baseline` namespace. I
 you overrode a security context, check it against the
 [restricted profile](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted).
 
+## External services
+
+[external-databases.md](external-databases.md#checking-a-connection) shows how
+to test a connection from inside the namespace.
+
+**`wait-for-datastores` never finishes.** The host or port isn't reachable
+from the cluster: check the name, security groups, firewall rules and IP
+allow lists (ClickHouse Cloud has one), and `networkPolicy.egress` if you
+restricted it.
+
+**PostgreSQL: `extension "postgis" is not available` or `permission denied to
+create extension`.** The server lacks PostGIS, pgvector or pg_trgm, or the
+Appwrite user may not create them. Create them as an administrator
+([requirements](external-databases.md#requirements)); on Azure, allow them in
+`azure.extensions` first.
+
+**MariaDB or MySQL: `Connections using insecure transport are prohibited`.**
+The server requires TLS, which Appwrite's MySQL client doesn't use. Turn off
+`require_secure_transport` and keep the traffic on a private network.
+
+**Redis: connection resets or timeouts against a managed Redis.** The service
+expects TLS (ElastiCache with in-transit encryption, ElastiCache Serverless,
+Azure's TLS port, Upstash). Appwrite 2.3.0 connects in plain text only
+([Redis](external-databases.md#redis)).
+
+**ClickHouse: authentication fails although the password is right.** The
+password contains a character that isn't URL-safe (`+`, `/`, `@`, `%`, ...).
+Use one made of letters and digits, for example `openssl rand -hex 32`.
+
+**S3: uploads fail with `SignatureDoesNotMatch`, `AccessDenied` or
+`NoSuchBucket`.** Check `region` (R2 and GCS use `auto`), that the bucket
+exists, and that the key may read, write, list and delete in it. With an
+`endpoint`, Appwrite uses path-style URLs, which the store must accept
+([storage.md](storage.md#s3)).
+
+**Emails don't arrive.** See [integrations.md](integrations.md#email-smtp):
+the worker's log names the SMTP error, and most providers reject senders on
+unverified domains.
+
 ## Requests
 
 **Every request redirects to HTTPS (301).** `appwrite.forceHttps` is on and the

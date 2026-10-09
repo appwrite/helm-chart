@@ -321,7 +321,7 @@
           "type": "string"
         },
         "config": {
-          "description": "Extra `_APP_*` environment variables for every Appwrite pod. They override the chart's defaults and computed values, including those set per container (`_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), except credentials, which come from Secrets. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.",
+          "description": "Extra `_APP_*` environment variables for every Appwrite pod, e.g. Git deployments, SMS or console sign-in (docs/integrations.md). They override the chart's defaults and computed values, including those set per container (`_APP_CPU_NUM`, `_APP_WORKERS_NUM`, `_APP_WORKER_MAX_COROUTINES`, `_APP_CONNECTIONS_DB_*`), except credentials, which come from Secrets. See https://appwrite.io/docs/advanced/self-hosting/configuration/environment-variables.",
           "type": "object",
           "additionalProperties": {
             "type": [
@@ -461,6 +461,20 @@
           },
           "description": "Extra `envFrom` sources for every Appwrite container."
         },
+        "extraVolumeMounts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volume mounts for every Appwrite container."
+        },
+        "extraVolumes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Extra volumes for every Appwrite pod, e.g. a CA certificate for verifying the database's TLS certificate."
+        },
         "forceHttps": {
           "description": "Redirect HTTP to HTTPS and generate HTTPS URLs (`_APP_OPTIONS_FORCE_HTTPS` and `_APP_OPTIONS_ROUTER_FORCE_HTTPS`). Turn it off only when TLS isn't terminated in front of Appwrite.",
           "type": "boolean"
@@ -555,7 +569,7 @@
               "type": "string"
             },
             "host": {
-              "description": "SMTP server (`_APP_SMTP_HOST`). Empty disables email.",
+              "description": "SMTP server (`_APP_SMTP_HOST`). Empty disables email. Settings for SES, SendGrid, Postmark and others: docs/integrations.md#email-smtp.",
               "type": "string"
             },
             "password": {
@@ -626,7 +640,7 @@
                   "type": "string"
                 },
                 "endpoint": {
-                  "description": "Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com`. Empty uses AWS S3.",
+                  "description": "Endpoint of an S3-compatible store, e.g. `https://fsn1.your-objectstorage.com` or `https://<account>.r2.cloudflarestorage.com`. Empty uses AWS S3. Endpoints and regions per provider: docs/storage.md#s3.",
                   "type": "string"
                 },
                 "existingSecret": {

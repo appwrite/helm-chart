@@ -1,0 +1,18 @@
+# Try Appwrite on a local cluster (kind, k3d, k3s, Rancher Desktop) over plain
+# HTTP, with the built-in PostgreSQL, Redis and ClickHouse.
+#
+#   helm install appwrite oci://ghcr.io/appwrite/charts/appwrite \
+#     --namespace appwrite --create-namespace -f local.yaml --wait --timeout 15m
+#   kubectl -n traefik port-forward svc/traefik 80:80
+#
+# Then open http://appwrite.localhost. Needs an ingress controller; see
+# docs/getting-started.md#try-it-on-your-machine.
+
+appwrite:
+  domain: appwrite.localhost          # browsers resolve *.localhost to your machine
+  certificatesEmail: you@example.com  # required, unused without HTTPS
+  forceHttps: false                   # nothing terminates TLS locally
+
+ingress:
+  enabled: true
+  # className: traefik                # when the cluster has no default IngressClass

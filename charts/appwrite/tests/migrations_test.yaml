@@ -184,3 +184,17 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: mounts appwrite.extraVolumes in the migration Job
+    template: templates/hooks/migrate-job.yaml
+    set:
+      migrations.mode: job
+      appwrite.extraVolumes: [{name: db-ca, secret: {secretName: db-ca}}]
+      appwrite.extraVolumeMounts: [{name: db-ca, mountPath: /etc/appwrite/db-ca, readOnly: true}]
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content: {name: db-ca, secret: {secretName: db-ca}}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: {name: db-ca, mountPath: /etc/appwrite/db-ca, readOnly: true}

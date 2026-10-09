@@ -54,6 +54,7 @@ producing a random one, for example `No value for postgres-password`.
 | `compute.secrets.existingSecret` | `executor-secret`, `orchestrator-secret` (`compute.secrets.*Key`) |
 | `compute.executor.existingSecret`, in the executor namespace | `executor-secret`, `s3-access-key`, `s3-secret-key` ([executor.md](executor.md#existing-secrets)) |
 | `appwrite.storage.s3.existingSecret` | `s3-access-key`, `s3-secret-key` (`appwrite.storage.s3.accessKeyKey`, `secretKeyKey`) |
+| `externalDatabase`, `externalRedis`, `externalClickhouse`, `appwrite.smtp` | see [external-databases.md](external-databases.md#credentials) |
 
 The core Secret needs these keys (names configurable under
 `appwrite.secrets.keys`):
@@ -72,6 +73,39 @@ stringData:
 Generate values with `openssl rand -hex 32` (the chart itself generates 48
 random letters and digits). Keep passwords URL-safe (letters and digits):
 Appwrite puts some of them into connection URLs.
+
+With the [External Secrets Operator](https://external-secrets.io), the
+credentials can live in AWS Secrets Manager, Google Secret Manager, Vault or
+Azure Key Vault. One `ExternalSecret` per Kubernetes Secret, with the key
+names the chart expects:
+
+```yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: appwrite-external
+  namespace: appwrite
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: aws-secrets-manager            # a store you've set up
+  target:
+    name: appwrite-external              # what existingSecret refers to
+  data:
+    - secretKey: db-password
+      remoteRef: {key: appwrite/production, property: db-password}
+    - secretKey: clickhouse-password
+      remoteRef: {key: appwrite/production, property: clickhouse-password}
+    - secretKey: s3-access-key
+      remoteRef: {key: appwrite/production, property: s3-access-key}
+    - secretKey: s3-secret-key
+      remoteRef: {key: appwrite/production, property: s3-secret-key}
+```
+
+Appwrite reads credentials when a pod starts, so a rotated value takes
+effect after a restart. [Reloader](https://github.com/stakater/Reloader) can
+do that for you.
 
 ## Server-side apply
 
