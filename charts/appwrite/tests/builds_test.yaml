@@ -21,8 +21,8 @@ set:
   appwrite.storage.s3.bucket: files
   appwrite.storage.s3.existingSecret: s3
   compute.enabled: true
-  compute.executor.mode: external
-  compute.executor.host: http://10.0.0.20:9900/v1
+  compute.executor.privileged: true
+  compute.executor.existingSecret: executor-credentials
 tests:
   - it: points Appwrite at the orchestrator and gives builds the API Service
     template: templates/configmap-env.yaml
@@ -264,11 +264,14 @@ tests:
       - failedTemplate:
           errorPattern: compute.builds.namespace must differ from the release namespace
 
-  - it: renders nothing for an external orchestrator
-    template: templates/orchestrator/deployment.yaml
+  - it: renders nothing without Functions and Sites
+    templates:
+      - templates/orchestrator/deployment.yaml
+      - templates/orchestrator/rbac.yaml
+      - templates/builds/namespace.yaml
+      - templates/builds/networkpolicy.yaml
     set:
-      compute.orchestrator.mode: external
-      compute.orchestrator.host: http://10.0.0.20:8080
+      compute.enabled: false
     asserts:
       - hasDocuments:
           count: 0

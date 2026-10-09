@@ -103,17 +103,12 @@ on each container (see appwrite.env).
 {{- $_ := set $computed "_APP_STORAGE_S3_BUCKET" $storage.s3.bucket }}
 {{- end }}
 
-{{- /* Compute plane (Functions and Sites): builds and executions in the cluster or on a Docker host */}}
+{{- /* Compute plane (Functions and Sites): the orchestrator runs builds as Jobs, the executor runs executions; build Jobs call back to the API Service */}}
 {{- $compute := .Values.compute }}
 {{- if $compute.enabled }}
 {{- $_ := set $computed "_APP_EXECUTOR_HOST" (include "appwrite.executor.url" .) }}
-{{- if include "appwrite.builds.inCluster" . }}
 {{- $_ := set $computed "_APP_JOBS_HOST" (printf "http://%s:8080" (include "appwrite.componentName" (dict "root" . "component" "orchestrator"))) }}
-{{- $_ := set $computed "_APP_JOBS_ENDPOINT" ($compute.appwriteEndpoint | default (include "appwrite.api.url" .)) }}
-{{- else }}
-{{- $_ := set $computed "_APP_JOBS_HOST" $compute.orchestrator.host }}
-{{- $_ := set $computed "_APP_JOBS_ENDPOINT" ($compute.appwriteEndpoint | default (printf "%s://%s" (ternary "https" "http" $v.forceHttps) $domain)) }}
-{{- end }}
+{{- $_ := set $computed "_APP_JOBS_ENDPOINT" (include "appwrite.api.url" .) }}
 {{- end }}
 {{- with $compute.functionsRuntimes }}
 {{- $_ := set $computed "_APP_FUNCTIONS_RUNTIMES" (join "," .) }}

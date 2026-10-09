@@ -16,10 +16,9 @@ Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, cons
 - Ingress or Gateway API routes for the API, console, realtime, function and
   site previews and custom domains.
 - Worker topologies from one combined worker to one Deployment per queue.
-- Functions and Sites: builds run in the cluster as unprivileged Jobs in their
+- Functions and Sites in the cluster: builds run as unprivileged Jobs in their
   own namespace, executions on an executor with its own Docker-in-Docker
-  daemon in another namespace (a privileged pod you opt into), or on a Docker
-  host.
+  daemon in another namespace (a privileged pod you opt into).
 - Credentials generated once and kept, data migrations on upgrade, and guards
   against changing the encryption key or downgrading.
 
@@ -98,7 +97,7 @@ See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/do
 | [Networking, TLS and domains](https://github.com/appwrite/helm-chart/blob/main/docs/networking.md) | Ingress, Gateway API, cert-manager, custom domains |
 | [External databases](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md) | PostgreSQL, MariaDB, MySQL, MongoDB, Redis, ClickHouse |
 | [Storage](https://github.com/appwrite/helm-chart/blob/main/docs/storage.md) | Volumes and S3 |
-| [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | Builds and the executor, in the cluster or on a Docker host |
+| [Functions and Sites](https://github.com/appwrite/helm-chart/blob/main/docs/executor.md) | Builds as Jobs and the executor on Docker-in-Docker |
 | [Optional components](https://github.com/appwrite/helm-chart/blob/main/docs/optional-components.md) | Browser, assistant, autogravity, embedding, MQTT |
 | [Security](https://github.com/appwrite/helm-chart/blob/main/docs/security.md) | Pod security, credentials, NetworkPolicies, signatures |
 | [Upgrading](https://github.com/appwrite/helm-chart/blob/main/docs/upgrading.md) | Versions, migrations, rollbacks |
@@ -330,7 +329,6 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | clickhouse.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | commonAnnotations | object | `{}` | Annotations added to every resource rendered by the chart. |
 | commonLabels | object | `{}` | Labels added to every resource rendered by the chart. |
-| compute.appwriteEndpoint | string | `""` | URL build Jobs use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Defaults to the API Service in the cluster, or, with an external orchestrator, to `https://<domain>` (`http` when `forceHttps` is off), whose host must then be `appwrite.domain`. |
 | compute.builds.cpuOvercommit | int | `8` | Divides each build's CPU limit to get its CPU request (`KUBE_CPU_OVERCOMMIT`). Appwrite gives builds up to 8 CPUs; the default requests 1. |
 | compute.builds.createNamespace | bool | `true` | Create the namespace, labelled for the `baseline` Pod Security Standard. Set to false to create it yourself. |
 | compute.builds.memoryOvercommit | int | `8` | Divides each build's memory limit to get its memory request (`KUBE_MEMORY_OVERCOMMIT`). Appwrite gives builds up to 8 GiB; the default requests 1 GiB. |
@@ -345,7 +343,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.builds.sidecarImage.repository | string | `"open-runtimes/orchestrator/job-sidecar"` | Image repository of the sidecar that moves sources, outputs and caches for each build. |
 | compute.builds.sidecarImage.tag | string | `"2.2.2"` | Image tag. |
 | compute.builds.tolerations | list | `[]` | Tolerations for build pods. |
-| compute.enabled | bool | `false` | Enable Functions and Sites. Needs `appwrite.storage.device: s3`, and with the in-cluster executor `compute.executor.privileged` (see docs/executor.md). |
+| compute.enabled | bool | `false` | Enable Functions and Sites. Needs `appwrite.storage.device: s3` and `compute.executor.privileged` (see docs/executor.md). |
 | compute.executor.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | compute.executor.createNamespace | bool | `true` | Create the namespace, labelled for the `privileged` Pod Security Standard. Set to false to create it yourself. |
 | compute.executor.dind.addressPool | string | `"198.18.0.0/15"` | Addresses of the Docker daemon's networks, split into /24s: its bridge and the runtimes' network. They shadow anything the executor and runtimes would reach in the same range, so it must not overlap the S3 endpoint, the cluster or your networks. Docker's own default, 172.17.0.0/16 onwards, often does; this one is reserved for benchmarking (RFC 2544) and routed nowhere. |
@@ -358,14 +356,12 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.executor.dind.volume | object | `{}` | Volume source for the Docker daemon's images and containers, e.g. `{ephemeral: {volumeClaimTemplate: ...}}`. Empty is an `emptyDir` of at most 20Gi; runtime images are pulled again when the pod is replaced. |
 | compute.executor.existingSecret | string | `""` | Secret in the executor namespace with the keys `executor-secret`, `s3-access-key` and `s3-secret-key`. Pods can't read Secrets in other namespaces, so it's required when `compute.secrets.existingSecret` or `appwrite.storage.s3.existingSecret` is set. Otherwise the chart creates it. |
 | compute.executor.extraEnv | list | `[]` | Extra environment variables for the executor. Variables named `OPR_EXECUTOR_*` are passed on to it, e.g. `OPR_EXECUTOR_DOCKER_HUB_USERNAME` and `OPR_EXECUTOR_DOCKER_HUB_PASSWORD` to pull runtime images as a Docker Hub user. |
-| compute.executor.host | string | `""` | URL of an external executor's API (`_APP_EXECUTOR_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:9900/v1`. |
 | compute.executor.image.digest | string | `""` | Image digest. |
 | compute.executor.image.registry | string | `"docker.io"` | Image registry. The executor image is pulled by the Docker daemon in the pod, not by the kubelet, so image pull secrets don't apply to it. |
 | compute.executor.image.repository | string | `"openruntimes/executor"` | Image repository. |
 | compute.executor.image.tag | string | `"0.29.0"` | Image tag. |
 | compute.executor.images | list | `[]` | Runtime images to pull when the executor starts (`OPR_EXECUTOR_IMAGES`). Empty derives them from `functionsRuntimes` and `sitesRuntimes`, e.g. `node-22` becomes `openruntimes/node:v5-22`. |
 | compute.executor.inactiveThreshold | int | `60` | Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). |
-| compute.executor.mode | string | `"cluster"` | Where executions run. `cluster`: the chart runs the executor on Docker-in-Docker in `compute.executor.namespace`. `external`: an executor you run on a Docker host, at `host`. |
 | compute.executor.namespace | string | `""` | Namespace of the executor. Defaults to `<release namespace>-executor`. Use a different one per release when several releases share a namespace. |
 | compute.executor.networkPolicy.deniedCIDRs | list | `[]` | CIDRs executor pods may not reach, on top of the private, link-local, CGNAT and special-purpose ranges always blocked. |
 | compute.executor.networkPolicy.enabled | bool | `true` | Restrict executor pods' traffic: incoming only from Appwrite pods of this release; outgoing (which includes every runtime) only to DNS, the S3 endpoint and public addresses. Takes effect only with a CNI that enforces NetworkPolicies. |
@@ -374,7 +370,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.executor.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | compute.executor.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
 | compute.executor.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
-| compute.executor.privileged | bool | `false` | Run the Docker daemon as a privileged container, which makes it root on its node. Required in `cluster` mode unless `runtimeClassName` names a runtime that runs Docker without it, such as Sysbox. Give the executor nodes of its own (`nodeSelector`, `tolerations`). |
+| compute.executor.privileged | bool | `false` | Run the Docker daemon as a privileged container, which makes it root on its node. Required unless `runtimeClassName` names a runtime that runs Docker without it, such as Sysbox. Give the executor nodes of its own (`nodeSelector`, `tolerations`). |
 | compute.executor.replicaCount | int | `1` | Executor replicas. Each has its own Docker daemon: a runtime starts on the replica an execution reaches and stays there until it's idle. |
 | compute.executor.resources | object | `{"limits":{"memory":"4Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}` | Resources of the Docker daemon container, which runs the executor and every runtime: size it for the executions you expect. |
 | compute.executor.runtimeClassName | string | `""` | RuntimeClass of executor pods, e.g. `sysbox-runc`. |
@@ -384,13 +380,11 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.functionsRuntimes | list | `[]` | Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps the Docker installer's list (node-16.0, php-8.0, python-3.9, ruby-3.0). |
 | compute.orchestrator.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | compute.orchestrator.containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context. |
-| compute.orchestrator.host | string | `""` | URL of an external orchestrator's API (`_APP_JOBS_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:8080`. |
 | compute.orchestrator.image.digest | string | `""` | Image digest. |
 | compute.orchestrator.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | compute.orchestrator.image.registry | string | `"ghcr.io"` | Image registry. |
 | compute.orchestrator.image.repository | string | `"open-runtimes/orchestrator/jobs-service"` | Image repository: the orchestrator's jobs service, with the Kubernetes backend. |
 | compute.orchestrator.image.tag | string | `"2.2.2"` | Image tag. |
-| compute.orchestrator.mode | string | `"cluster"` | Where builds run. `cluster`: the chart runs the orchestrator, which starts every build as a Kubernetes Job in `compute.builds.namespace`. `external`: an orchestrator you run on a Docker host, at `host`. |
 | compute.orchestrator.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | compute.orchestrator.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | compute.orchestrator.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
@@ -400,7 +394,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.orchestrator.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | compute.secrets.executorSecret | string | `""` | Explicit executor secret. |
 | compute.secrets.executorSecretKey | string | `"executor-secret"` | Key holding the executor secret (`_APP_EXECUTOR_SECRET`, `OPR_EXECUTOR_SECRET` on the executor). |
-| compute.secrets.existingSecret | string | `""` | Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the executor (and an external orchestrator) with the same values. |
+| compute.secrets.existingSecret | string | `""` | Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them. With an existing Secret, the executor also needs `compute.executor.existingSecret` in its namespace. |
 | compute.secrets.orchestratorSecret | string | `""` | Explicit orchestrator API key. |
 | compute.secrets.orchestratorSecretKey | string | `"orchestrator-secret"` | Key holding the orchestrator API key (`_APP_JOBS_SECRET`, the file in `API_KEY_FILE` on the orchestrator). |
 | compute.sitesRuntimes | list | `[]` | Site runtimes to enable (`_APP_SITES_RUNTIMES`). Empty keeps Appwrite's default list. Sites build with `node-22`, so keep it in the list. |
@@ -569,7 +563,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | mqtt.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | nameOverride | string | `""` | Override the chart name used in resource names. |
 | networkPolicy.egress.dns | list | `[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]` | DNS servers to allow (NetworkPolicyPeer) when egress is restricted, on port 53. DNS on another port (OpenShift: 5353) or NodeLocal DNSCache (169.254.20.10) needs a rule in `extraRules`. |
-| networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, an external executor, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`; the in-cluster executor is allowed already. |
+| networkPolicy.egress.enabled | bool | `false` | Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`; the executor is allowed already. |
 | networkPolicy.egress.extraRules | list | `[]` | Extra egress rules (NetworkPolicyEgressRule) when egress is restricted. |
 | networkPolicy.enabled | bool | `false` | Create NetworkPolicies. They only take effect with a CNI that enforces them. |
 | networkPolicy.ingress.from | list | `[]` | Sources (NetworkPolicyPeer) allowed to reach the API, console and realtime, typically your ingress controller or Gateway. Empty allows any source. Pods of this release can always reach them. |

@@ -1,4 +1,4 @@
-{{- if include "appwrite.builds.inCluster" . }}
+{{- if .Values.compute.enabled }}
 {{- $v := .Values.compute.orchestrator }}
 {{- $b := .Values.compute.builds }}
 {{- $cs := .Values.compute.secrets }}

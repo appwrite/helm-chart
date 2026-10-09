@@ -23,12 +23,11 @@ First release of the chart, for Appwrite 2.3.0.
   Kubernetes Jobs through the open-runtimes orchestrator, in their own
   `baseline` namespace behind a NetworkPolicy that only allows public
   addresses (plus `deniedCIDRs`). Executions run on the open-runtimes
-  executor, by default in the cluster on Docker-in-Docker: a privileged pod
-  you accept with `compute.executor.privileged` (or Sysbox through
-  `runtimeClassName`), in a namespace of its own with its own copy of its
-  credentials, no TCP listener on the Docker daemon, and a NetworkPolicy that
-  only lets Appwrite in and the executor out to DNS, S3 and public addresses.
-  `compute.executor.mode: external` runs it on a Docker host instead.
+  executor on Docker-in-Docker: a privileged pod you accept with
+  `compute.executor.privileged` (or Sysbox through `runtimeClassName`), in a
+  namespace of its own with its own copy of its credentials, no TCP listener
+  on the Docker daemon, and a NetworkPolicy that only lets Appwrite in and
+  the executor out to DNS, S3 and public addresses.
 - Optional browser, assistant, autogravity, embedding and MQTT components.
 - PodDisruptionBudgets and topology spread by default; opt-in
   NetworkPolicies and HorizontalPodAutoscalers.

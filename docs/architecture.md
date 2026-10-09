@@ -47,8 +47,8 @@ flowchart LR
 | `postgresql` | `appwrite/postgres` | `postgres` | One replica | Built-in database. Optional. |
 | `redis` | `redis` | `redis-server` | One replica | Cache, queues, pub/sub and locks. Optional. |
 | `clickhouse` | `clickhouse/clickhouse-server` | image default | One replica | Usage statistics and execution logs. Optional. |
-| `orchestrator` | `open-runtimes/orchestrator/jobs-service` | image default | One replica | Runs builds of functions and sites as Jobs in the build namespace. With `compute.enabled` and `compute.orchestrator.mode: cluster`. |
-| `executor` | `openruntimes/executor` on `docker:dind` | see [executor.md](executor.md#the-executor-in-the-cluster) | `compute.executor.replicaCount` | Runs functions and sites in runtime containers of its own Docker daemon, in the executor namespace. With `compute.enabled` and `compute.executor.mode: cluster`. |
+| `orchestrator` | `open-runtimes/orchestrator/jobs-service` | image default | One replica | Runs builds of functions and sites as Jobs in the build namespace. With `compute.enabled`. |
+| `executor` | `openruntimes/executor` on `docker:dind` | see [executor.md](executor.md#the-executor) | `compute.executor.replicaCount` | Runs functions and sites in runtime containers of its own Docker daemon, in the executor namespace. With `compute.enabled`. |
 
 The builds worker starts builds through the orchestrator, and the API cancels
 them. The functions worker and the API (synchronous executions, function and

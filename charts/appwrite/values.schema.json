@@ -1286,10 +1286,6 @@
     "compute": {
       "type": "object",
       "properties": {
-        "appwriteEndpoint": {
-          "description": "URL build Jobs use to download sources from and report back to Appwrite (`_APP_JOBS_ENDPOINT`). Defaults to the API Service in the cluster, or, with an external orchestrator, to `https://<domain>` (`http` when `forceHttps` is off), whose host must then be `appwrite.domain`.",
-          "type": "string"
-        },
         "builds": {
           "type": "object",
           "properties": {
@@ -1380,7 +1376,7 @@
           "additionalProperties": false
         },
         "enabled": {
-          "description": "Enable Functions and Sites. Needs `appwrite.storage.device: s3`, and with the in-cluster executor `compute.executor.privileged` (see docs/executor.md).",
+          "description": "Enable Functions and Sites. Needs `appwrite.storage.device: s3` and `compute.executor.privileged` (see docs/executor.md).",
           "type": "boolean"
         },
         "executor": {
@@ -1458,10 +1454,6 @@
               },
               "description": "Extra environment variables for the executor. Variables named `OPR_EXECUTOR_*` are passed on to it, e.g. `OPR_EXECUTOR_DOCKER_HUB_USERNAME` and `OPR_EXECUTOR_DOCKER_HUB_PASSWORD` to pull runtime images as a Docker Hub user."
             },
-            "host": {
-              "description": "URL of an external executor's API (`_APP_EXECUTOR_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:9900/v1`.",
-              "type": "string"
-            },
             "image": {
               "type": "object",
               "properties": {
@@ -1495,14 +1487,6 @@
             "inactiveThreshold": {
               "description": "Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`).",
               "type": "integer"
-            },
-            "mode": {
-              "description": "Where executions run. `cluster`: the chart runs the executor on Docker-in-Docker in `compute.executor.namespace`. `external`: an executor you run on a Docker host, at `host`.",
-              "type": "string",
-              "enum": [
-                "cluster",
-                "external"
-              ]
             },
             "namespace": {
               "description": "Namespace of the executor. Defaults to `<release namespace>-executor`. Use a different one per release when several releases share a namespace.",
@@ -1558,7 +1542,7 @@
               "type": "string"
             },
             "privileged": {
-              "description": "Run the Docker daemon as a privileged container, which makes it root on its node. Required in `cluster` mode unless `runtimeClassName` names a runtime that runs Docker without it, such as Sysbox. Give the executor nodes of its own (`nodeSelector`, `tolerations`).",
+              "description": "Run the Docker daemon as a privileged container, which makes it root on its node. Required unless `runtimeClassName` names a runtime that runs Docker without it, such as Sysbox. Give the executor nodes of its own (`nodeSelector`, `tolerations`).",
               "type": "boolean"
             },
             "replicaCount": {
@@ -1640,10 +1624,6 @@
               "type": "object",
               "description": "Container security context."
             },
-            "host": {
-              "description": "URL of an external orchestrator's API (`_APP_JOBS_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:8080`.",
-              "type": "string"
-            },
             "image": {
               "type": "object",
               "properties": {
@@ -1675,14 +1655,6 @@
                 }
               },
               "additionalProperties": false
-            },
-            "mode": {
-              "description": "Where builds run. `cluster`: the chart runs the orchestrator, which starts every build as a Kubernetes Job in `compute.builds.namespace`. `external`: an orchestrator you run on a Docker host, at `host`.",
-              "type": "string",
-              "enum": [
-                "cluster",
-                "external"
-              ]
             },
             "nodeSelector": {
               "description": "Node selector. Empty inherits `defaults.nodeSelector`.",
@@ -1766,7 +1738,7 @@
               "type": "string"
             },
             "existingSecret": {
-              "description": "Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them; configure the executor (and an external orchestrator) with the same values.",
+              "description": "Existing Secret holding the executor and orchestrator secrets. When empty, the chart generates them. With an existing Secret, the executor also needs `compute.executor.existingSecret` in its namespace.",
               "type": "string"
             },
             "orchestratorSecret": {
@@ -2989,7 +2961,7 @@
               "description": "DNS servers to allow (NetworkPolicyPeer) when egress is restricted, on port 53. DNS on another port (OpenShift: 5353) or NodeLocal DNSCache (169.254.20.10) needs a rule in `extraRules`."
             },
             "enabled": {
-              "description": "Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, an external executor, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`; the in-cluster executor is allowed already.",
+              "description": "Restrict egress to DNS, pods of this release and `extraRules`. Off by default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, and the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the Kubernetes API. Allow what you use in `extraRules`; the executor is allowed already.",
               "type": "boolean"
             },
             "extraRules": {

@@ -5,18 +5,18 @@ Appwrite runs Functions and Sites with two
 
 | Service | Does | Where it runs | Appwrite setting |
 | --- | --- | --- | --- |
-| [orchestrator](https://github.com/open-runtimes/orchestrator) | Builds deployments | In the cluster: the chart runs it, and it starts each build as a Kubernetes Job. Or on a Docker host. | `_APP_JOBS_HOST`, `_APP_JOBS_SECRET` |
-| [executor](https://github.com/open-runtimes/executor) | Starts runtime containers and executes functions and sites in them | In the cluster: the chart runs it on Docker-in-Docker. Or on a Docker host. | `_APP_EXECUTOR_HOST`, `_APP_EXECUTOR_SECRET` |
+| [orchestrator](https://github.com/open-runtimes/orchestrator) | Builds deployments | In the release namespace; it starts each build as a Kubernetes Job in the build namespace | `_APP_JOBS_HOST`, `_APP_JOBS_SECRET` |
+| [executor](https://github.com/open-runtimes/executor) | Starts runtime containers and executes functions and sites in them | In the executor namespace, on Docker-in-Docker | `_APP_EXECUTOR_HOST`, `_APP_EXECUTOR_SECRET` |
 
-The executor creates a container per runtime through a Docker daemon, and
-Kubernetes has no Docker daemon to offer. In the cluster the chart gives
-each executor pod its own daemon (Docker-in-Docker), which runs as a
+The chart runs both and wires Appwrite to them. Builds run as ordinary,
+unprivileged Jobs. The executor creates a container per runtime through a
+Docker daemon, and Kubernetes has no Docker daemon to offer, so the chart
+gives each executor pod its own (Docker-in-Docker). That daemon runs as a
 **privileged container: root on its node**. That is why the executor gets a
 namespace of its own, why you have to accept it explicitly, and why it should
-get nodes of its own. If you can't run a privileged pod (GKE Autopilot, EKS
-on Fargate, a policy that forbids it), run the executor on a Docker host
-instead ([below](#the-executor-on-a-docker-host)). Builds don't have this
-problem: the orchestrator runs them as ordinary, unprivileged Jobs.
+get nodes of its own. Where privileged pods aren't allowed (GKE Autopilot,
+EKS on Fargate, a policy that forbids them), [Sysbox](#without-a-privileged-container)
+runs the daemon without it.
 
 ```mermaid
 flowchart LR
@@ -165,7 +165,7 @@ waits for the build and executes it. Delete the project afterwards. Without
 an install where nobody has signed up yet, that account becomes the console
 administrator.
 
-## The executor in the cluster
+## The executor
 
 Each executor pod runs two containers:
 
@@ -235,8 +235,7 @@ compute:
 ```
 
 Don't put the API, the datastores or anything holding credentials there. If
-that's more than you can accept, run the executor on a Docker host
-([below](#the-executor-on-a-docker-host)), or use Sysbox.
+that's more than you can accept, use Sysbox.
 
 ### Without a privileged container
 
@@ -314,76 +313,6 @@ compute:
         - to: [{ipBlock: {cidr: 10.0.0.40/32}}]
           ports: [{port: 443}]
 ```
-
-## The executor on a Docker host
-
-To run executions outside the cluster, set `compute.executor.mode: external`
-and run the executor on a Docker host, on a private network the Appwrite pods
-can reach. The executor speaks plain HTTP, authenticated with a bearer
-secret; don't expose it to the internet. It also needs to reach the S3
-bucket.
-
-```yaml
-compute:
-  executor:
-    mode: external
-    host: http://10.0.0.20:9900/v1
-```
-
-Read the executor secret the chart generated, for the Docker host (or bring
-your own with `compute.secrets.existingSecret`, key `executor-secret`, or
-`compute.secrets.executorSecret`):
-
-```console
-kubectl -n appwrite get secret appwrite -o jsonpath='{.data.executor-secret}' | base64 -d
-```
-
-### Run it with Docker Compose
-
-[`examples/executor`](../examples/executor) has a Docker Compose file for the
-Docker host. Copy the directory to the host, for example from a clone of this
-repository:
-
-```console
-git clone --depth 1 https://github.com/appwrite/helm-chart
-cd helm-chart/examples/executor
-cp .env.example .env                      # fill in the secret, storage DSN and runtimes
-docker compose up -d
-```
-
-What to get right:
-
-| Setting | Value |
-| --- | --- |
-| `EXECUTOR_SECRET` | the chart's executor secret |
-| `EXECUTOR_STORAGE_DSN` | the bucket Appwrite uses, as a DSN, see below |
-| `RUNTIMES` | `compute.functionsRuntimes` and `compute.sitesRuntimes` combined |
-| `RUNTIME_IMAGES` | the images of those runtimes, so the executor pulls them when it starts |
-
-### The executor's storage DSN
-
-When `appwrite.storage.s3.endpoint` is set (any S3-compatible store), Appwrite
-records paths with the bucket as the first segment, so the executor's DSN
-names the endpoint **without** the bucket:
-
-```text
-s3://ACCESS_KEY:SECRET_KEY@s3.example.com?region=us-east-1
-s3://ACCESS_KEY:SECRET_KEY@minio.internal:9000?region=us-east-1&insecure=true   # plain HTTP
-```
-
-With AWS S3 (no endpoint in Appwrite), name the bucket in the hostname:
-
-```text
-s3://ACCESS_KEY:SECRET_KEY@my-bucket.s3.eu-central-1.amazonaws.com?region=eu-central-1
-```
-
-URL-encode the access key and secret key in the DSN: AWS secret keys often
-contain `/` or `+`, which otherwise break parsing (`/` becomes `%2F`, `+`
-becomes `%2B`). In `.env`, Docker Compose also interpolates `$`, so write a
-literal `$` as `$$`.
-
-A wrong DSN shows up as executions failing with "Timed out waiting for
-runtime": the executor can't find the build output.
 
 ## Builds
 
@@ -479,18 +408,16 @@ compute:
 
 Finished build Jobs are removed after `compute.builds.retention` (15 minutes).
 
-### With restricted egress
+## With restricted egress
 
 `networkPolicy.egress.enabled` limits every pod of the release to DNS, the
-release itself and the in-cluster executor, which cuts off the rest of the
-compute plane. Add rules to `networkPolicy.egress.extraRules` for:
+release itself and the executor, which cuts off the rest of the compute
+plane. Add rules to `networkPolicy.egress.extraRules` for:
 
 - **the S3 endpoint**, which the API, workers and orchestrator use,
 - **the Kubernetes API server**, which the orchestrator calls. Its address is
   in the `kubernetes` Service's EndpointSlice
-  (`kubectl get endpointslice -l kubernetes.io/service-name=kubernetes`),
-- **an executor on a Docker host**, which the API and workers call (port
-  9900 in the example).
+  (`kubectl get endpointslice -l kubernetes.io/service-name=kubernetes`).
 
 ```yaml
 networkPolicy:
@@ -501,33 +428,7 @@ networkPolicy:
         ports: [{port: 443}]
       - to: [{ipBlock: {cidr: 172.18.0.2/32}}]     # Kubernetes API server
         ports: [{port: 6443}]
-      - to: [{ipBlock: {cidr: 10.0.0.20/32}}]      # executor on a Docker host
-        ports: [{port: 9900}]
 ```
-
-### Builds on a Docker host instead
-
-With the executor on a Docker host, builds can run there too: set
-`compute.orchestrator.mode: external` and run the orchestrator there with
-[`external-builds.yml`](../examples/executor/external-builds.yml), an override
-for the executor's Compose file:
-
-```yaml
-compute:
-  orchestrator:
-    mode: external
-    host: http://10.0.0.20:8080
-```
-
-```console
-printf '%s' '<orchestrator secret>' > orchestrator-api-key   # no trailing newline
-# add S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY and S3_SECRET_KEY to .env
-docker compose -f docker-compose.yml -f external-builds.yml up -d
-```
-
-Build containers then download sources from Appwrite at
-`compute.appwriteEndpoint` (default `https://<appwrite.domain>`), so the
-Docker host must reach that URL, and its hostname must be `appwrite.domain`.
 
 ## Domains
 
@@ -546,19 +447,19 @@ through the wildcard and custom-domain routes
 
 | Symptom | Likely cause |
 | --- | --- |
-| Deployments stay `waiting` | The orchestrator isn't running: check `kubectl -n appwrite logs deploy/appwrite-orchestrator`. With an external orchestrator, it isn't reachable at `compute.orchestrator.host`, or its API key differs from the chart's orchestrator secret. |
+| Deployments stay `waiting` | The orchestrator isn't running, or can't reach the Kubernetes API (restricted egress, [above](#with-restricted-egress)): check `kubectl -n appwrite logs deploy/appwrite-orchestrator`. |
 | Build pods stay `Pending` | No node has room for the build's request. Raise `compute.builds.cpuOvercommit` and `memoryOvercommit`, or add nodes. |
 | Builds fail uploading the output (`dial tcp ... i/o timeout` in the build's `sidecar` container) | Build pods can't reach S3: add it to `compute.builds.networkPolicy.extraEgress`. |
 | Builds fail installing dependencies | Build pods can't reach the package registry, for example a private one: add it to `extraEgress`. |
 | The executor pod isn't created: `violates PodSecurity "baseline"` (or `restricted`) | The executor namespace doesn't admit privileged pods. Label it `pod-security.kubernetes.io/enforce=privileged`, or let the chart create it. |
 | The executor pod isn't ready | Check `kubectl -n appwrite-executor logs deploy/appwrite-executor -c executor` and `-c dind`. The daemon pulls the executor image from Docker Hub when the pod starts: a blocked or rate-limited registry stops it ([registries](#registries)). |
-| Executions fail with "Timed out waiting for runtime" | The executor can't find the build output: S3 is unreachable from the executor namespace (a private hostname needs `compute.executor.networkPolicy.extraEgress`), S3 is in `compute.executor.dind.addressPool` ([above](#the-executor-in-the-cluster)), or, on a Docker host, its storage DSN is wrong ([above](#the-executors-storage-dsn)). Or the runtime image can't be pulled. |
+| Executions fail with "Timed out waiting for runtime" | The executor can't find the build output: S3 is unreachable from the executor namespace (a private hostname needs `compute.executor.networkPolicy.extraEgress`), or S3 is in `compute.executor.dind.addressPool` ([above](#the-executor)). Or the runtime image can't be pulled. |
 | Functions can't call Appwrite (`fetch failed`, connection timeouts to `appwrite.domain`) | Runtimes call Appwrite at `https://<appwrite.domain>/v1`. When that name resolves to a private address (an internal load balancer, a LAN), the executor's NetworkPolicy blocks it like any private range: allow your ingress controller or load balancer in `compute.executor.networkPolicy.extraEgress`. |
-| Executions fail with 401 | On a Docker host: `EXECUTOR_SECRET` differs from the chart's executor secret. In the cluster: `compute.executor.existingSecret` holds a different `executor-secret` than Appwrite's. |
-| Creating a site fails with `Runtime "node-22" is not supported` | Add `node-22` to `compute.sitesRuntimes` (and to `RUNTIMES` on the Docker host). |
+| Executions fail with 401 | `compute.executor.existingSecret` holds a different `executor-secret` than Appwrite's. |
+| Creating a site fails with `Runtime "node-22" is not supported` | Add `node-22` to `compute.sitesRuntimes`. |
 | A site's preview URL redirects to `/auth/preview` | Expected: previews need a console login. Add a domain to publish the site. |
 
-Runtimes in the cluster:
+Runtimes:
 `kubectl -n appwrite-executor exec deploy/appwrite-executor -c dind -- docker ps`
 lists them, and `docker logs <runtime>` shows a runtime's output.
 

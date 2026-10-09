@@ -1,21 +1,23 @@
-# S3 storage with Functions and Sites (in-cluster builds, external executor),
-# rendered and linted only: the kind scenarios with S3 run in the nightly
-# workflow, which starts an S3 server next to the cluster. The in-cluster
-# executor is rendered by executor-values.yaml.
+# S3 storage with Functions and Sites, credentials from existing Secrets,
+# rendered and linted only: the nightly workflow installs Functions and Sites
+# with an S3 server next to the cluster. The executor can't read Secrets in
+# the release namespace, so it gets one of its own.
 appwrite:
   domain: appwrite.ci.local
   certificatesEmail: ci@example.com
   storage:
     device: s3
     s3:
-      endpoint: http://s3.example.com:8333
+      endpoint: https://s3.example.com
+      region: eu-central
       bucket: appwrite
-      accessKey: appwrite
-      secretKey: appwrite-s3-secret
+      existingSecret: appwrite-s3
 compute:
   enabled: true
+  secrets:
+    existingSecret: appwrite-compute
   executor:
-    mode: external
-    host: http://10.0.0.20:9900/v1
+    privileged: true
+    existingSecret: appwrite-executor-credentials
   functionsRuntimes: [node-22]
   sitesRuntimes: [static-1, node-22]

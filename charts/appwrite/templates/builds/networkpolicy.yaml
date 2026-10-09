@@ -1,4 +1,4 @@
-{{- if and (include "appwrite.builds.inCluster" .) .Values.compute.builds.networkPolicy.enabled }}
+{{- if and .Values.compute.enabled .Values.compute.builds.networkPolicy.enabled }}
 {{- $s3 := urlParse (.Values.appwrite.storage.s3.endpoint | default "https://s3.amazonaws.com") }}
 {{- $s3Host := regexReplaceAll ":[0-9]+$" $s3.host "" }}
 {{- $s3Port := regexFind "[0-9]+$" (regexFind ":[0-9]+$" $s3.host) | default (ternary "443" "80" (eq $s3.scheme "https")) }}

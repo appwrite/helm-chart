@@ -171,12 +171,11 @@ kubectl -n appwrite get secret appwrite -o jsonpath='{.data._APP_OPENSSL_KEY_V1}
 
 ## Functions and Sites
 
-Functions and Sites need S3 storage. Builds run in the cluster as Kubernetes
-Jobs, and executions on the open-runtimes executor, which starts runtime
-containers through a Docker daemon of its own: in the cluster that is a
-privileged pod, which you have to accept with `compute.executor.privileged`.
-[executor.md](executor.md) walks through it, and through running the executor
-on a Docker host instead.
+Functions and Sites need S3 storage. Builds run as Kubernetes Jobs, and
+executions on the open-runtimes executor, which starts runtime containers
+through a Docker daemon of its own: a privileged pod, which you have to
+accept with `compute.executor.privileged`. [executor.md](executor.md) walks
+through it.
 
 Function and site previews use wildcard hostnames (`*.functions.<domain>` and
 `*.sites.<domain>`). Turn `ingress.wildcard.enabled` back on then, with a

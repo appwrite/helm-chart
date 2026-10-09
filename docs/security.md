@@ -24,7 +24,7 @@ What that means for each pod:
 | `capabilities` | drop `ALL` |
 | `seccompProfile` | `RuntimeDefault` |
 | `readOnlyRootFilesystem` | `true`; writable paths are `emptyDir` volumes |
-| ServiceAccount token | not mounted, except for the orchestrator (`compute.enabled` with `compute.orchestrator.mode: cluster`) |
+| ServiceAccount token | not mounted, except for the orchestrator (`compute.enabled`) |
 
 | Component | User | Notes |
 | --- | --- | --- |
@@ -90,8 +90,7 @@ standards above, and the chart only renders it when you accept it
   that escapes its container is root on that node, and can read anything
   running there.
 
-If a privileged pod is unacceptable, run the executor on a separate Docker
-host (`compute.executor.mode: external`). See
+Where a privileged pod is unacceptable, Sysbox runs the daemon without it. See
 [executor.md](executor.md#executor-isolation).
 
 ## Credentials
@@ -195,7 +194,7 @@ CNI that enforces them (Calico, Cilium, kindnet, and most managed offerings).
 | `<fullname>-datastores` | PostgreSQL, Redis, ClickHouse | Appwrite pods of the release (label `appwrite/datastore-client: "true"`) |
 | `<fullname>-background` | workers and tasks | nothing |
 | `<fullname>-mqtt` | MQTT broker (`mqtt.enabled`) | any source, on the MQTT ports |
-| `<fullname>-orchestrator` | orchestrator (`compute.orchestrator.mode: cluster`) | pods of the release and build pods |
+| `<fullname>-orchestrator` | orchestrator (`compute.enabled`) | pods of the release and build pods |
 
 With in-cluster builds, `<fullname>-edge` also admits build pods to the API.
 Build pods get their own policy in the build namespace, `<fullname>-build`,
@@ -215,10 +214,10 @@ Policies add up: with `egress.enabled`, the browser may also reach the other
 pods of the release.
 
 With Functions and Sites, `networkPolicy.egress.enabled` also blocks traffic
-the compute plane needs, because the S3 endpoint, the Kubernetes API and an
-executor on a Docker host are outside the release. Add rules for them to
-`extraRules` ([executor.md](executor.md#with-restricted-egress)). The
-in-cluster executor is allowed already.
+the compute plane needs, because the S3 endpoint and the Kubernetes API are
+outside the release. Add rules for them to `extraRules`
+([executor.md](executor.md#with-restricted-egress)). The executor is allowed
+already.
 
 Restrict the entry points to your ingress controller or Gateway:
 

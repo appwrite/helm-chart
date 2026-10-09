@@ -1,4 +1,4 @@
-{{- if and (include "appwrite.executor.inCluster" .) .Values.compute.executor.createNamespace }}
+{{- if and .Values.compute.enabled .Values.compute.executor.createNamespace }}
 {{- /* Docker-in-Docker needs a privileged container, which no other Pod Security Standard admits. Only the executor runs here. */}}
 apiVersion: v1
 kind: Namespace

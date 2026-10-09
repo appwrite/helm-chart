@@ -45,31 +45,28 @@ tests:
           path: data.s3-access-key
           value: a2V5
 
-  - it: points Appwrite at an external orchestrator
+  - it: points Appwrite at the executor and enables runtimes
     template: templates/configmap-env.yaml
+    release:
+      namespace: apps
     set:
       compute.enabled: true
-      compute.executor.mode: external
-      compute.executor.host: http://10.0.0.20:9900/v1
-      compute.orchestrator.mode: external
-      compute.orchestrator.host: http://10.0.0.20:8080
+      compute.executor.privileged: true
+      compute.executor.existingSecret: executor-credentials
       compute.functionsRuntimes: [node-22, python-3.12]
     asserts:
       - isSubset:
           path: data
           content:
-            _APP_EXECUTOR_HOST: http://10.0.0.20:9900/v1
-            _APP_JOBS_HOST: http://10.0.0.20:8080
-            _APP_JOBS_ENDPOINT: https://appwrite.example.com
+            _APP_EXECUTOR_HOST: http://aw-appwrite-executor.apps-executor.svc:9900/v1
             _APP_FUNCTIONS_RUNTIMES: node-22,python-3.12
 
   - it: generates executor and orchestrator secrets
     template: templates/secret.yaml
     set:
       compute.enabled: true
-      compute.executor.mode: external
-      compute.executor.host: http://e/v1
-      compute.orchestrator.host: http://o
+      compute.executor.privileged: true
+      compute.executor.existingSecret: executor-credentials
     asserts:
       - exists:
           path: data.executor-secret
@@ -80,9 +77,8 @@ tests:
     template: templates/api/deployment.yaml
     set:
       compute.enabled: true
-      compute.executor.mode: external
-      compute.executor.host: http://e/v1
-      compute.orchestrator.host: http://o
+      compute.executor.privileged: true
+      compute.executor.existingSecret: executor-credentials
       compute.secrets.existingSecret: compute
     asserts:
       - contains:
@@ -97,32 +93,11 @@ tests:
     set:
       appwrite.storage.device: local
       compute.enabled: true
-      compute.executor.mode: external
-      compute.executor.host: http://e/v1
-      compute.orchestrator.host: http://o
+      compute.executor.privileged: true
+      compute.executor.existingSecret: executor-credentials
     asserts:
       - failedTemplate:
           errorPattern: compute.enabled needs appwrite.storage.device=s3
-
-  - it: requires the host of an external executor
-    template: templates/configmap-env.yaml
-    set:
-      compute.enabled: true
-      compute.executor.mode: external
-    asserts:
-      - failedTemplate:
-          errorPattern: compute.executor.host is required when compute.executor.mode is external
-
-  - it: requires the host of an external orchestrator
-    template: templates/configmap-env.yaml
-    set:
-      compute.enabled: true
-      compute.executor.mode: external
-      compute.executor.host: http://e/v1
-      compute.orchestrator.mode: external
-    asserts:
-      - failedTemplate:
-          errorPattern: compute.orchestrator.host is required when compute.orchestrator.mode is external
 
   - it: requires a bucket and credentials
     template: templates/configmap-env.yaml

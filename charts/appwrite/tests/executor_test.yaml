@@ -53,14 +53,6 @@ tests:
           path: spec.template.spec.initContainers[0].securityContext.privileged
           value: false
 
-  - it: rejects an executor host in cluster mode
-    template: templates/configmap-env.yaml
-    set:
-      compute.executor.host: http://10.0.0.20:9900/v1
-    asserts:
-      - failedTemplate:
-          errorPattern: Set compute.executor.mode=external to use the executor at that host
-
   - it: needs a namespace other than the release's
     template: templates/configmap-env.yaml
     set:
@@ -103,7 +95,7 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: renders nothing for an external executor
+  - it: renders nothing without Functions and Sites
     templates:
       - templates/executor/namespace.yaml
       - templates/executor/serviceaccount.yaml
@@ -112,8 +104,7 @@ tests:
       - templates/executor/service.yaml
       - templates/executor/networkpolicy.yaml
     set:
-      compute.executor.mode: external
-      compute.executor.host: http://10.0.0.20:9900/v1
+      compute.enabled: false
     asserts:
       - hasDocuments:
           count: 0

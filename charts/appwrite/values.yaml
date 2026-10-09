@@ -267,28 +267,22 @@ appwrite:
   # -- Extra `envFrom` sources for every Appwrite container.
   extraEnvFrom: [] # @schema item: object
 
-# Functions and Sites run on Open Runtimes services. Builds run inside the
-# cluster: the chart deploys the orchestrator, which starts each build as a
-# Kubernetes Job in a separate namespace. Executions need a Docker daemon, so
-# the executor runs on a Docker host next to the cluster. See docs/executor.md.
+# Functions and Sites run on Open Runtimes services, both deployed by the
+# chart: the orchestrator starts each build as a Kubernetes Job in a namespace
+# of its own, and the executor runs executions on Docker-in-Docker in another.
+# See docs/executor.md.
 compute:
-  # -- Enable Functions and Sites. Needs `appwrite.storage.device: s3`, and
-  # with the in-cluster executor `compute.executor.privileged` (see docs/executor.md).
+  # -- Enable Functions and Sites. Needs `appwrite.storage.device: s3` and
+  # `compute.executor.privileged` (see docs/executor.md).
   enabled: false
   # The open-runtimes executor, which starts a container per function or site
-  # runtime and executes requests in it. It needs a Docker daemon, so in the
-  # cluster it runs on Docker-in-Docker, in a namespace of its own.
+  # runtime and executes requests in it. It needs a Docker daemon, so it runs
+  # on Docker-in-Docker, in a namespace of its own.
   executor:
-    # -- Where executions run. `cluster`: the chart runs the executor on
-    # Docker-in-Docker in `compute.executor.namespace`. `external`: an executor
-    # you run on a Docker host, at `host`.
-    mode: cluster # @schema enum: [cluster, external]
-    # -- URL of an external executor's API (`_APP_EXECUTOR_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:9900/v1`.
-    host: ""
     # -- Run the Docker daemon as a privileged container, which makes it root
-    # on its node. Required in `cluster` mode unless `runtimeClassName` names a
-    # runtime that runs Docker without it, such as Sysbox. Give the executor
-    # nodes of its own (`nodeSelector`, `tolerations`).
+    # on its node. Required unless `runtimeClassName` names a runtime that runs
+    # Docker without it, such as Sysbox. Give the executor nodes of its own
+    # (`nodeSelector`, `tolerations`).
     privileged: false
     # -- RuntimeClass of executor pods, e.g. `sysbox-runc`.
     runtimeClassName: ""
@@ -388,13 +382,9 @@ compute:
     topologySpreadConstraints: [] # @schema item: object
     # -- Priority class. Empty inherits `defaults.priorityClassName`.
     priorityClassName: ""
+  # The open-runtimes orchestrator, which starts every build as a Kubernetes
+  # Job in `compute.builds.namespace`.
   orchestrator:
-    # -- Where builds run. `cluster`: the chart runs the orchestrator, which
-    # starts every build as a Kubernetes Job in `compute.builds.namespace`.
-    # `external`: an orchestrator you run on a Docker host, at `host`.
-    mode: cluster # @schema enum: [cluster, external]
-    # -- URL of an external orchestrator's API (`_APP_JOBS_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:8080`.
-    host: ""
     image:
       # -- Image registry.
       registry: ghcr.io
@@ -439,11 +429,10 @@ compute:
     affinity: {} # @schema additionalProperties: true
     # -- Priority class. Empty inherits `defaults.priorityClassName`.
     priorityClassName: ""
-  # Build Jobs, when `compute.orchestrator.mode` is `cluster`. Builds run the
-  # build commands of your functions and sites, so they get their own
-  # namespace, admitted under the `baseline` Pod Security Standard, with no
-  # ServiceAccount token and a NetworkPolicy that keeps them away from the
-  # rest of the cluster.
+  # Build Jobs. Builds run the build commands of your functions and sites, so
+  # they get their own namespace, admitted under the `baseline` Pod Security
+  # Standard, with no ServiceAccount token and a NetworkPolicy that keeps them
+  # away from the rest of the cluster.
   builds:
     # -- Namespace for build Jobs. Defaults to `<release namespace>-builds`.
     # Use a different one per release when several releases share a namespace.
@@ -488,11 +477,6 @@ compute:
       # node ranges that aren't private addresses (GKE privately used public
       # ranges, IPv6 clusters).
       deniedCIDRs: [] # @schema item: string
-  # -- URL build Jobs use to download sources from and report back to
-  # Appwrite (`_APP_JOBS_ENDPOINT`). Defaults to the API Service in the
-  # cluster, or, with an external orchestrator, to `https://<domain>`
-  # (`http` when `forceHttps` is off), whose host must then be `appwrite.domain`.
-  appwriteEndpoint: ""
   # -- Function runtimes to enable (`_APP_FUNCTIONS_RUNTIMES`). Empty keeps the
   # Docker installer's list (node-16.0, php-8.0, python-3.9, ruby-3.0).
   functionsRuntimes: [] # @schema item: string
@@ -501,8 +485,8 @@ compute:
   sitesRuntimes: [] # @schema item: string
   secrets:
     # -- Existing Secret holding the executor and orchestrator secrets. When
-    # empty, the chart generates them; configure the executor (and an external
-    # orchestrator) with the same values.
+    # empty, the chart generates them. With an existing Secret, the executor
+    # also needs `compute.executor.existingSecret` in its namespace.
     existingSecret: ""
     # -- Key holding the executor secret (`_APP_EXECUTOR_SECRET`, `OPR_EXECUTOR_SECRET` on the executor).
     executorSecretKey: executor-secret
@@ -1947,11 +1931,10 @@ networkPolicy:
     from: [] # @schema item: object
   egress:
     # -- Restrict egress to DNS, pods of this release and `extraRules`. Off by
-    # default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, an
-    # external executor, and the DNS server it verifies custom domains against
-    # (`_APP_DNS`, 8.8.8.8). With compute, the orchestrator also needs the
-    # Kubernetes API. Allow what you use in `extraRules`; the in-cluster
-    # executor is allowed already.
+    # default: Appwrite calls webhooks, SMTP servers, OAuth providers, S3, and
+    # the DNS server it verifies custom domains against (`_APP_DNS`, 8.8.8.8).
+    # With compute, the orchestrator also needs the Kubernetes API. Allow what
+    # you use in `extraRules`; the executor is allowed already.
     enabled: false
     # -- DNS servers to allow (NetworkPolicyPeer) when egress is restricted,
     # on port 53. DNS on another port (OpenShift: 5353) or NodeLocal DNSCache

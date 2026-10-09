@@ -213,26 +213,10 @@ reads as floats) render as integers, so 30000000 doesn't become 3e+07.
 {{- end }}
 
 {{/*
-"true" when builds run in the cluster: compute is on and the chart runs the
-orchestrator.
-*/}}
-{{- define "appwrite.builds.inCluster" -}}
-{{- if and .Values.compute.enabled (eq .Values.compute.orchestrator.mode "cluster") }}true{{ end }}
-{{- end }}
-
-{{/*
 Namespace build Jobs run in.
 */}}
 {{- define "appwrite.builds.namespace" -}}
 {{- .Values.compute.builds.namespace | default (printf "%s-builds" .Release.Namespace) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-"true" when executions run in the cluster: compute is on and the chart runs
-the executor.
-*/}}
-{{- define "appwrite.executor.inCluster" -}}
-{{- if and .Values.compute.enabled (eq .Values.compute.executor.mode "cluster") }}true{{ end }}
 {{- end }}
 
 {{/*
@@ -246,11 +230,7 @@ Namespace the executor runs in.
 URL Appwrite calls the executor at (_APP_EXECUTOR_HOST).
 */}}
 {{- define "appwrite.executor.url" -}}
-{{- if include "appwrite.executor.inCluster" . }}
 {{- printf "http://%s.%s.svc:9900/v1" (include "appwrite.componentName" (dict "root" . "component" "executor")) (include "appwrite.executor.namespace" .) }}
-{{- else }}
-{{- .Values.compute.executor.host }}
-{{- end }}
 {{- end }}
 
 {{/*

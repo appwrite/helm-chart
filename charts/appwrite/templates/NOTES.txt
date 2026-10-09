@@ -51,26 +51,9 @@ First steps
 
 {{- if .Values.compute.enabled }}
 
-{{- if include "appwrite.executor.inCluster" . }}
-Functions and Sites execute in namespace "{{ include "appwrite.executor.namespace" . }}", on Docker-in-Docker{{ if .Values.compute.executor.privileged }} in a
-privileged container: keep the executor on nodes of its own{{ end }}.
-{{- else }}
-Functions and Sites execute on the executor at {{ .Values.compute.executor.host }}.
-{{- end }}
-{{- if include "appwrite.builds.inCluster" . }}
-Builds run as Jobs in namespace "{{ include "appwrite.builds.namespace" . }}".
-{{- else }}
-Builds run on the orchestrator at {{ .Values.compute.orchestrator.host }}.
-{{- end }}
-{{- $outside := list }}
-{{- if not (include "appwrite.executor.inCluster" .) }}{{ $outside = append $outside "executor" }}{{ end }}
-{{- if not (include "appwrite.builds.inCluster" .) }}{{ $outside = append $outside "orchestrator" }}{{ end }}
-{{- if and $outside (not .Values.compute.secrets.existingSecret) }}
-Give the {{ join " and " $outside }} the same {{ ternary "secret" "secrets" (eq (len $outside) 1) }} as Appwrite:
-{{ range $outside }}
-  kubectl -n {{ $.Release.Namespace }} get secret {{ include "appwrite.secretName" $ }} -o jsonpath='{.data.{{ . }}-secret}' | base64 -d
-{{- end }}
-{{- end }}
+Functions and Sites build as Jobs in namespace "{{ include "appwrite.builds.namespace" . }}" and execute in
+namespace "{{ include "appwrite.executor.namespace" . }}", on Docker-in-Docker{{ if .Values.compute.executor.privileged }} in a privileged container:
+keep the executor on nodes of its own{{ end }}.
 {{- else }}
 
 Functions and Sites are off. To turn them on: {{ $docs }}/executor.md
@@ -102,11 +85,11 @@ certificates) aren't visible to the others.
 {{- if and .Values.compute.enabled .Values.networkPolicy.enabled .Values.networkPolicy.egress.enabled (not .Values.networkPolicy.egress.extraRules) }}
 
 WARNING: networkPolicy.egress is restricted, but no extraRules are set.
-Appwrite can't reach {{ if not (include "appwrite.executor.inCluster" .) }}the executor ({{ .Values.compute.executor.host }}) or {{ end }}S3, and
+Appwrite can't reach S3, and
 the orchestrator can't reach the Kubernetes API. Allow them in
 networkPolicy.egress.extraRules: {{ $docs }}/executor.md
 {{- end }}
-{{- if and (include "appwrite.builds.inCluster" .) (not .Values.compute.builds.createNamespace) }}
+{{- if and .Values.compute.enabled (not .Values.compute.builds.createNamespace) }}
 {{- $ns := lookup "v1" "Namespace" "" (include "appwrite.builds.namespace" .) }}
 {{- $enforce := dig "metadata" "labels" "pod-security.kubernetes.io/enforce" "" ($ns | default dict) }}
 {{- if and $ns (not (has $enforce (list "baseline" "restricted"))) }}

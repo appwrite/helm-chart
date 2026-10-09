@@ -1,4 +1,4 @@
-{{- if include "appwrite.executor.inCluster" . }}
+{{- if .Values.compute.enabled }}
 apiVersion: v1
 kind: Service
 metadata:

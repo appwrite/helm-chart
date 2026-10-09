@@ -1,4 +1,4 @@
-{{- if and (include "appwrite.builds.inCluster" .) .Values.compute.builds.createNamespace }}
+{{- if and .Values.compute.enabled .Values.compute.builds.createNamespace }}
 {{- /* Build pods run your build commands, possibly as root, so they can't pass the restricted profile. baseline still forbids privileged pods and host access. */}}
 apiVersion: v1
 kind: Namespace

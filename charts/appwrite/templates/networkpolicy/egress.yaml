@@ -23,7 +23,7 @@ spec:
           protocol: TCP
     - to:
         - {{- include "appwrite.networkPolicy.releasePeer" . | nindent 10 }}
-    {{- if include "appwrite.executor.inCluster" . }}
+    {{- if .Values.compute.enabled }}
     - to:
         - namespaceSelector:
             matchLabels:

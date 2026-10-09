@@ -42,7 +42,7 @@ annotations:
     - kind: added
       description: Ingress and Gateway API routes, including function and site previews and custom domains
     - kind: added
-      description: S3 storage, and Functions and Sites with builds as Kubernetes Jobs and the executor on Docker-in-Docker in its own namespace (opt-in privileged pod) or on a Docker host
+      description: S3 storage, and Functions and Sites in the cluster, with builds as Kubernetes Jobs and the executor on Docker-in-Docker in its own namespace (opt-in privileged pod)
     - kind: added
       description: Optional browser, assistant, autogravity, embedding and MQTT components
     - kind: added

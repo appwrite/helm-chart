@@ -36,10 +36,9 @@ in ten minutes, a real one step by step, and installing from a clone.
 - Ingress and Gateway API routes, including function and site previews and
   custom domains.
 - Combined, per-queue or grouped workers.
-- Functions and Sites: builds run in the cluster as unprivileged Kubernetes
+- Functions and Sites in the cluster: builds run as unprivileged Kubernetes
   Jobs in their own namespace; executions run on an executor with its own
-  Docker-in-Docker daemon, in a namespace of its own (privileged, opt-in), or
-  on a Docker host.
+  Docker-in-Docker daemon, in a namespace of its own (privileged, opt-in).
 - Credentials generated once and kept; data migrations on upgrade.
 
 ## Repository layout
@@ -47,7 +46,6 @@ in ten minutes, a real one step by step, and installing from a clone.
 ```text
 charts/appwrite/   the chart: templates, values, unit tests, CI scenarios
 docs/              operator guides
-examples/executor/ Docker Compose for an executor on a Docker host (Functions and Sites)
 hack/              scripts used by CI and local development
 ```
 
@@ -65,7 +63,7 @@ installs on kind in a namespace that enforces the `restricted` profile:
 | `separate-workers`, `grouped-workers` | Worker topologies |
 | `external-dbs` | PostgreSQL, Redis and ClickHouse outside the release |
 | `ingress`, `gateway-api` | Routing through Traefik |
-| nightly | Every optional component, S3, and a function built and executed on the in-cluster executor, and on an external one |
+| nightly | Every optional component, S3, and a function built and executed in the cluster |
 
 Each install runs `helm test` and an end-to-end smoke test
 ([`hack/smoke.sh`](hack/smoke.sh)).

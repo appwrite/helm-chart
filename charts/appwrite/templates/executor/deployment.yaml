@@ -1,4 +1,4 @@
-{{- if include "appwrite.executor.inCluster" . }}
+{{- if .Values.compute.enabled }}
 {{- $e := .Values.compute.executor }}
 {{- $s3 := .Values.appwrite.storage.s3 }}
 {{- $name := include "appwrite.componentName" (dict "root" . "component" "executor") }}

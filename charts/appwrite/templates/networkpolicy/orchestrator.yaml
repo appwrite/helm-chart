@@ -1,4 +1,4 @@
-{{- if and .Values.networkPolicy.enabled (include "appwrite.builds.inCluster" .) }}
+{{- if and .Values.networkPolicy.enabled .Values.compute.enabled }}
 {{- /* The orchestrator: called by Appwrite to start builds, and by build pods to move artifacts. */}}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

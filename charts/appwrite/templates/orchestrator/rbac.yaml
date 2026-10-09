@@ -1,4 +1,4 @@
-{{- if include "appwrite.builds.inCluster" . }}
+{{- if .Values.compute.enabled }}
 {{- $name := include "appwrite.componentName" (dict "root" . "component" "orchestrator") }}
 {{- /* The orchestrator calls the Kubernetes API to run builds: it gets its own ServiceAccount, allowed only to manage Jobs and read their pods in the build namespace. */}}
 apiVersion: v1
