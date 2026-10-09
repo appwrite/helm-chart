@@ -1326,12 +1326,11 @@
                   "type": "boolean"
                 },
                 "extraEgress": {
-                  "description": "Extra egress rules (NetworkPolicyEgressRule) for build pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a private package registry.",
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": false
-                  }
+                    "type": "object"
+                  },
+                  "description": "Extra egress rules (NetworkPolicyEgressRule) for build pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a private package registry."
                 }
               },
               "additionalProperties": false
@@ -1442,20 +1441,8 @@
                   "additionalProperties": false
                 },
                 "volume": {
-                  "description": "Volume for the Docker daemon's images and containers. Runtime images are pulled again when the pod is replaced.",
                   "type": "object",
-                  "properties": {
-                    "emptyDir": {
-                      "type": "object",
-                      "properties": {
-                        "sizeLimit": {
-                          "type": "string"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "additionalProperties": false
+                  "description": "Volume source for the Docker daemon's images and containers, e.g. `{ephemeral: {volumeClaimTemplate: ...}}`. Empty is an `emptyDir` of at most 20Gi; runtime images are pulled again when the pod is replaced."
                 }
               },
               "additionalProperties": false
@@ -1536,12 +1523,11 @@
                   "type": "boolean"
                 },
                 "extraEgress": {
-                  "description": "Extra egress rules (NetworkPolicyEgressRule) for executor pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a registry mirror.",
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": false
-                  }
+                    "type": "object"
+                  },
+                  "description": "Extra egress rules (NetworkPolicyEgressRule) for executor pods, e.g. an S3 endpoint on a private network that isn't an IP address, or a registry mirror."
                 }
               },
               "additionalProperties": false

@@ -219,7 +219,7 @@ spec:
         - name: docker-socket
           emptyDir: {}
         - name: docker
-          {{- toYaml $e.dind.volume | nindent 10 }}
+          {{- toYaml ($e.dind.volume | default (dict "emptyDir" (dict "sizeLimit" "20Gi"))) | nindent 10 }}
         - name: tmp
           emptyDir: {}
         - name: client-tmp

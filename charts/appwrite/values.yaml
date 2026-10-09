@@ -332,11 +332,10 @@ compute:
       addressPool: 198.18.0.0/15
       # -- Extra arguments for `dockerd`, e.g. `--registry-mirror=https://mirror.example.com`.
       extraArgs: [] # @schema item: string
-      # -- Volume for the Docker daemon's images and containers. Runtime images
-      # are pulled again when the pod is replaced.
-      volume:
-        emptyDir:
-          sizeLimit: 20Gi
+      # -- Volume source for the Docker daemon's images and containers, e.g.
+      # `{ephemeral: {volumeClaimTemplate: ...}}`. Empty is an `emptyDir` of at
+      # most 20Gi; runtime images are pulled again when the pod is replaced.
+      volume: {}
     # -- Resources of the Docker daemon container, which runs the executor and
     # every runtime: size it for the executions you expect.
     resources:

@@ -366,3 +366,45 @@ tests:
       - matchRegex:
           path: spec.template.spec.initContainers[0].command[2]
           pattern: --default-address-pool=base=198.18.0.0/15,size=24
+
+  - it: adds extra egress rules
+    template: templates/executor/networkpolicy.yaml
+    set:
+      compute.executor.networkPolicy.extraEgress:
+        - to: [{ipBlock: {cidr: 10.0.0.40/32}}]
+          ports: [{port: 443}]
+    asserts:
+      - contains:
+          path: spec.egress
+          content:
+            to: [{ipBlock: {cidr: 10.0.0.40/32}}]
+            ports: [{port: 443}]
+
+  - it: keeps the Docker daemon's data on any volume
+    template: templates/executor/deployment.yaml
+    set:
+      compute.executor.dind.volume:
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              accessModes: [ReadWriteOnce]
+              resources: {requests: {storage: 50Gi}}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker
+            ephemeral:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: [ReadWriteOnce]
+                  resources: {requests: {storage: 50Gi}}
+
+  - it: limits the default Docker volume
+    template: templates/executor/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker
+            emptyDir: {sizeLimit: 20Gi}

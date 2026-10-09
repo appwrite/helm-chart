@@ -355,7 +355,7 @@ kubectl -n appwrite delete pvc -l app.kubernetes.io/instance=appwrite
 | compute.executor.dind.image.registry | string | `"docker.io"` | Image registry. |
 | compute.executor.dind.image.repository | string | `"library/docker"` | Image repository of the Docker daemon, also used to start the executor. |
 | compute.executor.dind.image.tag | string | `"29.9.0-dind"` | Image tag. |
-| compute.executor.dind.volume | object | `{"emptyDir":{"sizeLimit":"20Gi"}}` | Volume for the Docker daemon's images and containers. Runtime images are pulled again when the pod is replaced. |
+| compute.executor.dind.volume | object | `{}` | Volume source for the Docker daemon's images and containers, e.g. `{ephemeral: {volumeClaimTemplate: ...}}`. Empty is an `emptyDir` of at most 20Gi; runtime images are pulled again when the pod is replaced. |
 | compute.executor.existingSecret | string | `""` | Secret in the executor namespace with the keys `executor-secret`, `s3-access-key` and `s3-secret-key`. Pods can't read Secrets in other namespaces, so it's required when `compute.secrets.existingSecret` or `appwrite.storage.s3.existingSecret` is set. Otherwise the chart creates it. |
 | compute.executor.extraEnv | list | `[]` | Extra environment variables for the executor. Variables named `OPR_EXECUTOR_*` are passed on to it, e.g. `OPR_EXECUTOR_DOCKER_HUB_USERNAME` and `OPR_EXECUTOR_DOCKER_HUB_PASSWORD` to pull runtime images as a Docker Hub user. |
 | compute.executor.host | string | `""` | URL of an external executor's API (`_APP_EXECUTOR_HOST`) when `mode` is `external`, e.g. `http://10.0.0.20:9900/v1`. |

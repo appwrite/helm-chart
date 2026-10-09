@@ -272,3 +272,16 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: adds extra egress rules for build pods
+    template: templates/builds/networkpolicy.yaml
+    set:
+      compute.builds.networkPolicy.extraEgress:
+        - to: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: minio}}}]
+          ports: [{port: 9000}]
+    asserts:
+      - contains:
+          path: spec.egress
+          content:
+            to: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: minio}}}]
+            ports: [{port: 9000}]

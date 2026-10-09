@@ -70,6 +70,9 @@ PASSTHROUGH = {
     "from": OBJECT_LIST,
     "dns": OBJECT_LIST,
     "extraRules": OBJECT_LIST,
+    "extraEgress": OBJECT_LIST,
+    # Any volume source for the executor's Docker daemon.
+    "volume": OBJECT,
     "parentRefs": OBJECT_LIST,
 }
 WORKER_GROUP["properties"]["resources"] = PASSTHROUGH["resources"]
