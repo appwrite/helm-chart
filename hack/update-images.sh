@@ -55,7 +55,7 @@ list_tags() {
   fi
   while [[ -n "$url" ]]; do
     headers=$(mktemp)
-    curl -fsS "${auth[@]}" -D "$headers" "$url" | jq -r '.tags[]?'
+    curl -fsS ${auth[@]+"${auth[@]}"} -D "$headers" "$url" | jq -r '.tags[]?'
     url=$(tr -d '\r' < "$headers" | sed -nE 's/^[Ll]ink: <([^>]+)>.*/\1/p')
     rm -f "$headers"
     [[ -z "$url" || "$url" == http* ]] || url="https://${host}${url}"
@@ -105,10 +105,14 @@ while IFS=$'\t' read -r path registry repository tag; do
   changed=$((changed + 1))
   if [[ "$dry_run" == false ]]; then
     # yq -i would drop the file's blank lines: edit only the tag's line, the
-    # first one after the image's repository.
+    # first one after the image's repository. A quoted tag ("4.48") stays
+    # quoted, so YAML doesn't read the new one as a number.
     awk -v repo="$repository" -v old="$tag" -v new="$latest" '
       $1 == "repository:" && $2 == repo { found = 1 }
-      found && $1 == "tag:" && $2 == old { sub(/tag: .*/, "tag: " new); found = 0 }
+      found && $1 == "tag:" {
+        quote = ($2 ~ /^".*"$/) ? "\"" : ""
+        if ($2 == quote old quote) { sub(/tag: .*/, "tag: " quote new quote); found = 0 }
+      }
       { print }
     ' "$VALUES" > "$VALUES.tmp" && mv "$VALUES.tmp" "$VALUES"
   fi

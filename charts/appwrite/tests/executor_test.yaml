@@ -163,7 +163,7 @@ tests:
           value: Always
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: docker.io/library/docker:29.9.0-dind
+          value: docker.io/library/docker:29.9.2-dind
       - equal:
           path: spec.template.spec.initContainers[0].securityContext.privileged
           value: true

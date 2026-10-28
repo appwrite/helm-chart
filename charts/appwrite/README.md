@@ -383,7 +383,7 @@ Built-in or your own.
 | redis.builtin.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | redis.builtin.image.registry | string | `"docker.io"` | Image registry. |
 | redis.builtin.image.repository | string | `"library/redis"` | Image repository. `valkey/valkey` works as a drop-in replacement, with a Valkey tag (e.g. `8-alpine`). |
-| redis.builtin.image.tag | string | `"7.4.11-alpine"` | Image tag. |
+| redis.builtin.image.tag | string | `"7.4.12-alpine"` | Image tag. |
 | redis.builtin.maxmemory | string | `"512mb"` | `maxmemory`. Keep it below the memory limit. |
 | redis.builtin.maxmemoryPolicy | string | `"allkeys-lru"` | `maxmemory-policy`. Appwrite's Docker install uses `allkeys-lru`. |
 | redis.builtin.metrics.enabled | bool | `false` | Run a redis_exporter sidecar and expose it on port 9121 of the Service. See docs/production.md#monitoring. |
@@ -391,7 +391,7 @@ Built-in or your own.
 | redis.builtin.metrics.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | redis.builtin.metrics.image.registry | string | `"docker.io"` | Image registry. |
 | redis.builtin.metrics.image.repository | string | `"oliver006/redis_exporter"` | Image repository. |
-| redis.builtin.metrics.image.tag | string | `"v1.93.0-alpine"` | Image tag. |
+| redis.builtin.metrics.image.tag | string | `"v1.96.0-alpine"` | Image tag. |
 | redis.builtin.metrics.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}` | Resource requests and limits of the exporter. |
 | redis.builtin.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | redis.builtin.persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. |
@@ -479,7 +479,7 @@ Where files go (the volume or S3), and the `/storage` volume.
 | storage.s3.builtin.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | storage.s3.builtin.image.registry | string | `"docker.io"` | Image registry. |
 | storage.s3.builtin.image.repository | string | `"chrislusf/seaweedfs"` | Image repository. |
-| storage.s3.builtin.image.tag | string | `"4.48"` | Image tag. |
+| storage.s3.builtin.image.tag | string | `"4.51"` | Image tag. |
 | storage.s3.builtin.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | storage.s3.builtin.persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. |
 | storage.s3.builtin.persistence.annotations | object | `{}` | Annotations for the PersistentVolumeClaim. |
@@ -895,7 +895,7 @@ The build orchestrator and the executor.
 | compute.executor.dind.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | compute.executor.dind.image.registry | string | `"docker.io"` | Image registry. |
 | compute.executor.dind.image.repository | string | `"library/docker"` | Image repository of the Docker daemon, also used to start the executor. |
-| compute.executor.dind.image.tag | string | `"29.9.0-dind"` | Image tag. |
+| compute.executor.dind.image.tag | string | `"29.9.2-dind"` | Image tag. |
 | compute.executor.dind.volume | object | `{}` | Volume source for the Docker daemon's images and containers, e.g. `{ephemeral: {volumeClaimTemplate: ...}}`. Empty is an `emptyDir` of at most 20Gi; runtime images are pulled again when the pod is replaced. |
 | compute.executor.existingSecret | string | `""` | Secret in the executor namespace with the keys `executor-secret`, `s3-access-key` and `s3-secret-key`. Pods can't read Secrets in other namespaces, so it's required when `compute.secrets.existingSecret` or an S3 `secretName` (`storage.s3.accessKeyId`) is set. Otherwise the chart creates it. |
 | compute.executor.extraEnv | list | `[]` | Extra environment variables for the executor. Variables named `OPR_EXECUTOR_*` are passed on to it, e.g. `OPR_EXECUTOR_DOCKER_HUB_USERNAME` and `OPR_EXECUTOR_DOCKER_HUB_PASSWORD` to pull runtime images as a Docker Hub user. |

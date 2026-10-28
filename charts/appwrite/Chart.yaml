@@ -83,19 +83,19 @@ annotations:
     - name: builtin
       image: docker.io/appwrite/postgres:0.1.0
     - name: builtin
-      image: docker.io/library/redis:7.4.11-alpine
+      image: docker.io/library/redis:7.4.12-alpine
     - name: builtin
       image: docker.io/clickhouse/clickhouse-server:26.4.5-alpine
     - name: builtin
-      image: docker.io/chrislusf/seaweedfs:4.48
+      image: docker.io/chrislusf/seaweedfs:4.51
     - name: builtin-exporter
       image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
     - name: builtin-exporter
-      image: docker.io/oliver006/redis_exporter:v1.93.0-alpine
+      image: docker.io/oliver006/redis_exporter:v1.96.0-alpine
     - name: console
       image: docker.io/appwrite/new:1.2.106-self-hosted
     - name: dind
-      image: docker.io/library/docker:29.9.0-dind
+      image: docker.io/library/docker:29.9.2-dind
     - name: embedding
       image: docker.io/appwrite/embedding:0.3.1
     - name: executor

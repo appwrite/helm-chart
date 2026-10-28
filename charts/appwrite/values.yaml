@@ -459,7 +459,7 @@ redis:
       # with a Valkey tag (e.g. `8-alpine`).
       repository: library/redis
       # -- Image tag.
-      tag: 7.4.11-alpine
+      tag: 7.4.12-alpine
       # -- Image digest.
       digest: ""
       # -- Image pull policy.
@@ -537,7 +537,7 @@ redis:
         # -- Image repository.
         repository: oliver006/redis_exporter
         # -- Image tag.
-        tag: v1.93.0-alpine
+        tag: v1.96.0-alpine
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
@@ -706,7 +706,7 @@ storage:
         # -- Image repository.
         repository: chrislusf/seaweedfs
         # -- Image tag.
-        tag: "4.48"
+        tag: "4.51"
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
@@ -868,7 +868,7 @@ compute:
         # -- Image repository of the Docker daemon, also used to start the executor.
         repository: library/docker
         # -- Image tag.
-        tag: 29.9.0-dind
+        tag: 29.9.2-dind
         # -- Image digest.
         digest: ""
         # -- Image pull policy.

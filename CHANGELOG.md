@@ -12,6 +12,15 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 - Update the Console image to 1.2.106-self-hosted, which patches DOMPurify
   to 3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr.
+- Update the images whose base layers the nightly Trivy scan flags to their
+  newest patch releases: Redis 7.4.12-alpine, redis_exporter v1.96.0-alpine,
+  SeaweedFS 4.51 and Docker 29.9.2-dind.
+
+### Fixed
+
+- `make update-images` writes quoted tags such as SeaweedFS's `"4.48"`
+  (it reported the bump but left the file unchanged) and runs on macOS's
+  bash 3.2, where an anonymous registry pull failed on an unbound variable.
 
 ## [2.1.0] - 2026-10-22
 
