@@ -28,7 +28,7 @@
 #   require_secure_transport can stay on: Appwrite connects with TLS when
 #   offered.
 # - Azure Cache for Redis, Standard tier or higher for a replica, with the
-#   non-TLS port (6379) turned on: it's off by default, and Appwrite 2.6.1 has
+#   non-TLS port (6379) turned on: it's off by default, and Appwrite 2.6.2 has
 #   no Redis TLS. An access key is the password. Keep it on a private
 #   endpoint. Azure Cache for Redis retires on 30 September 2028; for Azure
 #   Managed Redis, choose the Non-clustered policy, turn on Non-TLS access and

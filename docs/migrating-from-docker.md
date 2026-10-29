@@ -5,8 +5,8 @@ keeping all data.
 
 Before you start:
 
-- **Same Appwrite version.** The chart deploys Appwrite 2.6.1. Upgrade the
-  Docker install to 2.6.1 first, including its data migration. A Docker
+- **Same Appwrite version.** The chart deploys Appwrite 2.6.2. Upgrade the
+  Docker install to 2.6.2 first, including its data migration. A Docker
   install on 2.2.0 can also move as it is: install the chart with
   `--set image.tag=2.2.0` in step 3 and drop it in step 5, which then runs
   the migration; give that upgrade a `--timeout` long enough for it

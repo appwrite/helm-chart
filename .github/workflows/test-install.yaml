@@ -57,7 +57,7 @@ jobs:
           # and Appwrite's data migration.
           - scenario: default
             kubernetes: v1.37.0
-            upgrade-from: 2.0.0
+            upgrade-from: 2.1.0
           # PostgreSQL, Redis and ClickHouse outside the release.
           - scenario: external-dbs
             kubernetes: v1.37.0
@@ -108,7 +108,7 @@ jobs:
         # instead of as a 15-minute install timeout.
         run: |
           # shellcheck disable=SC2016 # expanded inside the pod
-          kubectl -n appwrite run dns-check --rm -i --restart=Never --image=docker.io/appwrite/appwrite:2.6.1 --command -- sh -c '
+          kubectl -n appwrite run dns-check --rm -i --restart=Never --image=docker.io/appwrite/appwrite:2.6.2 --command -- sh -c '
             cat /etc/resolv.conf
             ok=0
             for host in postgres.external-dbs.svc.cluster.local postgres.external-dbs.svc postgres.external-dbs; do

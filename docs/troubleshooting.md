@@ -207,7 +207,7 @@ The server requires TLS, which Appwrite's MySQL client doesn't use. Turn off
 ### Redis: connection resets or timeouts against a managed Redis
 
 The service expects TLS (ElastiCache with in-transit encryption, ElastiCache
-Serverless, Azure's TLS port, Upstash). Appwrite 2.6.1 connects in plain text
+Serverless, Azure's TLS port, Upstash). Appwrite 2.6.2 connects in plain text
 only; use a plain-text endpoint on a private network
 ([Redis](external-databases.md#redis)).
 
@@ -402,7 +402,7 @@ it.
 
 ### Does it expose Prometheus metrics?
 
-Appwrite 2.6.1 has no metrics endpoint. Watch its health API, its queues and
+Appwrite 2.6.2 has no metrics endpoint. Watch its health API, its queues and
 its logs, plus the metrics of Kubernetes and the datastores. The built-in
 datastores can run exporters (`database.builtin.metrics`,
 `redis.builtin.metrics`, `clickhouse.builtin.metrics`) with ServiceMonitors

@@ -1,6 +1,6 @@
 # Appwrite Helm chart
 
-![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.6.1](https://img.shields.io/badge/AppVersion-2.6.1-informational?style=flat-square)
+![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.6.2](https://img.shields.io/badge/AppVersion-2.6.2-informational?style=flat-square)
 
 Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 
@@ -168,7 +168,7 @@ See the [architecture guide](https://github.com/appwrite/helm-chart/blob/main/do
 - **Highly available datastores.** The built-in ones are single replicas. Use
   managed services or operators in production
   ([guide](https://github.com/appwrite/helm-chart/blob/main/docs/external-databases.md)).
-- **Metrics.** Appwrite 2.6.1 exposes no Prometheus metrics.
+- **Metrics.** Appwrite 2.6.2 exposes no Prometheus metrics.
 
 ## Documentation
 
@@ -595,7 +595,7 @@ The SMTP server Appwrite sends mail through.
 | console.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | console.image.registry | string | `"docker.io"` | Image registry. |
 | console.image.repository | string | `"appwrite/new"` | Image repository. |
-| console.image.tag | string | `"1.2.106-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
+| console.image.tag | string | `"1.2.108-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
 | console.livenessProbe.enabled | bool | `true` | Enable the liveness probe. |
 | console.livenessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
 | console.livenessProbe.periodSeconds | int | `20` | Seconds between probes. |
@@ -980,7 +980,7 @@ The build orchestrator and the executor.
 | browser.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | browser.image.registry | string | `"docker.io"` | Image registry. |
 | browser.image.repository | string | `"appwrite/browser"` | Image repository. |
-| browser.image.tag | string | `"0.3.6"` | Image tag. |
+| browser.image.tag | string | `"0.3.8"` | Image tag. |
 | browser.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | browser.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | browser.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
@@ -1130,7 +1130,7 @@ Image, security contexts, scheduling defaults, names, labels and extra objects.
 | exiftool.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | exiftool.image.registry | string | `"ghcr.io"` | Image registry. |
 | exiftool.image.repository | string | `"appwrite/exiftool"` | Image repository. |
-| exiftool.image.tag | string | `"0.1.0"` | Image tag. |
+| exiftool.image.tag | string | `"0.1.1"` | Image tag. |
 | exiftool.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | exiftool.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | exiftool.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |

@@ -141,7 +141,7 @@ Set any that differ on yours.
   CREATE EXTENSION IF NOT EXISTS pg_trgm;
   ```
 
-- **Extensions.** Appwrite 2.6.1 uses three, which Appwrite's own image
+- **Extensions.** Appwrite 2.6.2 uses three, which Appwrite's own image
   (`appwrite/postgres`, PostgreSQL 18) ships:
 
   | Extension | Used for |
@@ -309,7 +309,7 @@ database:
 
 - **One host, no TLS.** Appwrite connects to a single host with a username
   and password. It doesn't take connection strings, so SRV records
-  (`mongodb+srv://`) and TLS aren't supported in 2.6.1. That rules out
+  (`mongodb+srv://`) and TLS aren't supported in 2.6.2. That rules out
   MongoDB Atlas.
 
 ## Connections
@@ -396,7 +396,7 @@ redis:
 
 ### Requirements
 
-- **One endpoint, no TLS.** Appwrite 2.6.1 connects to a single Redis
+- **One endpoint, no TLS.** Appwrite 2.6.2 connects to a single Redis
   endpoint in plain text. TLS, Sentinel and Redis Cluster aren't supported.
   Valkey works as a drop-in replacement.
 - **Memory that never runs out.** Redis holds the job queues as well as the

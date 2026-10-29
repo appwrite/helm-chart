@@ -20,7 +20,7 @@
 #   "Allow only SSL connections" can stay on: Appwrite connects with TLS when
 #   offered.
 # - Memorystore for Redis (not Redis Cluster), Standard tier for a replica
-#   with automatic failover, with in-transit encryption off (Appwrite 2.6.1
+#   with automatic failover, with in-transit encryption off (Appwrite 2.6.2
 #   has no Redis TLS). AUTH can stay on: its AUTH string goes in the Secret.
 # - A Cloud Storage bucket, and an HMAC key (Cloud Storage > Settings >
 #   Interoperability) for a service account with Storage Object Admin on the

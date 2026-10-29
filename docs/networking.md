@@ -190,9 +190,11 @@ Make sure your controller sets the header, and that clients can't spoof it.
 
 Appwrite refuses to fetch a URL that resolves to a private or reserved
 address: OAuth2 and OIDC providers, webhooks, messaging webhooks, migration
-sources and avatar URLs. That includes every pod and Service in the cluster.
-To use an identity provider or webhook receiver that runs in the cluster,
-list its addresses (IPs or CIDRs, comma-separated) in
+sources and avatar URLs. From 2.6.2 on, it refuses the same addresses for
+the SMTP servers projects and messaging providers set (not the chart's own
+`smtp`). That includes every pod and Service in the cluster. To use an
+identity provider, webhook receiver or mail server that runs in the
+cluster, list its addresses (IPs or CIDRs, comma-separated) in
 `_APP_ALLOWED_INTERNAL_ADDRESSES`, for example your Service range:
 
 ```yaml
@@ -202,10 +204,10 @@ appwrite:
 ```
 
 Migrations from this Appwrite itself are allowed already
-(`_APP_MIGRATION_HOST`). Before fetching a migration source or an avatar
-URL, Appwrite also checks its host through the resolvers in
-`_APP_DNS_EXTERNAL` (by default `_APP_DNS`, `8.8.8.8`) rather than the
-cluster's DNS. With `networkPolicy.egress.enabled`, that resolver needs the
+(`_APP_MIGRATION_HOST`). Before connecting to a migration source, an avatar
+URL or a project's SMTP server, Appwrite also checks its host through the
+resolvers in `_APP_DNS_EXTERNAL` (by default `_APP_DNS`, `8.8.8.8`) rather
+than the cluster's DNS. With `networkPolicy.egress.enabled`, that resolver needs the
 same egress rule as custom domains below.
 
 ### cert-manager

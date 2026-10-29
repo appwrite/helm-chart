@@ -15,7 +15,7 @@
 #     CREATE EXTENSION postgis; CREATE EXTENSION vector; CREATE EXTENSION pg_trgm;
 #   rds.force_ssl can stay on: Appwrite connects with TLS when offered.
 # - ElastiCache for Valkey or Redis OSS, node-based, cluster mode disabled,
-#   in-transit encryption off (Appwrite 2.6.1 has no Redis TLS). ElastiCache
+#   in-transit encryption off (Appwrite 2.6.2 has no Redis TLS). ElastiCache
 #   only allows an AUTH token with in-transit encryption, so there's no
 #   password: restrict it with a security group.
 # - An S3 bucket and an IAM user with an access key for it. Appwrite doesn't

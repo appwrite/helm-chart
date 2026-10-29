@@ -70,6 +70,14 @@ tests:
       - failedTemplate:
           errorPattern: compute.executor.namespace must differ from compute.builds.namespace
 
+  - it: refuses Appwrite's placeholder orchestrator secret
+    template: templates/configmap-env.yaml
+    set:
+      compute.secrets.orchestratorSecret: your-secret-key
+    asserts:
+      - failedTemplate:
+          errorPattern: compute.secrets.orchestratorSecret is Appwrite's public placeholder
+
   - it: needs its own Secret when credentials come from existing Secrets
     template: templates/configmap-env.yaml
     set:
