@@ -169,6 +169,8 @@ jobs:
           persist-credentials: false
       - name: artifacthub.io/images matches values.yaml
         run: hack/chart-images.sh --check
+      - name: Every Appwrite version named matches appVersion
+        run: make check-versions
 
   artifacthub:
     name: Artifact Hub lint

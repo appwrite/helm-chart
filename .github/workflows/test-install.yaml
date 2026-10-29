@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   install:
-    name: ${{ matrix.scenario }} (k8s ${{ matrix.kubernetes }})${{ matrix.upgrade-from && format(' upgrade from chart {0}', matrix.upgrade-from) || '' }}
+    name: ${{ matrix.scenario }} (k8s ${{ matrix.kubernetes }})${{ matrix.upgrade-from && ' upgrade from the latest release' || '' }}
     runs-on: >-
       ${{ (github.event_name != 'pull_request'
       || github.event.pull_request.head.repo.full_name == github.repository)
@@ -52,12 +52,12 @@ jobs:
             kubernetes: v1.37.0
           - scenario: grouped-workers
             kubernetes: v1.37.0
-          # Install a published chart release with its own defaults and
+          # Install the newest published chart with its own defaults and
           # Appwrite version, then upgrade to this chart's: the chart upgrade
-          # and Appwrite's data migration.
+          # and Appwrite's data migration, as users will run them.
           - scenario: default
             kubernetes: v1.37.0
-            upgrade-from: 2.1.0
+            upgrade-from: latest
           # PostgreSQL, Redis and ClickHouse outside the release.
           - scenario: external-dbs
             kubernetes: v1.37.0
@@ -80,6 +80,23 @@ jobs:
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           version: v4.3.0
+      - name: Versions under test
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPGRADE: ${{ matrix.upgrade-from }}
+        run: |
+          app_version=$(awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}' charts/appwrite/Chart.yaml)
+          echo "APP_VERSION=${app_version}" >> "$GITHUB_ENV"
+          echo "Appwrite ${app_version}"
+          if [[ "$UPGRADE" == latest ]]; then
+            # Highest chart version with a release; the release workflow
+            # creates it only after the chart is in the registry.
+            from=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 100 \
+              --json tagName --jq '.[].tagName | select(startswith("appwrite-")) | ltrimstr("appwrite-")' | sort -V | tail -1)
+            [[ -n "$from" ]] || { echo "::error::No published chart release to upgrade from"; exit 1; }
+            echo "UPGRADE_FROM=${from}" >> "$GITHUB_ENV"
+            echo "::notice::Upgrading from chart ${from}"
+          fi
       - uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
         with:
           cluster_name: appwrite
@@ -108,18 +125,17 @@ jobs:
         # instead of as a 15-minute install timeout.
         run: |
           # shellcheck disable=SC2016 # expanded inside the pod
-          kubectl -n appwrite run dns-check --rm -i --restart=Never --image=docker.io/appwrite/appwrite:2.6.2 --command -- sh -c '
+          kubectl -n appwrite run dns-check --rm -i --restart=Never --image="docker.io/appwrite/appwrite:${APP_VERSION}" --command -- sh -c '
             cat /etc/resolv.conf
             ok=0
             for host in postgres.external-dbs.svc.cluster.local postgres.external-dbs.svc postgres.external-dbs; do
               if getent hosts "$host"; then echo "resolved $host"; else echo "FAILED $host"; ok=1; fi
             done
             exit $ok'
-      - name: Install chart ${{ matrix.upgrade-from }}
+      - name: Install the latest published chart
         if: matrix.upgrade-from
         env:
           SCENARIO: ${{ matrix.scenario }}
-          UPGRADE_FROM: ${{ matrix.upgrade-from }}
         run: |
           helm upgrade --install appwrite oci://ghcr.io/appwrite/charts/appwrite --version "${UPGRADE_FROM}" \
             -n appwrite --create-namespace -f "charts/appwrite/ci/${SCENARIO}-values.yaml" --wait --timeout 15m
@@ -131,7 +147,7 @@ jobs:
       - name: Check the API runs the new version (the migration hook must succeed for the upgrade to pass)
         if: matrix.upgrade-from
         run: |
-          kubectl -n appwrite get deployment appwrite-api -o jsonpath='{.metadata.annotations.appwrite/version}' | grep -qx "$(awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}' charts/appwrite/Chart.yaml)"
+          kubectl -n appwrite get deployment appwrite-api -o jsonpath='{.metadata.annotations.appwrite/version}' | grep -qx "$APP_VERSION"
       - name: helm test
         run: make helm-test
       - name: Smoke test

@@ -216,8 +216,8 @@ appwrite:
 Upgrade, then open a function or site in the console and choose *Connect
 Git*. If GitHub shows a delivery error under the app's *Advanced* tab, check
 that `https://<domain>/v1/vcs/github/events` is reachable from outside and
-that the webhook secret matches. The secret is required: Appwrite 2.4.0 and
-later refuse GitHub's events without `_APP_VCS_GITHUB_WEBHOOK_SECRET`.
+that the webhook secret matches. The secret is required: Appwrite 2.4.0 and later
+refuse GitHub's events without `_APP_VCS_GITHUB_WEBHOOK_SECRET`.
 
 ### GitLab, Gitea and Bitbucket
 

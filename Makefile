@@ -83,6 +83,10 @@ changes: ## Write the CHANGELOG.md section of the chart version into artifacthub
 check-changes: ## Fail if artifacthub.io/changes doesn't match CHANGELOG.md (no-op until CHANGELOG.md has a section for the chart version)
 	hack/changelog-changes.sh --check
 
+.PHONY: check-versions
+check-versions: ## Fail if the docs, examples or workflows name an Appwrite version other than appVersion
+	hack/check-versions.sh
+
 .PHONY: kubeconform
 kubeconform: ## Validate rendered manifests against several Kubernetes versions
 	@for f in $(CHART)/ci/*-values.yaml; do \
@@ -115,7 +119,7 @@ template: ## Render the chart with default values
 	helm template $(RELEASE) $(CHART) -n $(NAMESPACE)
 
 .PHONY: test
-test: lint unittest kubeconform examples check-generated check-changes ## Run every static check
+test: lint unittest kubeconform examples check-generated check-changes check-versions ## Run every static check
 
 .PHONY: kind-up
 kind-up: ## Create a local kind cluster

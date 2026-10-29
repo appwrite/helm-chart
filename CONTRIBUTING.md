@@ -94,8 +94,8 @@ The scenarios CI installs are the `charts/appwrite/ci/*-values.yaml` files.
 
 | Workflow | When | What |
 | --- | --- | --- |
-| [Lint and test](.github/workflows/lint.yaml) | every pull request and push to `main` | `ct lint` and `helm lint --strict` for every `ci/` scenario, unit tests (Helm 3.18 and 4.3), kubeconform, `make examples`, generated files, `artifacthub.io/images`, `ah lint`, a `CHANGELOG.md` entry for chart changes and `make check-changes` |
-| [Install](.github/workflows/test-install.yaml) | changes to `charts/`, `hack/`, the `Makefile` or the workflow | installs on kind per scenario, `helm test`, `hack/smoke.sh`, routes through Traefik, an upgrade from the previous Appwrite release, and a second upgrade that must keep credentials and pods; `Install result` sums up the scenarios |
+| [Lint and test](.github/workflows/lint.yaml) | every pull request and push to `main` | `ct lint` and `helm lint --strict` for every `ci/` scenario, unit tests (Helm 3.18 and 4.3), kubeconform, `make examples`, generated files, `artifacthub.io/images`, Appwrite versions named in the docs (`make check-versions`), `ah lint`, a `CHANGELOG.md` entry for chart changes and `make check-changes` |
+| [Install](.github/workflows/test-install.yaml) | changes to `charts/`, `hack/`, the `Makefile` or the workflow | installs on kind per scenario, `helm test`, `hack/smoke.sh`, routes through Traefik, an upgrade from the newest published chart, and a second upgrade that must keep credentials and pods; `Install result` sums up the scenarios |
 | [Workflow lint](.github/workflows/actions-lint.yaml) | changes to workflows or `hack/*.sh` | actionlint, shellcheck and zizmor (`make lint-actions` locally) |
 | [Renovate generate](.github/workflows/renovate-generate.yaml) | Renovate pull requests that change `values.yaml` or `Chart.yaml` | runs `make generate` and commits the result, see [below](#renovate-pull-requests) |
 | [Nightly end-to-end](.github/workflows/e2e-nightly.yaml) | daily | `ci/full-values.yaml` (every optional component but embedding) with Functions built and executed in the cluster |
@@ -162,11 +162,12 @@ also opens a pull request for `appVersion`). To follow it:
    `templates/workers/_workers.tpl` and by `workers.queues`), and new tasks.
 4. Check whether the data migration changed (`src/Appwrite/Migration/Migration.php`)
    and update [docs/upgrading.md](docs/upgrading.md) if it did.
-5. Find what else names the old version, such as the docs, the chart icon
-   URL and the DNS check in the install workflow, with
-   `git grep -n <old version>`. Set `upgrade-from` in
-   [test-install.yaml](.github/workflows/test-install.yaml) to the version
-   the chart shipped until now.
+5. Run `make check-versions`. It lists the docs, examples, values and the
+   chart icon URL that still name the old version. Recheck each claim against
+   the new version and update it, or write "Appwrite X.Y.Z and later" when
+   it's about the version that introduced something. The workflows need
+   nothing: they read `appVersion`, and the upgrade test starts from the
+   newest published chart.
 6. Run `make generate test`, then test the upgrade on kind the way CI does:
 
    ```console
