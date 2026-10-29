@@ -16,7 +16,7 @@ The [changelog](../CHANGELOG.md) lists what changed in each chart version,
 and [version notes](#version-notes) what you have to do about it.
 
 What CI tests: a fresh install of the `appVersion`, and an upgrade from the
-published chart 2.0.0 (Appwrite 2.5.0) with default values, including the
+published chart 2.1.0 (Appwrite 2.6.1) with default values, including the
 data migration.
 
 ## What happens during an upgrade
@@ -53,11 +53,11 @@ the Job as soon as the manifests are applied.
    for breaking API changes your apps depend on.
 4. **Don't skip a data migration.** `migrate` applies only the migration of
    the version it runs and doesn't replay those of the versions in between.
-   Several releases share a migration: every version from 1.9.6 to 2.6.1
+   Several releases share a migration: every version from 1.9.6 to 2.6.2
    uses the same one, so 2.0 → 2.6 is a single step. 1.8 → 2.6 isn't: go to
    a release from 1.9.0 to 1.9.5 first, whose migration 2.6 doesn't repeat.
    The table is in Appwrite's
-   [`src/Appwrite/Migration/Migration.php`](https://github.com/appwrite/appwrite/blob/2.6.1/src/Appwrite/Migration/Migration.php).
+   [`src/Appwrite/Migration/Migration.php`](https://github.com/appwrite/appwrite/blob/2.6.2/src/Appwrite/Migration/Migration.php).
 
 ```console
 helm upgrade appwrite oci://ghcr.io/appwrite/charts/appwrite \

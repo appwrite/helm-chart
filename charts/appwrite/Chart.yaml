@@ -3,10 +3,10 @@ name: appwrite
 description: Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 type: application
 version: 2.1.0
-appVersion: "2.6.1"
+appVersion: "2.6.2"
 kubeVersion: ">=1.29.0-0"
 home: https://github.com/appwrite/helm-chart
-icon: https://raw.githubusercontent.com/appwrite/appwrite/2.6.1/public/images/logos/appwrite-icon.svg
+icon: https://raw.githubusercontent.com/appwrite/appwrite/2.6.2/public/images/logos/appwrite-icon.svg
 sources:
   - https://github.com/appwrite/helm-chart
   - https://github.com/appwrite/appwrite
@@ -73,11 +73,11 @@ annotations:
       description: Troubleshooting for site deployments whose screenshot fails.
   artifacthub.io/images: |
     - name: appwrite
-      image: docker.io/appwrite/appwrite:2.6.1
+      image: docker.io/appwrite/appwrite:2.6.2
     - name: autogravity
       image: ghcr.io/appwrite/autogravity:0.0.11
     - name: browser
-      image: docker.io/appwrite/browser:0.3.6
+      image: docker.io/appwrite/browser:0.3.8
     - name: builds
       image: ghcr.io/open-runtimes/orchestrator/job-sidecar:2.2.4
     - name: builtin
@@ -93,7 +93,7 @@ annotations:
     - name: builtin-exporter
       image: docker.io/oliver006/redis_exporter:v1.96.0-alpine
     - name: console
-      image: docker.io/appwrite/new:1.2.106-self-hosted
+      image: docker.io/appwrite/new:1.2.108-self-hosted
     - name: dind
       image: docker.io/library/docker:29.9.2-dind
     - name: embedding
@@ -101,7 +101,7 @@ annotations:
     - name: executor
       image: docker.io/openruntimes/executor:1.1.2
     - name: exiftool
-      image: ghcr.io/appwrite/exiftool:0.1.0
+      image: ghcr.io/appwrite/exiftool:0.1.1
     - name: geo
       image: docker.io/appwrite/geo:0.3.2
     - name: orchestrator

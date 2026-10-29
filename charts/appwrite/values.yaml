@@ -428,7 +428,7 @@ vectorsDb:
 
 # Redis, for queues, cache, pub/sub and locks. `builtin` runs a
 # single-replica StatefulSet; `external` connects to a single endpoint
-# without TLS (Appwrite 2.6.1 has no Redis TLS, Sentinel or Cluster).
+# without TLS (Appwrite 2.6.2 has no Redis TLS, Sentinel or Cluster).
 # See docs/external-databases.md#redis.
 redis:
   # -- `builtin` deploys Redis in the release; `external` uses `redis.external`.
@@ -1188,7 +1188,7 @@ console:
     # -- Image repository.
     repository: appwrite/new
     # -- Image tag. Pinned independently from appVersion so Console security updates can ship separately.
-    tag: 1.2.106-self-hosted
+    tag: 1.2.108-self-hosted
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -1914,7 +1914,7 @@ browser:
     # -- Image repository.
     repository: appwrite/browser
     # -- Image tag.
-    tag: 0.3.6
+    tag: 0.3.8
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -2045,7 +2045,7 @@ exiftool:
     # -- Image repository.
     repository: appwrite/exiftool
     # -- Image tag.
-    tag: 0.1.0
+    tag: 0.1.1
     # -- Image digest.
     digest: ""
     # -- Image pull policy.

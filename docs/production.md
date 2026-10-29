@@ -44,6 +44,10 @@ to the guide that explains it.
       ([architecture.md](architecture.md#why-_app_cpu_num-matters)).
 - [ ] **Replicas and autoscaling** for the API, console and realtime
       (`replicaCount`, `autoscaling.enabled`).
+- [ ] **PHP memory limit** raised for a realtime that holds thousands of
+      connections: `appwrite.config._APP_MEMORY_LIMIT` (512M per PHP
+      process, `-1` for none) applies to every Appwrite pod, so raise
+      `realtime.resources.limits.memory` with it.
 - [ ] **Function and site specifications capped** with
       `appwrite.config._APP_COMPUTE_CPUS` and `_APP_COMPUTE_MEMORY`, if you
       run Functions and Sites. Without a cap, Appwrite offers up to 8 CPUs and
@@ -102,7 +106,7 @@ to the guide that explains it.
 
 ## Monitoring
 
-Appwrite 2.6.1 exposes no Prometheus metrics. You have its logs, its health
+Appwrite 2.6.2 exposes no Prometheus metrics. You have its logs, its health
 API, and the metrics of Kubernetes and your datastores.
 
 | Watch | How | Alert when |

@@ -10,7 +10,7 @@ to production, swap each of those for a managed service, one at a time.
 
 | | |
 | --- | --- |
-| Appwrite | 2.6.1 |
+| Appwrite | 2.6.2 |
 | Kubernetes | 1.29 or later |
 | Helm | 4, or 3.18 or later |
 | Chart | `oci://ghcr.io/appwrite/charts/appwrite` |

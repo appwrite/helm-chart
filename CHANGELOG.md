@@ -10,14 +10,42 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
-- Update the Console image to 1.2.106-self-hosted, which patches DOMPurify
-  to 3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr.
+- Appwrite 2.6.2, a security release: its base image patches Brotli for
+  CVE-2026-111497, and it tightens API keys, realtime, GraphQL, storage,
+  VCS and outbound requests ([release notes](https://github.com/appwrite/appwrite/releases/tag/2.6.2)).
+  No schema change: the data migration is 2.6.1's.
+- Update the Console image to 1.2.108-self-hosted, the one Appwrite 2.6.2
+  ships, which patches DOMPurify to 3.4.17 for GHSA-cg2g-xh64-v4q7 and
+  GHSA-mrv2-3pqr-j5jr.
 - Update the images whose base layers the nightly Trivy scan flags to their
   newest patch releases: Redis 7.4.12-alpine, redis_exporter v1.96.0-alpine,
   SeaweedFS 4.51 and Docker 29.9.2-dind.
 
+### Changed
+
+- The browser 0.3.8 and ExifTool 0.1.1 images, as in Appwrite 2.6.2's
+  `docker-compose.yml`.
+- `_APP_MEMORY_LIMIT`, new in Appwrite 2.6.2, sets the PHP memory limit of
+  every Appwrite process (512M, as before). Raise it, with realtime's memory
+  limit, for a realtime that holds thousands of connections ([production.md](docs/production.md#capacity)).
+- Project SMTP, messaging SMTP providers and migration sources on a private
+  or reserved address need it in `_APP_ALLOWED_INTERNAL_ADDRESSES` from
+  Appwrite 2.6.2 on ([networking.md](docs/networking.md#requests-to-private-addresses)).
+  The chart's own `smtp` settings aren't affected.
+- The console offers Entire as a Git provider ([integrations.md](docs/integrations.md#entire)).
+- CI upgrades from the published chart 2.1.0 with default values.
+
+### Added
+
+- The render fails when `compute.secrets.orchestratorSecret` is Appwrite's
+  placeholder `your-secret-key`, which Appwrite 2.6.2 refuses for job
+  callbacks, unless `compute.secrets.existingSecret` supplies the secret
+  instead. An empty value, the default, still generates a random secret.
+
 ### Fixed
 
+- The weekly upstream drift check installs PHP, which the gcrunner image
+  lacks: it found Appwrite 2.6.2 but failed before opening an issue.
 - `make update-images` writes quoted tags such as SeaweedFS's `"4.48"`
   (it reported the bump but left the file unchanged) and runs on macOS's
   bash 3.2, where an anonymous registry pull failed on an unbound variable.
