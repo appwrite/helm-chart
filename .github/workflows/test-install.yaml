@@ -90,9 +90,12 @@ jobs:
           echo "Appwrite ${app_version}"
           if [[ "$UPGRADE" == latest ]]; then
             # Highest chart version with a release; the release workflow
-            # creates it only after the chart is in the registry.
-            from=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 100 \
-              --json tagName --jq '.[].tagName | select(startswith("appwrite-")) | ltrimstr("appwrite-")' | sort -V | tail -1)
+            # creates it only after the chart is in the registry. A release
+            # of this very commit (the release workflow can finish first on a
+            # push to main) would upgrade the chart to itself, so it's skipped.
+            from=$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              --jq '.[] | select((.draft or .prerelease or .target_commitish == env.GITHUB_SHA) | not)
+                | .tag_name | select(startswith("appwrite-")) | ltrimstr("appwrite-")' | sort -V | tail -1)
             [[ -n "$from" ]] || { echo "::error::No published chart release to upgrade from"; exit 1; }
             echo "UPGRADE_FROM=${from}" >> "$GITHUB_ENV"
             echo "::notice::Upgrading from chart ${from}"
