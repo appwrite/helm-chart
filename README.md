@@ -105,7 +105,7 @@ that enforces the `restricted` profile:
 | Scenario | What it exercises |
 | --- | --- |
 | `default` | Built-in datastores and combined workers, on Kubernetes 1.29 and 1.37 |
-| `default` | The data migration on upgrade, upgrade from Appwrite 2.2.0 |
+| `default` | The chart upgrade and data migration, from the latest published chart |
 | `hardened` | NetworkPolicies with restricted egress |
 | `separate-workers`, `grouped-workers` | Worker topologies |
 | `external-dbs` | PostgreSQL, Redis and ClickHouse outside the release |

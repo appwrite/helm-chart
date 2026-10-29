@@ -58,3 +58,18 @@ jobs:
             echo "https://github.com/appwrite/appwrite/compare/${current}...${latest}"
           } > body.md
           gh issue create --title "$title" --body-file body.md
+      # A failed scheduled run shows up nowhere else, and it hides the
+      # release it was looking at.
+      - name: Open an issue when the check fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Upstream drift check is failing"
+          number=$(gh issue list --state open --search "in:title \"${title}\"" --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then
+            gh issue comment "$number" --body "Failed again: ${RUN_URL}"
+          else
+            gh issue create --title "$title" --body "The weekly check for new Appwrite releases failed, so a release may be going unnoticed. Run: ${RUN_URL}"
+          fi

@@ -16,8 +16,7 @@ The [changelog](../CHANGELOG.md) lists what changed in each chart version,
 and [version notes](#version-notes) what you have to do about it.
 
 What CI tests: a fresh install of the `appVersion`, and an upgrade from the
-published chart 2.1.0 (Appwrite 2.6.1) with default values, including the
-data migration.
+latest published chart with default values, including the data migration.
 
 ## What happens during an upgrade
 
@@ -117,7 +116,7 @@ before upgrading.
 running:
 
 ```text
-Appwrite 2.3.0 is installed and this would downgrade it to 2.2.0. Appwrite can't migrate data backwards; restore a backup taken before the upgrade instead, or set migrations.allowDowngrade=true.
+Appwrite <running version> is installed and this would downgrade it to <the chart's appVersion>. Appwrite can't migrate data backwards; restore a backup taken before the upgrade instead, or set migrations.allowDowngrade=true.
 ```
 
 The check reads the running version with `lookup`, so it does nothing with
