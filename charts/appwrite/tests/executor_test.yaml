@@ -78,6 +78,15 @@ tests:
       - failedTemplate:
           errorPattern: compute.secrets.orchestratorSecret is Appwrite's public placeholder
 
+  - it: ignores the placeholder when the secrets come from an existing Secret
+    template: templates/configmap-env.yaml
+    set:
+      compute.secrets.orchestratorSecret: your-secret-key
+      compute.secrets.existingSecret: compute
+      compute.executor.existingSecret: executor
+    asserts:
+      - notFailedTemplate: {}
+
   - it: needs its own Secret when credentials come from existing Secrets
     template: templates/configmap-env.yaml
     set:

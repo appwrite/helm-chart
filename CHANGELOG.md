@@ -39,7 +39,8 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 - The render fails when `compute.secrets.orchestratorSecret` is Appwrite's
   placeholder `your-secret-key`, which Appwrite 2.6.2 refuses for job
-  callbacks. An empty value, the default, still generates a random secret.
+  callbacks, unless `compute.secrets.existingSecret` supplies the secret
+  instead. An empty value, the default, still generates a random secret.
 
 ### Fixed
 
