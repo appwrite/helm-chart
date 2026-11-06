@@ -10,6 +10,8 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- `appwrite/geo` 0.3.5, which moves from `appwrite/base` 1.1.1 to 2.2.9 and clears
+  most of the image's critical and high findings.
 - Appwrite 2.6.2, a security release: its base image patches Brotli for
   CVE-2026-111497, and it tightens API keys, realtime, GraphQL, storage,
   VCS and outbound requests ([release notes](https://github.com/appwrite/appwrite/releases/tag/2.6.2)).
