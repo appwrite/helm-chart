@@ -235,6 +235,23 @@
       "dependencyDashboardApproval": true
     },
     {
+      "description": "A patch release of a service is usually a rebuild on a newer base, so it opens a PR without approval. Its CI still installs the chart, and Appwrite and its console keep the approval above.",
+      "matchPackageNames": [
+        "docker.io/appwrite/geo",
+        "docker.io/appwrite/browser",
+        "docker.io/appwrite/embedding",
+        "docker.io/appwrite/postgres",
+        "ghcr.io/appwrite/autogravity",
+        "ghcr.io/appwrite/exiftool",
+        "docker.io/openruntimes/executor"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "groupName": "appwrite service patches",
+      "dependencyDashboardApproval": false
+    },
+    {
       "description": "The console's tags carry a -self-hosted suffix; only follow those",
       "matchPackageNames": [
         "docker.io/appwrite/new"
