@@ -105,5 +105,5 @@ annotations:
     - name: redis-exporter
       image: docker.io/oliver006/redis_exporter:v1.96.0-alpine
     - name: s3
-      image: docker.io/chrislusf/seaweedfs:4.51
+      image: docker.io/chrislusf/seaweedfs:4.52
   artifacthub.io/displayName: Appwrite

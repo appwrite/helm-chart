@@ -19,7 +19,8 @@ annotation in `charts/appwrite/Chart.yaml`.
   GHSA-mrv2-3pqr-j5jr.
 - Update the images whose base layers the nightly Trivy scan flags to their
   newest patch releases: Redis 7.4.12-alpine, redis_exporter v1.96.0-alpine,
-  SeaweedFS 4.51 and Docker 29.9.2-dind.
+  SeaweedFS 4.52 and Docker 29.9.2-dind. SeaweedFS 4.52 also patches
+  go-jose to 4.1.6 for CVE-2026-116587.
 
 ### Changed
 
