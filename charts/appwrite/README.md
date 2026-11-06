@@ -479,7 +479,7 @@ Where files go (the volume or S3), and the `/storage` volume.
 | storage.s3.builtin.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | storage.s3.builtin.image.registry | string | `"docker.io"` | Image registry. |
 | storage.s3.builtin.image.repository | string | `"chrislusf/seaweedfs"` | Image repository. |
-| storage.s3.builtin.image.tag | string | `"4.51"` | Image tag. |
+| storage.s3.builtin.image.tag | string | `"4.52"` | Image tag. |
 | storage.s3.builtin.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | storage.s3.builtin.persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. |
 | storage.s3.builtin.persistence.annotations | object | `{}` | Annotations for the PersistentVolumeClaim. |

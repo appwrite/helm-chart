@@ -706,7 +706,7 @@ storage:
         # -- Image repository.
         repository: chrislusf/seaweedfs
         # -- Image tag.
-        tag: "4.51"
+        tag: "4.52"
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
