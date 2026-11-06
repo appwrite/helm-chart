@@ -638,7 +638,7 @@ The SMTP server Appwrite sends mail through.
 | geo.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | geo.image.registry | string | `"docker.io"` | Image registry. |
 | geo.image.repository | string | `"appwrite/geo"` | Image repository. |
-| geo.image.tag | string | `"0.3.2"` | Image tag. |
+| geo.image.tag | string | `"0.3.5"` | Image tag. |
 | geo.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | geo.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | geo.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
