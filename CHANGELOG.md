@@ -49,6 +49,12 @@ annotation in `charts/appwrite/Chart.yaml`.
 - `make update-images` writes quoted tags such as SeaweedFS's `"4.48"`
   (it reported the bump but left the file unchanged) and runs on macOS's
   bash 3.2, where an anonymous registry pull failed on an unbound variable.
+- The `artifacthub.io/images` annotation names the built-in datastores'
+  images after their component (`database`, `redis`, `clickhouse`, `s3`,
+  `database-exporter`, `redis-exporter`) instead of `builtin` and
+  `builtin-exporter`. The nightly Trivy scan uploads under these names, so
+  the six images overwrote each other's results and alerts flapped between
+  fixed and reopened every night.
 
 ## [2.1.0] - 2026-10-22
 
