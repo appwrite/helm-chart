@@ -4,6 +4,9 @@ name: Security scan
 # annotation, which hack/chart-images.sh keeps equal to values.yaml) and the
 # manifests each ci/ scenario renders. Results go to code scanning once the
 # repository is public; until then they're in the job logs and summaries.
+# Code scanning only gets findings someone can act on: medium or above and, for
+# images, with a fixed version. The job summaries keep unfixed high and critical
+# findings visible.
 on:
   schedule:
     - cron: "37 4 * * *"
@@ -69,7 +72,9 @@ jobs:
             docker run --rm -v "${RUNNER_TEMP}:/out" -v trivy-cache:/root/.cache "$TRIVY_IMAGE" "$@"
           }
           trivy image --scanners vuln --format json --output /out/image.json "$IMAGE"
-          trivy convert --format sarif --output /out/image.sarif /out/image.json
+          jq '(.Results[]? | select(.Vulnerabilities) | .Vulnerabilities) |= map(select(.FixedVersion // "" | length > 0))' \
+            "${RUNNER_TEMP}/image.json" > "${RUNNER_TEMP}/fixable.json"
+          trivy convert --severity MEDIUM,HIGH,CRITICAL --format sarif --output /out/image.sarif /out/fixable.json
           {
             echo "### ${IMAGE}"
             echo '```'
@@ -117,7 +122,7 @@ jobs:
           # the chart pulls from docker.io, ghcr.io and quay.io by design.
           printf '%s\n' KSV-0125 > trivy-ignore.txt
           trivy config --ignorefile trivy-ignore.txt --format json --output trivy-config.json rendered
-          trivy convert --format sarif --output trivy-config.sarif trivy-config.json
+          trivy convert --severity MEDIUM,HIGH,CRITICAL --format sarif --output trivy-config.sarif trivy-config.json
           {
             echo '### Rendered manifests'
             echo '```'
