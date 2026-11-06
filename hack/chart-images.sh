@@ -11,12 +11,21 @@ app_version=$(yq '.appVersion' "$CHART/Chart.yaml")
 
 # Every map with registry, repository and tag is an image; name it after its
 # parent key (the component), "<datastore>-exporter" for a metrics exporter,
-# or "appwrite" for the top-level image.
+# or "appwrite" for the top-level image. "builtin" is skipped so that
+# database.builtin.image is "database", not "builtin".
 images=$(yq -r '
   [.. | select(tag == "!!map" and has("registry") and has("repository") and has("tag"))
-      | {"name": (path | select(length > 1) | (select(.[-2] == "metrics") | .[-3] + "-exporter") // .[-2]) // "appwrite", "ref": (.registry + "/" + .repository + ":" + (.tag // ""))}]
+      | {"name": (path | map(select(. != "builtin")) | select(length > 1) | (select(.[-2] == "metrics") | .[-3] + "-exporter") // .[-2]) // "appwrite", "ref": (.registry + "/" + .repository + ":" + (.tag // ""))}]
   | sort_by(.name) | .[] | "- name: " + .name + "\n  image: " + .ref' "$CHART/values.yaml" \
   | sed "s/:\$/:$app_version/")
+
+# The security scan uploads each image's results under a category made from
+# its name; two images with one name overwrite each other's results.
+dups=$(echo "$images" | sed -n 's/^- name: //p' | sort | uniq -d)
+if [[ -n "$dups" ]]; then
+  echo "Image names in $CHART/values.yaml aren't unique:" $dups
+  exit 1
+fi
 
 if [[ "${1:-}" == --check ]]; then
   current=$(yq -r '.annotations["artifacthub.io/images"]' "$CHART/Chart.yaml")
