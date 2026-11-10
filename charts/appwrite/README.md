@@ -902,7 +902,7 @@ The build orchestrator and the executor.
 | compute.executor.image.digest | string | `""` | Image digest. |
 | compute.executor.image.registry | string | `"docker.io"` | Image registry. The executor image is pulled by the Docker daemon in the pod, not by the kubelet, so image pull secrets don't apply to it. |
 | compute.executor.image.repository | string | `"openruntimes/executor"` | Image repository. |
-| compute.executor.image.tag | string | `"1.1.2"` | Image tag. |
+| compute.executor.image.tag | string | `"1.3.2"` | Image tag. |
 | compute.executor.images | list | `[]` | Runtime images to pull when the executor starts (`OPR_EXECUTOR_IMAGES`). Empty derives them from `functionsRuntimes` and `sitesRuntimes`, e.g. `node-22` becomes `openruntimes/node:v5-22`; with both of those empty too, nothing is pulled ahead of the first executions. |
 | compute.executor.inactiveThreshold | int | `60` | Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). The executor removes idle runtimes in its maintenance pass, which the chart runs hourly (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`), so a runtime can stay up to an hour longer. |
 | compute.executor.namespace | string | `""` | Namespace of the executor. Defaults to `<release namespace>-executor`. Use a different one per release when several releases share a namespace. |
@@ -980,7 +980,7 @@ The build orchestrator and the executor.
 | browser.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | browser.image.registry | string | `"docker.io"` | Image registry. |
 | browser.image.repository | string | `"appwrite/browser"` | Image repository. |
-| browser.image.tag | string | `"0.3.8"` | Image tag. |
+| browser.image.tag | string | `"0.3.12"` | Image tag. |
 | browser.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | browser.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | browser.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |

@@ -10,6 +10,9 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- `openruntimes/executor` 1.3.2 and `appwrite/browser` 0.3.12, ahead of the tags in
+  Appwrite 2.6.2's `docker-compose.yml`, which clear most of both images' critical
+  and high findings.
 - `appwrite/geo` 0.3.5, which moves from `appwrite/base` 1.1.1 to 2.2.9 and clears
   most of the image's critical and high findings.
 - Appwrite 2.6.2, a security release: its base image patches Brotli for
