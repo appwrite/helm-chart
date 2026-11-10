@@ -1135,6 +1135,10 @@
               "description": "Create the namespace, labelled for the `baseline` Pod Security Standard. Set to false to create it yourself.",
               "type": "boolean"
             },
+            "hostUsers": {
+              "description": "Keep build pods in the node's user namespace (`KUBE_WORKLOAD_HOST_USERS`). Set to false to give each build pod its own, so a build running as root is an unprivileged user on the node; that needs Kubernetes 1.33, Linux 6.3 and containerd 2.0 or CRI-O 1.25 on the nodes.",
+              "type": "boolean"
+            },
             "memoryOvercommit": {
               "description": "Divides each build's memory limit to get its memory request (`KUBE_MEMORY_OVERCOMMIT`). The limit is the build specification: by default 8 GiB for functions and 2 GiB for sites, lower when `_APP_COMPUTE_MEMORY` (in `appwrite.config`) caps it. The default requests 1 GiB for an 8 GiB build.",
               "type": "integer",

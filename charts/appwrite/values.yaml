@@ -952,7 +952,7 @@ compute:
       # -- Image repository: the orchestrator's jobs service, with the Kubernetes backend.
       repository: open-runtimes/orchestrator/jobs-service
       # -- Image tag.
-      tag: 2.2.4
+      tag: 5.1.0
       # -- Image digest.
       digest: ""
       # -- Image pull policy.
@@ -1008,7 +1008,7 @@ compute:
       # -- Image repository of the sidecar that moves sources, outputs and caches for each build.
       repository: open-runtimes/orchestrator/job-sidecar
       # -- Image tag.
-      tag: 2.2.4
+      tag: 5.1.0
       # -- Image digest.
       digest: ""
     # -- Divides each build's CPU limit to get its CPU request
@@ -1025,6 +1025,12 @@ compute:
     memoryOvercommit: 8 # @schema minimum: 1
     # -- How long finished build Jobs are kept (`JOB_RETENTION`).
     retention: 15m
+    # -- Keep build pods in the node's user namespace
+    # (`KUBE_WORKLOAD_HOST_USERS`). Set to false to give each build pod its
+    # own, so a build running as root is an unprivileged user on the node;
+    # that needs Kubernetes 1.33, Linux 6.3 and containerd 2.0 or CRI-O 1.25
+    # on the nodes.
+    hostUsers: true
     # -- Node selector for build pods.
     nodeSelector: {} # @schema additionalProperties: {type: string}
     # -- Tolerations for build pods.

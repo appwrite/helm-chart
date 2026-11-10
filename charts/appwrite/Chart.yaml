@@ -79,7 +79,7 @@ annotations:
     - name: browser
       image: docker.io/appwrite/browser:0.3.12
     - name: builds
-      image: ghcr.io/open-runtimes/orchestrator/job-sidecar:2.2.4
+      image: ghcr.io/open-runtimes/orchestrator/job-sidecar:5.1.0
     - name: clickhouse
       image: docker.io/clickhouse/clickhouse-server:26.4.5-alpine
     - name: console
@@ -99,7 +99,7 @@ annotations:
     - name: geo
       image: docker.io/appwrite/geo:0.3.6
     - name: orchestrator
-      image: ghcr.io/open-runtimes/orchestrator/jobs-service:2.2.4
+      image: ghcr.io/open-runtimes/orchestrator/jobs-service:5.1.0
     - name: redis
       image: docker.io/library/redis:7.4.12-alpine
     - name: redis-exporter

@@ -49,12 +49,12 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/open-runtimes/orchestrator/jobs-service:2.2.4
+          value: ghcr.io/open-runtimes/orchestrator/jobs-service:5.1.0
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: JOB_SIDECAR_IMAGE
-            value: ghcr.io/open-runtimes/orchestrator/job-sidecar:2.2.4
+            value: ghcr.io/open-runtimes/orchestrator/job-sidecar:5.1.0
       - equal:
           path: spec.strategy.type
           value: Recreate
@@ -73,6 +73,9 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content: {name: KUBE_JOB_SERVICE_ACCOUNT, value: aw-appwrite-build}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_WORKLOAD_HOST_USERS, value: "true"}
       - contains:
           path: spec.template.spec.containers[0].env
           content: {name: ARTIFACT_ENDPOINT, value: "http://aw-appwrite-orchestrator.apps.svc:8080"}
@@ -98,6 +101,7 @@ tests:
     set:
       compute.builds.nodeSelector: {pool: builds}
       compute.builds.tolerations: [{key: builds, operator: Exists, effect: NoSchedule}]
+      compute.builds.hostUsers: false
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -105,6 +109,9 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content: {name: KUBE_WORKLOAD_TOLERATIONS, value: '[{"effect":"NoSchedule","key":"builds","operator":"Exists"}]'}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_WORKLOAD_HOST_USERS, value: "false"}
 
   - it: reads the API key from an existing Secret
     template: templates/orchestrator/deployment.yaml

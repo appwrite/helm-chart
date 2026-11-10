@@ -10,6 +10,10 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- The orchestrator's jobs service and job sidecar 5.1.0, the major version on
+  Appwrite's main branch, which clear both images' critical and high findings.
+  5.x gives build pods their own user namespace by default; the chart keeps
+  them in the node's (`compute.builds.hostUsers`), as before.
 - `appwrite/geo` 0.3.6, Docker 29.9.3-dind and Console 1.2.138-self-hosted, the
   Console tag on Appwrite's main branch, which clear the critical findings in all
   three images and most of the high ones in the first two. The Console image now
