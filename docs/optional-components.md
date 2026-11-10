@@ -172,7 +172,7 @@ with `mqtt.replicaCount`. `_APP_MQTT_REPLAY_DEPTH` (5) and
 | Component | Image | Requests | Memory limit | Replicas |
 | --- | --- | --- | --- | --- |
 | Geo | `docker.io/appwrite/geo:0.3.5` | 20m CPU, 128Mi | 512Mi | `geo.replicaCount` (1) |
-| Browser | `docker.io/appwrite/browser:0.3.8` | 100m CPU, 512Mi | 2Gi | `browser.replicaCount` (1) |
+| Browser | `docker.io/appwrite/browser:0.3.12` | 100m CPU, 512Mi | 2Gi | `browser.replicaCount` (1) |
 | ExifTool | `ghcr.io/appwrite/exiftool:0.1.1` | 20m CPU, 128Mi | 512Mi | `exiftool.replicaCount` (1) |
 | Autogravity | `ghcr.io/appwrite/autogravity:0.0.11` | 100m CPU, 512Mi | 2Gi | 1 |
 | Embedding | `docker.io/appwrite/embedding:0.3.1` | 250m CPU, 1Gi | 4Gi | 1 |
