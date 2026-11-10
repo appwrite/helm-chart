@@ -595,7 +595,7 @@ The SMTP server Appwrite sends mail through.
 | console.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | console.image.registry | string | `"docker.io"` | Image registry. |
 | console.image.repository | string | `"appwrite/new"` | Image repository. |
-| console.image.tag | string | `"1.2.108-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
+| console.image.tag | string | `"1.2.138-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
 | console.livenessProbe.enabled | bool | `true` | Enable the liveness probe. |
 | console.livenessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
 | console.livenessProbe.periodSeconds | int | `20` | Seconds between probes. |
@@ -638,7 +638,7 @@ The SMTP server Appwrite sends mail through.
 | geo.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | geo.image.registry | string | `"docker.io"` | Image registry. |
 | geo.image.repository | string | `"appwrite/geo"` | Image repository. |
-| geo.image.tag | string | `"0.3.5"` | Image tag. |
+| geo.image.tag | string | `"0.3.6"` | Image tag. |
 | geo.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | geo.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | geo.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
@@ -896,7 +896,7 @@ The build orchestrator and the executor.
 | compute.executor.dind.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | compute.executor.dind.image.registry | string | `"docker.io"` | Image registry. |
 | compute.executor.dind.image.repository | string | `"library/docker"` | Image repository of the Docker daemon, also used to start the executor. |
-| compute.executor.dind.image.tag | string | `"29.9.2-dind"` | Image tag. |
+| compute.executor.dind.image.tag | string | `"29.9.3-dind"` | Image tag. |
 | compute.executor.dind.volume | object | `{}` | Volume source for the Docker daemon's images and containers, e.g. `{ephemeral: {volumeClaimTemplate: ...}}`. Empty is an `emptyDir` of at most 20Gi; runtime images are pulled again when the pod is replaced. |
 | compute.executor.existingSecret | string | `""` | Secret in the executor namespace with the keys `executor-secret`, `s3-access-key` and `s3-secret-key`. Pods can't read Secrets in other namespaces, so it's required when `compute.secrets.existingSecret` or an S3 `secretName` (`storage.s3.accessKeyId`) is set. Otherwise the chart creates it. |
 | compute.executor.extraEnv | list | `[]` | Extra environment variables for the executor. Variables named `OPR_EXECUTOR_*` are passed on to it, e.g. `OPR_EXECUTOR_DOCKER_HUB_USERNAME` and `OPR_EXECUTOR_DOCKER_HUB_PASSWORD` to pull runtime images as a Docker Hub user. |

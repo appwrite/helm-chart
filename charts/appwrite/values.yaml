@@ -868,7 +868,7 @@ compute:
         # -- Image repository of the Docker daemon, also used to start the executor.
         repository: library/docker
         # -- Image tag.
-        tag: 29.9.2-dind
+        tag: 29.9.3-dind
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
@@ -1194,7 +1194,7 @@ console:
     # -- Image repository.
     repository: appwrite/new
     # -- Image tag. Pinned independently from appVersion so Console security updates can ship separately.
-    tag: 1.2.108-self-hosted
+    tag: 1.2.138-self-hosted
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -1849,7 +1849,7 @@ geo:
     # -- Image repository.
     repository: appwrite/geo
     # -- Image tag.
-    tag: 0.3.5
+    tag: 0.3.6
     # -- Image digest.
     digest: ""
     # -- Image pull policy.

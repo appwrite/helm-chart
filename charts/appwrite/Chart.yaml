@@ -83,13 +83,13 @@ annotations:
     - name: clickhouse
       image: docker.io/clickhouse/clickhouse-server:26.4.5-alpine
     - name: console
-      image: docker.io/appwrite/new:1.2.108-self-hosted
+      image: docker.io/appwrite/new:1.2.138-self-hosted
     - name: database
       image: docker.io/appwrite/postgres:0.1.0
     - name: database-exporter
       image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
     - name: dind
-      image: docker.io/library/docker:29.9.2-dind
+      image: docker.io/library/docker:29.9.3-dind
     - name: embedding
       image: docker.io/appwrite/embedding:0.3.1
     - name: executor
@@ -97,7 +97,7 @@ annotations:
     - name: exiftool
       image: ghcr.io/appwrite/exiftool:0.1.1
     - name: geo
-      image: docker.io/appwrite/geo:0.3.5
+      image: docker.io/appwrite/geo:0.3.6
     - name: orchestrator
       image: ghcr.io/open-runtimes/orchestrator/jobs-service:5.1.0
     - name: redis
