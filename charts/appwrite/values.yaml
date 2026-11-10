@@ -2113,7 +2113,7 @@ embedding:
     # -- Image repository.
     repository: appwrite/embedding
     # -- Image tag.
-    tag: 0.3.1
+    tag: 0.3.2
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
