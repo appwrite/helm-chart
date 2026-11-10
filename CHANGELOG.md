@@ -10,6 +10,10 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- `appwrite/geo` 0.3.6, Docker 29.9.3-dind and Console 1.2.138-self-hosted, the
+  Console tag on Appwrite's main branch, which clear the critical findings in all
+  three images and most of the high ones in the first two. The Console image now
+  patches Brotli for CVE-2026-111497.
 - `openruntimes/executor` 1.3.2 and `appwrite/browser` 0.3.12, ahead of the tags in
   Appwrite 2.6.2's `docker-compose.yml`, which clear most of both images' critical
   and high findings.
