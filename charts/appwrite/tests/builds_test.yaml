@@ -101,6 +101,7 @@ tests:
     set:
       compute.builds.nodeSelector: {pool: builds}
       compute.builds.tolerations: [{key: builds, operator: Exists, effect: NoSchedule}]
+      compute.builds.hostUsers: false
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -108,6 +109,9 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content: {name: KUBE_WORKLOAD_TOLERATIONS, value: '[{"effect":"NoSchedule","key":"builds","operator":"Exists"}]'}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: KUBE_WORKLOAD_HOST_USERS, value: "false"}
 
   - it: reads the API key from an existing Secret
     template: templates/orchestrator/deployment.yaml
