@@ -874,6 +874,7 @@ The build orchestrator and the executor.
 |-----|------|---------|-------------|
 | compute.builds.cpuOvercommit | int | `8` | Divides each build's CPU limit to get its CPU request (`KUBE_CPU_OVERCOMMIT`). The limit is the build specification: by default 8 CPUs for functions and 2 for sites, lower when `_APP_COMPUTE_CPUS` (in `appwrite.config`) caps it. The default requests 1 CPU for an 8-CPU build. |
 | compute.builds.createNamespace | bool | `true` | Create the namespace, labelled for the `baseline` Pod Security Standard. Set to false to create it yourself. |
+| compute.builds.hostUsers | bool | `true` | Keep build pods in the node's user namespace (`KUBE_WORKLOAD_HOST_USERS`). Set to false to give each build pod its own, so a build running as root is an unprivileged user on the node; that needs Kubernetes 1.33, Linux 6.3 and containerd 2.0 or CRI-O 1.25 on the nodes. |
 | compute.builds.memoryOvercommit | int | `8` | Divides each build's memory limit to get its memory request (`KUBE_MEMORY_OVERCOMMIT`). The limit is the build specification: by default 8 GiB for functions and 2 GiB for sites, lower when `_APP_COMPUTE_MEMORY` (in `appwrite.config`) caps it. The default requests 1 GiB for an 8 GiB build. |
 | compute.builds.namespace | string | `""` | Namespace for build Jobs. Defaults to `<release namespace>-builds`. Use a different one per release when several releases share a namespace. |
 | compute.builds.networkPolicy.deniedCIDRs | list | `[]` | CIDRs build pods may not reach, on top of the private, link-local, CGNAT and special-purpose ranges always blocked. Add pod, Service and node ranges that aren't private addresses (GKE privately used public ranges, IPv6 clusters). |
@@ -884,7 +885,7 @@ The build orchestrator and the executor.
 | compute.builds.sidecarImage.digest | string | `""` | Image digest. |
 | compute.builds.sidecarImage.registry | string | `"ghcr.io"` | Image registry. |
 | compute.builds.sidecarImage.repository | string | `"open-runtimes/orchestrator/job-sidecar"` | Image repository of the sidecar that moves sources, outputs and caches for each build. |
-| compute.builds.sidecarImage.tag | string | `"2.2.4"` | Image tag. |
+| compute.builds.sidecarImage.tag | string | `"5.1.0"` | Image tag. |
 | compute.builds.tolerations | list | `[]` | Tolerations for build pods. |
 | compute.enabled | bool | `true` | Enable Functions and Sites. Needs `storage.device: s3`, and runs the executor as a privileged pod in a namespace of its own (see docs/executor.md). Set to false on clusters that forbid privileged pods. |
 | compute.executor.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
@@ -927,7 +928,7 @@ The build orchestrator and the executor.
 | compute.orchestrator.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | compute.orchestrator.image.registry | string | `"ghcr.io"` | Image registry. |
 | compute.orchestrator.image.repository | string | `"open-runtimes/orchestrator/jobs-service"` | Image repository: the orchestrator's jobs service, with the Kubernetes backend. |
-| compute.orchestrator.image.tag | string | `"2.2.4"` | Image tag. |
+| compute.orchestrator.image.tag | string | `"5.1.0"` | Image tag. |
 | compute.orchestrator.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | compute.orchestrator.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | compute.orchestrator.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |

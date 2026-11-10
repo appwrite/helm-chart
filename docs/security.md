@@ -60,8 +60,8 @@ Treat the build namespace as holding secrets:
 
 - The orchestrator writes the key Appwrite uses for build callbacks
   (`orchestrator-secret`) into every build Job, as the pod annotation
-  `job.callback.key` and in the sidecar's environment. The S3 access and
-  secret keys are in the sidecar's environment too. Anyone who can read
+  `job.callback.key`. The S3 access and secret keys are in the sidecar's
+  environment. Anyone who can read
   pods or Jobs there (the built-in `view` role is enough) gets both. With the
   key they can call the orchestrator's API and send build callbacks to
   Appwrite. Grant access to the build namespace as you would to the chart's

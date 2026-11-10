@@ -15,6 +15,7 @@
   (dict "name" "JOB_RETENTION" "value" $b.retention)
   (dict "name" "KUBE_CPU_OVERCOMMIT" "value" (include "appwrite.envValue" $b.cpuOvercommit))
   (dict "name" "KUBE_MEMORY_OVERCOMMIT" "value" (include "appwrite.envValue" $b.memoryOvercommit))
+  (dict "name" "KUBE_WORKLOAD_HOST_USERS" "value" ($b.hostUsers | toString))
   (dict "name" "SHUTDOWN_DRAIN_WAIT" "value" "0s")
   (dict "name" "API_KEY_FILE" "value" "/var/run/secrets/orchestrator/api-key")
   (dict "name" "S3_REGION" "value" $conn.region)
