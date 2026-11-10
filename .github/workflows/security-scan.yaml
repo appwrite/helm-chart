@@ -4,9 +4,9 @@ name: Security scan
 # annotation, which hack/chart-images.sh keeps equal to values.yaml) and the
 # manifests each ci/ scenario renders. Results go to code scanning once the
 # repository is public; until then they're in the job logs and summaries.
-# Code scanning only gets findings someone can act on: medium or above and, for
-# images, with a fixed version. The job summaries keep unfixed high and critical
-# findings visible.
+# Code scanning only gets findings someone can act on: medium or above for the
+# manifests; high or above with a fixed version for images. The job summaries
+# keep unfixed high and critical findings visible.
 on:
   schedule:
     - cron: "37 4 * * *"
@@ -74,7 +74,7 @@ jobs:
           trivy image --scanners vuln --format json --output /out/image.json "$IMAGE"
           jq '(.Results[]? | select(.Vulnerabilities) | .Vulnerabilities) |= map(select(.FixedVersion // "" | length > 0))' \
             "${RUNNER_TEMP}/image.json" > "${RUNNER_TEMP}/fixable.json"
-          trivy convert --severity MEDIUM,HIGH,CRITICAL --format sarif --output /out/image.sarif /out/fixable.json
+          trivy convert --severity HIGH,CRITICAL --format sarif --output /out/image.sarif /out/fixable.json
           {
             echo "### ${IMAGE}"
             echo '```'
