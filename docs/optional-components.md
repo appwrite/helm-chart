@@ -28,8 +28,7 @@ geo:
   enabled: false
 ```
 
-Appwrite then skips geolocation. The geo server listens on port 80, so its
-pod lowers `net.ipv4.ip_unprivileged_port_start` instead of running as root.
+Appwrite then skips geolocation.
 
 ## Browser
 
