@@ -10,6 +10,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- ClickHouse 26.8.36, the newest patch of the 26.8 LTS line, which updates musl, zlib and OpenSSL and clears the image's high findings.
 - `appwrite/geo` 0.3.7, which updates `symfony/http-client` to 7.4.23 and clears the image's last high finding.
 - `appwrite/postgres` 0.2.1, `appwrite/browser` 0.3.13 and `openruntimes/executor` 1.3.3, rebuilt with patched packages, which clear all of the database and executor images' critical and high findings and all but one of the browser's. 0.2.1 adds pg_cron and preloads it with pg_stat_statements on new data directories.
 - `appwrite/embedding` 0.3.2, which clears the image's critical findings and
@@ -44,6 +45,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Changed
 
+- The built-in ClickHouse's `init.sh` resets `table_readonly`, which ClickHouse 26.7 and later set on the system log tables they replace, before giving those tables a TTL. Without it the pod fails to start after the upgrade to 26.8.
 - The browser 0.3.8 and ExifTool 0.1.1 images, as in Appwrite 2.6.2's
   `docker-compose.yml`.
 - `_APP_MEMORY_LIMIT`, new in Appwrite 2.6.2, sets the PHP memory limit of

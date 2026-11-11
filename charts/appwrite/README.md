@@ -432,7 +432,7 @@ Built-in or your own.
 | clickhouse.builtin.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | clickhouse.builtin.image.registry | string | `"docker.io"` | Image registry. |
 | clickhouse.builtin.image.repository | string | `"clickhouse/clickhouse-server"` | Image repository. |
-| clickhouse.builtin.image.tag | string | `"26.4.5-alpine"` | Image tag. |
+| clickhouse.builtin.image.tag | string | `"26.8.36-alpine"` | Image tag. |
 | clickhouse.builtin.metrics.enabled | bool | `false` | Serve ClickHouse's built-in Prometheus endpoint on port 9363 of the Service (`/metrics`). No sidecar. See docs/production.md#monitoring. |
 | clickhouse.builtin.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | clickhouse.builtin.persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. |

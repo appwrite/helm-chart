@@ -7,7 +7,7 @@
 # same number of version components, so floating tags (7, 7.4, latest) and
 # pre-releases (-rc.1) are never picked. The built-in datastores stay on their
 # current major version, as in renovate.json, and ClickHouse on its current
-# year.month release (26.4.x), since each of those is a feature release.
+# year.month release (26.8.x), since each of those is a feature release.
 #
 # The images Renovate groups with Appwrite in renovate.json (the console,
 # executor, orchestrator and Appwrite's own services) are pinned to what
