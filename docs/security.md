@@ -30,7 +30,7 @@ What that means for each pod:
 | --- | --- | --- |
 | Appwrite (API, realtime, workers, tasks, MQTT) | `www-data` (82) | API and realtime listen on 8080 (`PORT`). `/tmp`, `/storage/cache` and certbot's directories are `emptyDir`s. |
 | Console | `bun` (1000) | |
-| Geo | `www-data` (82) | Its port 80 is hard-coded, so the pod sets the namespaced sysctl `net.ipv4.ip_unprivileged_port_start=0`, which `restricted` allows. |
+| Geo | `www-data` (82) | Listens on 8080 (`GEO_PORT`). |
 | PostgreSQL | `postgres` (999) | `/var/run/postgresql` is an `emptyDir`. |
 | Redis | `redis` (999) | |
 | SeaweedFS | 1000 | Runs as root in its own image; the chart sets UID 1000. The S3 users file is written to `/tmp` from the chart's Secret on start. |
