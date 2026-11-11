@@ -10,6 +10,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- Console 1.2.176-self-hosted, `appwrite/embedding` 0.3.3, `appwrite/exiftool` 0.1.2 and `appwrite/autogravity` 0.0.12, rebuilt with patched Debian packages (and, for Autogravity, a patched Go), which clear the open critical and high findings in all four images.
 - `appwrite/geo` 0.3.7, which updates `symfony/http-client` to 7.4.23 and clears the image's last high finding.
 - `appwrite/postgres` 0.2.1, `appwrite/browser` 0.3.13 and `openruntimes/executor` 1.3.3, rebuilt with patched packages, which clear all of the database and executor images' critical and high findings and all but one of the browser's. 0.2.1 adds pg_cron and preloads it with pg_stat_statements on new data directories.
 - `appwrite/embedding` 0.3.2, which clears the image's critical findings and
