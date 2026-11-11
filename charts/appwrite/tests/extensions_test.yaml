@@ -9,6 +9,7 @@ templates:
   - templates/clickhouse/statefulset.yaml
   - templates/clickhouse/configmap.yaml
   - templates/geo/deployment.yaml
+  - templates/geo/service.yaml
   - templates/api/deployment.yaml
   - templates/api/hpa.yaml
   - templates/ingress/main.yaml
@@ -188,6 +189,24 @@ tests:
     asserts:
       - exists:
           path: spec.template.metadata.annotations["checksum/secret"]
+
+  - it: serves geo on 8080 behind its Service's port 80
+    templates:
+      - templates/geo/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: GEO_PORT, value: "8080"}
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content: {name: http, containerPort: 8080, protocol: TCP}
+
+  - it: points the geo Service at the named port
+    template: templates/geo/service.yaml
+    asserts:
+      - contains:
+          path: spec.ports
+          content: {name: http, port: 80, targetPort: http, protocol: TCP, appProtocol: http}
 
   - it: serves ClickHouse metrics from its own endpoint
     template: templates/clickhouse/statefulset.yaml
