@@ -174,7 +174,7 @@ with `mqtt.replicaCount`. `_APP_MQTT_REPLAY_DEPTH` (5) and
 | Browser | `docker.io/appwrite/browser:0.3.12` | 100m CPU, 512Mi | 2Gi | `browser.replicaCount` (1) |
 | ExifTool | `ghcr.io/appwrite/exiftool:0.1.1` | 20m CPU, 128Mi | 512Mi | `exiftool.replicaCount` (1) |
 | Autogravity | `ghcr.io/appwrite/autogravity:0.0.11` | 100m CPU, 512Mi | 2Gi | 1 |
-| Embedding | `docker.io/appwrite/embedding:0.3.1` | 250m CPU, 1Gi | 4Gi | 1 |
+| Embedding | `docker.io/appwrite/embedding:0.3.2` | 250m CPU, 1Gi | 4Gi | 1 |
 | MQTT | the Appwrite image | 50m CPU, 128Mi | 512Mi | `mqtt.replicaCount` (1) |
 
 Change the requests and limits under `<component>.resources`, and the image

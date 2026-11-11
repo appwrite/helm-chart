@@ -10,6 +10,9 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- `appwrite/embedding` 0.3.2, which clears the image's critical findings and
+  most of its high ones. Models now load on the first request and unload after
+  five idle minutes, so the pod's idle memory drops.
 - Geo listens on 8080 (`GEO_PORT`) and no longer lowers the pod's unprivileged port range.
 - The nightly manifest scan ignores the executor's, the orchestrator Role's and the env ConfigMap's by-design findings, each scoped to that resource.
 - The orchestrator's jobs service and job sidecar 5.1.0, the major version on
