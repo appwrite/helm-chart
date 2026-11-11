@@ -97,7 +97,7 @@ annotations:
     - name: exiftool
       image: ghcr.io/appwrite/exiftool:0.1.1
     - name: geo
-      image: docker.io/appwrite/geo:0.3.6
+      image: docker.io/appwrite/geo:0.3.7
     - name: orchestrator
       image: ghcr.io/open-runtimes/orchestrator/jobs-service:5.1.0
     - name: redis
