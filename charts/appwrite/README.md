@@ -595,7 +595,7 @@ The SMTP server Appwrite sends mail through.
 | console.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | console.image.registry | string | `"docker.io"` | Image registry. |
 | console.image.repository | string | `"appwrite/new"` | Image repository. |
-| console.image.tag | string | `"1.2.138-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
+| console.image.tag | string | `"1.2.176-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
 | console.livenessProbe.enabled | bool | `true` | Enable the liveness probe. |
 | console.livenessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
 | console.livenessProbe.periodSeconds | int | `20` | Seconds between probes. |
@@ -959,7 +959,7 @@ The build orchestrator and the executor.
 | autogravity.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | autogravity.image.registry | string | `"ghcr.io"` | Image registry. |
 | autogravity.image.repository | string | `"appwrite/autogravity"` | Image repository. |
-| autogravity.image.tag | string | `"0.0.11"` | Image tag. |
+| autogravity.image.tag | string | `"0.0.12"` | Image tag. |
 | autogravity.modelBackend | string | `"focalnet"` | Model backend (`MODEL_BACKEND`). |
 | autogravity.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | autogravity.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
@@ -1003,7 +1003,7 @@ The build orchestrator and the executor.
 | embedding.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | embedding.image.registry | string | `"docker.io"` | Image registry. |
 | embedding.image.repository | string | `"appwrite/embedding"` | Image repository. |
-| embedding.image.tag | string | `"0.3.2"` | Image tag. |
+| embedding.image.tag | string | `"0.3.3"` | Image tag. |
 | embedding.models | list | `["nomic-embed-text"]` | Models to load (`EMBEDDING_MODELS`). |
 | embedding.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | embedding.persistence.enabled | bool | `true` | Keep downloaded models in a PersistentVolumeClaim. |
@@ -1131,7 +1131,7 @@ Image, security contexts, scheduling defaults, names, labels and extra objects.
 | exiftool.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | exiftool.image.registry | string | `"ghcr.io"` | Image registry. |
 | exiftool.image.repository | string | `"appwrite/exiftool"` | Image repository. |
-| exiftool.image.tag | string | `"0.1.1"` | Image tag. |
+| exiftool.image.tag | string | `"0.1.2"` | Image tag. |
 | exiftool.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | exiftool.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | exiftool.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |

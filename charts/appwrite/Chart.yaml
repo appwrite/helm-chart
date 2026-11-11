@@ -75,7 +75,7 @@ annotations:
     - name: appwrite
       image: docker.io/appwrite/appwrite:2.6.2
     - name: autogravity
-      image: ghcr.io/appwrite/autogravity:0.0.11
+      image: ghcr.io/appwrite/autogravity:0.0.12
     - name: browser
       image: docker.io/appwrite/browser:0.3.13
     - name: builds
@@ -83,7 +83,7 @@ annotations:
     - name: clickhouse
       image: docker.io/clickhouse/clickhouse-server:26.8.36-alpine
     - name: console
-      image: docker.io/appwrite/new:1.2.138-self-hosted
+      image: docker.io/appwrite/new:1.2.176-self-hosted
     - name: database
       image: docker.io/appwrite/postgres:0.2.1
     - name: database-exporter
@@ -91,11 +91,11 @@ annotations:
     - name: dind
       image: docker.io/library/docker:29.9.3-dind
     - name: embedding
-      image: docker.io/appwrite/embedding:0.3.2
+      image: docker.io/appwrite/embedding:0.3.3
     - name: executor
       image: docker.io/openruntimes/executor:1.3.3
     - name: exiftool
-      image: ghcr.io/appwrite/exiftool:0.1.1
+      image: ghcr.io/appwrite/exiftool:0.1.2
     - name: geo
       image: docker.io/appwrite/geo:0.3.7
     - name: orchestrator

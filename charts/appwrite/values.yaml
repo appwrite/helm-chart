@@ -1194,7 +1194,7 @@ console:
     # -- Image repository.
     repository: appwrite/new
     # -- Image tag. Pinned independently from appVersion so Console security updates can ship separately.
-    tag: 1.2.138-self-hosted
+    tag: 1.2.176-self-hosted
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -1981,7 +1981,7 @@ autogravity:
     # -- Image repository.
     repository: appwrite/autogravity
     # -- Image tag.
-    tag: 0.0.11
+    tag: 0.0.12
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -2047,7 +2047,7 @@ exiftool:
     # -- Image repository.
     repository: appwrite/exiftool
     # -- Image tag.
-    tag: 0.1.1
+    tag: 0.1.2
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -2115,7 +2115,7 @@ embedding:
     # -- Image repository.
     repository: appwrite/embedding
     # -- Image tag.
-    tag: 0.3.2
+    tag: 0.3.3
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
