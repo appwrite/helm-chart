@@ -81,7 +81,7 @@ annotations:
     - name: builds
       image: ghcr.io/open-runtimes/orchestrator/job-sidecar:5.1.0
     - name: clickhouse
-      image: docker.io/clickhouse/clickhouse-server:26.4.5-alpine
+      image: docker.io/clickhouse/clickhouse-server:26.8.36-alpine
     - name: console
       image: docker.io/appwrite/new:1.2.176-self-hosted
     - name: database
