@@ -190,7 +190,7 @@ metadata:
   namespace: appwrite
 spec:
   instances: 3
-  imageName: docker.io/appwrite/postgres:0.1.0
+  imageName: docker.io/appwrite/postgres:0.2.1
   postgresql:
     parameters:
       max_connections: "500"          # from your connections ceiling

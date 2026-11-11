@@ -10,6 +10,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- `appwrite/postgres` 0.2.1, `appwrite/browser` 0.3.13 and `openruntimes/executor` 1.3.3, rebuilt with patched packages, which clear all of the database and executor images' critical and high findings and all but one of the browser's. 0.2.1 adds pg_cron and preloads it with pg_stat_statements on new data directories.
 - `appwrite/embedding` 0.3.2, which clears the image's critical findings and
   most of its high ones. Models now load on the first request and unload after
   five idle minutes, so the pod's idle memory drops.
