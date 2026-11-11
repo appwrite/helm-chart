@@ -213,7 +213,7 @@ tests:
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
-          content: {name: EXECUTOR_IMAGE, value: docker.io/openruntimes/executor:1.3.2}
+          content: {name: EXECUTOR_IMAGE, value: docker.io/openruntimes/executor:1.3.3}
       - contains:
           path: spec.template.spec.containers[0].env
           content: {name: OPR_EXECUTOR_IMAGES, value: "openruntimes/node:v5-22,openruntimes/python-ml:v5-3.11,openruntimes/static:v5-1"}

@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: appwrite/postgres:0.1.0
+          image: appwrite/postgres:0.2.1
           env:
             - {name: POSTGRES_DB, value: appwrite_ext}
             - {name: POSTGRES_USER, value: appwrite_ext}
