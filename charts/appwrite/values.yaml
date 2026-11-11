@@ -1849,7 +1849,7 @@ geo:
     # -- Image repository.
     repository: appwrite/geo
     # -- Image tag.
-    tag: 0.3.6
+    tag: 0.3.7
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
