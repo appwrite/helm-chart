@@ -120,8 +120,10 @@ jobs:
           }
           # KSV-0125 (images from untrusted registries) flags every container:
           # the chart pulls from docker.io, ghcr.io and quay.io by design.
+          # .github/trivy-ignore.rego: by-design findings, each scoped to one resource.
           printf '%s\n' KSV-0125 > trivy-ignore.txt
-          trivy config --ignorefile trivy-ignore.txt --format json --output trivy-config.json rendered
+          trivy config --ignorefile trivy-ignore.txt --ignore-policy .github/trivy-ignore.rego \
+            --format json --output trivy-config.json rendered
           trivy convert --severity MEDIUM,HIGH,CRITICAL --format sarif --output trivy-config.sarif trivy-config.json
           {
             echo '### Rendered manifests'

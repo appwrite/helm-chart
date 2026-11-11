@@ -325,8 +325,7 @@ Writable paths are `emptyDir`s. Build Jobs run in their own namespace under
 
 - The Appwrite image runs as `www-data` (UID 82). The API and realtime listen
   on 8080 instead of 80.
-- The geo image listens on port 80, so its pod sets the namespaced sysctl
-  `net.ipv4.ip_unprivileged_port_start=0`, which the `restricted` profile allows.
+- Geo listens on 8080 (`GEO_PORT`).
 - ServiceAccount tokens aren't mounted; nothing in Appwrite uses the
   Kubernetes API. The exception is the orchestrator, which mounts its own
   ServiceAccount's token. Its Role, the only RBAC in the chart, is limited to
