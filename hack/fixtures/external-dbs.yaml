@@ -97,7 +97,7 @@ spec:
     spec:
       containers:
         - name: clickhouse
-          image: clickhouse/clickhouse-server:26.4.5-alpine
+          image: clickhouse/clickhouse-server:26.8.36-alpine
           env:
             - {name: CLICKHOUSE_DB, value: usage}
             - {name: CLICKHOUSE_USER, value: usage}

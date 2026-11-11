@@ -14,10 +14,11 @@
   # replaced this one, or a week when the log is no longer written at all.
   # The named logs must match the ones system-log-ttl.xml removes: a log that
   # is still written gets replaced on the next restart if its TTL is altered here.
+  # ClickHouse 26.7+ marks the tables it leaves behind table_readonly, which rejects the ALTER.
   client --format TSVRaw <<'SQL' | client --multiquery
-SELECT concat('ALTER TABLE system.', stale.name, ' MODIFY TTL ', if(active.name = '', 'event_date + INTERVAL 7 DAY DELETE', splitByString(' SETTINGS ', splitByString(' TTL ', active.engine_full)[2])[1]), ';')
+SELECT concat(if(stale.readonly, concat('ALTER TABLE system.', stale.name, ' RESET SETTING table_readonly;'), ''), 'ALTER TABLE system.', stale.name, ' MODIFY TTL ', if(active.name = '', 'event_date + INTERVAL 7 DAY DELETE', splitByString(' SETTINGS ', splitByString(' TTL ', active.engine_full)[2])[1]), ';')
 FROM (
-  SELECT name, splitByChar('_', name)[-1] AS suffix, arrayStringConcat(arrayPopBack(splitByChar('_', name)), '_') AS log
+  SELECT name, match(engine_full, 'table_readonly = (1|true)') AS readonly, splitByChar('_', name)[-1] AS suffix, arrayStringConcat(arrayPopBack(splitByChar('_', name)), '_') AS log
   FROM system.tables
   WHERE database = 'system'
     AND position(engine_full, ' TTL ') = 0
