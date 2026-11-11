@@ -1003,7 +1003,7 @@ The build orchestrator and the executor.
 | embedding.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | embedding.image.registry | string | `"docker.io"` | Image registry. |
 | embedding.image.repository | string | `"appwrite/embedding"` | Image repository. |
-| embedding.image.tag | string | `"0.3.1"` | Image tag. |
+| embedding.image.tag | string | `"0.3.2"` | Image tag. |
 | embedding.models | list | `["nomic-embed-text"]` | Models to load (`EMBEDDING_MODELS`). |
 | embedding.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | embedding.persistence.enabled | bool | `true` | Keep downloaded models in a PersistentVolumeClaim. |

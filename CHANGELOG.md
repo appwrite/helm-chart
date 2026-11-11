@@ -10,6 +10,9 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- `appwrite/embedding` 0.3.2, which clears the image's critical findings and
+  most of its high ones. Models now load on the first request and unload after
+  five idle minutes, so the pod's idle memory drops.
 - The orchestrator's jobs service and job sidecar 5.1.0, the major version on
   Appwrite's main branch, which clear both images' critical and high findings.
   5.x gives build pods their own user namespace by default; the chart keeps
