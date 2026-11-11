@@ -45,7 +45,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Changed
 
-- The built-in ClickHouse's `init.sh` resets `table_readonly`, which ClickHouse 26.7 and later set on the system log tables they replace, before giving those tables a TTL. Without it the pod fails to start after the upgrade to 26.8.
+- The built-in ClickHouse's `init.sh` resets `table_readonly`, which ClickHouse 26.7 and later set on the system log tables they replace, before giving those tables a TTL. Without it the pod fails to start after the upgrade to 26.8, which also needs AVX2 on x86 nodes.
 - The browser 0.3.8 and ExifTool 0.1.1 images, as in Appwrite 2.6.2's
   `docker-compose.yml`.
 - `_APP_MEMORY_LIMIT`, new in Appwrite 2.6.2, sets the PHP memory limit of
