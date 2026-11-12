@@ -169,7 +169,7 @@ spec:
             - name: OPR_EXECUTOR_INACTIVE_THRESHOLD
               value: {{ include "appwrite.envValue" $e.inactiveThreshold | quote }}
             - name: OPR_EXECUTOR_MAINTENANCE_INTERVAL
-              value: "3600"
+              value: {{ include "appwrite.envValue" $e.maintenanceInterval | quote }}
             {{- with $e.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

@@ -905,7 +905,8 @@ The build orchestrator and the executor.
 | compute.executor.image.repository | string | `"openruntimes/executor"` | Image repository. |
 | compute.executor.image.tag | string | `"1.3.3"` | Image tag. |
 | compute.executor.images | list | `[]` | Runtime images to pull when the executor starts (`OPR_EXECUTOR_IMAGES`). Empty derives them from `functionsRuntimes` and `sitesRuntimes`, e.g. `node-22` becomes `openruntimes/node:v5-22`; with both of those empty too, nothing is pulled ahead of the first executions. |
-| compute.executor.inactiveThreshold | int | `60` | Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). The executor removes idle runtimes in its maintenance pass, which the chart runs hourly (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`), so a runtime can stay up to an hour longer. |
+| compute.executor.inactiveThreshold | int | `60` | Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). The executor removes idle runtimes in its maintenance pass, so a runtime can stay up to one `maintenanceInterval` longer. |
+| compute.executor.maintenanceInterval | int | `3600` | Seconds between the executor's maintenance passes, which remove idle runtimes (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`). |
 | compute.executor.namespace | string | `""` | Namespace of the executor. Defaults to `<release namespace>-executor`. Use a different one per release when several releases share a namespace. |
 | compute.executor.networkPolicy.deniedCIDRs | list | `[]` | CIDRs executor pods may not reach, on top of the private, link-local, CGNAT and special-purpose ranges always blocked. |
 | compute.executor.networkPolicy.enabled | bool | `true` | Restrict executor pods' traffic: incoming only from Appwrite pods of this release; outgoing (which includes every runtime) only to DNS, the S3 endpoint and public addresses. Takes effect only with a CNI that enforces NetworkPolicies. |

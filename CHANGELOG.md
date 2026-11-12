@@ -61,6 +61,10 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Added
 
+- `compute.executor.maintenanceInterval` sets how often the executor's
+  maintenance pass removes idle runtimes (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`,
+  3600 seconds by default, as before), so a lower interval frees their memory
+  sooner.
 - The render fails when `compute.secrets.orchestratorSecret` is Appwrite's
   placeholder `your-secret-key`, which Appwrite 2.6.2 refuses for job
   callbacks, unless `compute.secrets.existingSecret` supplies the secret
