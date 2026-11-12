@@ -93,11 +93,11 @@ annotations:
     - name: embedding
       image: docker.io/appwrite/embedding:0.3.3
     - name: executor
-      image: docker.io/openruntimes/executor:1.3.3
+      image: docker.io/openruntimes/executor:1.3.4
     - name: exiftool
       image: ghcr.io/appwrite/exiftool:0.1.2
     - name: geo
-      image: docker.io/appwrite/geo:0.3.7
+      image: docker.io/appwrite/geo:0.3.8
     - name: orchestrator
       image: ghcr.io/open-runtimes/orchestrator/jobs-service:5.1.0
     - name: redis

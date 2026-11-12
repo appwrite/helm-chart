@@ -10,6 +10,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Security
 
+- `openruntimes/executor` 1.3.4 and `appwrite/geo` 0.3.8, rebuilt on base images with patched git, which clear both images' high findings.
 - Console 1.2.176-self-hosted, `appwrite/embedding` 0.3.3, `appwrite/exiftool` 0.1.2 and `appwrite/autogravity` 0.0.12, rebuilt with patched Debian packages (and, for Autogravity, a patched Go), which clear the open critical and high findings in all four images.
 - ClickHouse 26.8.36, the newest patch of the 26.8 LTS line, which updates musl, zlib and OpenSSL and clears the image's high findings.
 - `appwrite/geo` 0.3.7, which updates `symfony/http-client` to 7.4.23 and clears the image's last high finding.
