@@ -14,12 +14,13 @@ maintenance: {name: maintenance, coroutines: 1, optional: true}
 databases: {name: databases, coroutines: 1}
 builds: {name: builds, coroutines: 8, storage: true}
 jobs: {name: jobs, coroutines: 8, storage: true}
-screenshots: {name: screenshots, coroutines: 8, storage: true}
+screenshots: {name: screenshots, coroutines: 4, storage: true}
 certificates: {name: certificates, coroutines: 8, storage: true, certbot: true}
 executions: {name: executions, coroutines: 8}
 functions: {name: functions, coroutines: 8}
 mails: {name: mails, coroutines: 1}
 notifications: {name: notifications, coroutines: 1}
+alerts: {name: alerts, coroutines: 8, optional: true}
 messaging: {name: messaging, coroutines: 1, storage: true}
 migrations: {name: migrations, coroutines: 1, storage: true}
 {{- end }}

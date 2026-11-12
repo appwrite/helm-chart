@@ -1,6 +1,6 @@
 # Appwrite Helm chart
 
-![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.6.2](https://img.shields.io/badge/AppVersion-2.6.2-informational?style=flat-square)
+![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.7.2](https://img.shields.io/badge/AppVersion-2.7.2-informational?style=flat-square)
 
 Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 
@@ -595,7 +595,7 @@ The SMTP server Appwrite sends mail through.
 | console.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | console.image.registry | string | `"docker.io"` | Image registry. |
 | console.image.repository | string | `"appwrite/new"` | Image repository. |
-| console.image.tag | string | `"1.2.176-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
+| console.image.tag | string | `"1.2.181-self-hosted"` | Image tag. Pinned independently from appVersion so Console security updates can ship separately. |
 | console.livenessProbe.enabled | bool | `true` | Enable the liveness probe. |
 | console.livenessProbe.failureThreshold | int | `3` | Consecutive failures before the probe counts as failed. |
 | console.livenessProbe.periodSeconds | int | `20` | Seconds between probes. |
@@ -718,13 +718,13 @@ The SMTP server Appwrite sends mail through.
 | tasks.podSecurityContext | object | `{}` | Pod security context, merged key by key over `podSecurityContext`. |
 | tasks.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
 | tasks.scheduler.enabled | bool | `true` | Run the scheduler for function, execution and message schedules. |
-| tasks.scheduler.mode | string | `"combined"` | `combined` runs one scheduler pod. `separate` runs the functions, executions and messages schedulers and the resource-usage task as separate pods, each with these resources. |
+| tasks.scheduler.mode | string | `"combined"` | `combined` runs one scheduler pod. `separate` runs the functions, executions, messages and alerts schedulers and the resource-usage task as separate pods, each with these resources. |
 | tasks.scheduler.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests and limits. |
 | tasks.terminationGracePeriodSeconds | int | `30` | Seconds to wait on shutdown. |
 | tasks.tolerations | list | `[]` | Tolerations. Empty inherits `defaults.tolerations`. |
 | workers.affinity | object | `{}` | Affinity. Empty inherits `defaults.affinity`. |
 | workers.combined.cpuNum | string | `""` | CPUs Appwrite sizes its connection pools for (`_APP_CPU_NUM`). Derived from resources when empty. |
-| workers.combined.maxCoroutines | int | `79` | Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default is the sum of every queue's concurrency in Appwrite's own combined worker. |
+| workers.combined.maxCoroutines | int | `83` | Coroutine budget used to size connection pools (`_APP_WORKER_MAX_COROUTINES`). The default is the sum of every queue's concurrency in Appwrite's own combined worker. |
 | workers.combined.processes | int | `1` | Worker processes per pod (`_APP_WORKERS_NUM`). Must be 1: each process would consume the `databases` queue. |
 | workers.combined.replicaCount | int | `1` | Replicas. Capped at 1, because the `databases` queue must have a single consumer; use `separate` or `grouped` to scale other queues. |
 | workers.combined.resources | object | `{"limits":{"memory":"2Gi"},"requests":{"cpu":"250m","memory":"512Mi"}}` | Resource requests and limits. |
@@ -741,6 +741,14 @@ The SMTP server Appwrite sends mail through.
 | workers.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
 | workers.podSecurityContext | object | `{}` | Pod security context, merged key by key over `podSecurityContext`. |
 | workers.priorityClassName | string | `""` | Priority class. Empty inherits `defaults.priorityClassName`. |
+| workers.queues.alerts.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
+| workers.queues.alerts.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
+| workers.queues.alerts.autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| workers.queues.alerts.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
+| workers.queues.alerts.enabled | bool | `true` | Consume the `alerts` queue. Usage alert rules and their notifications. |
+| workers.queues.alerts.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.alerts.replicaCount | int | `1` | Replicas. |
+| workers.queues.alerts.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
 | workers.queues.builds.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |
 | workers.queues.builds.autoscaling.maxReplicas | int | `5` | Maximum replicas. |
 | workers.queues.builds.autoscaling.minReplicas | int | `1` | Minimum replicas. |
@@ -834,7 +842,7 @@ The SMTP server Appwrite sends mail through.
 | workers.queues.screenshots.autoscaling.minReplicas | int | `1` | Minimum replicas. |
 | workers.queues.screenshots.autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilisation, in percent. |
 | workers.queues.screenshots.enabled | bool | `true` | Consume the `screenshots` queue. Site screenshots (needs the browser service). |
-| workers.queues.screenshots.maxCoroutines | int | `8` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
+| workers.queues.screenshots.maxCoroutines | int | `4` | Concurrent jobs per process (`_APP_WORKER_MAX_COROUTINES`). |
 | workers.queues.screenshots.replicaCount | int | `1` | Replicas. |
 | workers.queues.screenshots.resources | object | `{}` | Resource requests and limits. Empty inherits `workers.resources`. |
 | workers.queues.statsResources.autoscaling.enabled | bool | `false` | Create a HorizontalPodAutoscaler. |

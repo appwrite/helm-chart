@@ -3,7 +3,7 @@
 {{- $tasks := list }}
 {{- if $scheduler.enabled }}
 {{- if eq $scheduler.mode "separate" }}
-{{- range $name := list "functions" "executions" "messages" "maintenance" }}
+{{- range $name := list "functions" "executions" "messages" "maintenance" "alerts" }}
 {{- $tasks = append $tasks (dict "name" (printf "scheduler-%s" $name) "values" $scheduler "command" (list "php" "app/cli.php" (printf "schedule-%s" $name)) "extra" (dict "_APP_WORKER_MAX_COROUTINES" "8")) }}
 {{- end }}
 {{- /* The combined scheduler also counts project resources; run that loop on its own. */}}
