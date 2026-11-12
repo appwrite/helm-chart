@@ -3,7 +3,7 @@ name: appwrite
 description: Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 type: application
 version: 2.1.0
-appVersion: "2.6.2"
+appVersion: "2.7.2"
 kubeVersion: ">=1.29.0-0"
 home: https://github.com/appwrite/helm-chart
 icon: https://raw.githubusercontent.com/appwrite/appwrite/2.6.2/public/images/logos/appwrite-icon.svg
@@ -73,7 +73,7 @@ annotations:
       description: Troubleshooting for site deployments whose screenshot fails.
   artifacthub.io/images: |
     - name: appwrite
-      image: docker.io/appwrite/appwrite:2.6.2
+      image: docker.io/appwrite/appwrite:2.7.2
     - name: autogravity
       image: ghcr.io/appwrite/autogravity:0.0.12
     - name: browser
@@ -83,7 +83,7 @@ annotations:
     - name: clickhouse
       image: docker.io/clickhouse/clickhouse-server:26.8.36-alpine
     - name: console
-      image: docker.io/appwrite/new:1.2.176-self-hosted
+      image: docker.io/appwrite/new:1.2.181-self-hosted
     - name: database
       image: docker.io/appwrite/postgres:0.2.1
     - name: database-exporter

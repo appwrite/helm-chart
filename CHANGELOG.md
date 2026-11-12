@@ -47,6 +47,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ### Changed
 
+- Appwrite 2.7.2 (`appVersion`), with Console 1.2.181-self-hosted. Adds the `alerts` queue (8 coroutines) in `separate` and `grouped` worker modes and the alerts scheduler in `separate` scheduler mode; the combined worker's coroutine budget goes to 83 and `screenshots` to 4, matching Appwrite. The env defaults gain 2.7's variables (realtime limits, alerts, APNs and Functions domain fallback). The migration hook runs 2.7's V25 migration on upgrade.
 - The built-in ClickHouse's `init.sh` resets `table_readonly`, which ClickHouse 26.7 and later set on the system log tables they replace, before giving those tables a TTL. Without it the pod fails to start after the upgrade to 26.8, which also needs AVX2 on x86 nodes.
 - The browser 0.3.8 and ExifTool 0.1.1 images, as in Appwrite 2.6.2's
   `docker-compose.yml`.

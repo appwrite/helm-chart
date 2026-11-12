@@ -287,7 +287,7 @@ opens its own database pool, sized _APP_CONNECTIONS_MAX / _APP_POOL_CLIENTS.
 {{- end }}
 {{- if .Values.mqtt.enabled }}{{ $n = add $n (.Values.mqtt.replicaCount | int) }}{{ end }}
 {{- $t := .Values.tasks }}
-{{- if $t.scheduler.enabled }}{{ $n = add $n (ternary 4 1 (eq $t.scheduler.mode "separate")) }}{{ end }}
+{{- if $t.scheduler.enabled }}{{ $n = add $n (ternary 6 1 (eq $t.scheduler.mode "separate")) }}{{ end }}
 {{- if $t.maintenance.enabled }}{{ $n = add $n 1 }}{{ end }}
 {{- if $t.interval.enabled }}{{ $n = add $n 1 }}{{ end }}
 {{- $n }}
