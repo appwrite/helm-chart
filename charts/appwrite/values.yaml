@@ -858,7 +858,7 @@ compute:
       # -- Image repository.
       repository: openruntimes/executor
       # -- Image tag.
-      tag: 1.3.3
+      tag: 1.3.4
       # -- Image digest.
       digest: ""
     dind:
@@ -1849,7 +1849,7 @@ geo:
     # -- Image repository.
     repository: appwrite/geo
     # -- Image tag.
-    tag: 0.3.7
+    tag: 0.3.8
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
