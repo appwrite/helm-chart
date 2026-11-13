@@ -1,10 +1,11 @@
 name: Renovate generate
 
 # Renovate bumps image tags in values.yaml and Chart.yaml but can't run
-# `make generate`, so its pull requests would fail the "Generated files are
-# up to date" check. This regenerates values.schema.json, the chart README
-# and the artifacthub.io/images annotation and commits them to the pull
-# request branch.
+# `make generate` or write a changelog entry, so its pull requests would fail
+# the "Generated files are up to date" and "Changelog" checks. This adds an
+# entry under [Unreleased] from the pull request title, regenerates
+# values.schema.json, the chart README and the artifacthub.io/images
+# annotation, and commits them to the pull request branch.
 #
 # The commit is made with a GitHub App token (secrets RENOVATE_HOOK_APP_ID and
 # RENOVATE_HOOK_PRIVATE_KEY, see CONTRIBUTING.md) through the API, so it's
@@ -31,7 +32,7 @@ jobs:
     name: Regenerate files on Renovate pull requests
     # The pull request's author, which a later pusher can't change. Forks
     # never get here: Renovate pushes branches to this repository.
-    if: github.event.pull_request.user.login == 'renovate[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    if: contains(fromJSON('["renovate[bot]", "renovate-appwrite[bot]"]'), github.event.pull_request.user.login) && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: >-
       ${{ (github.event_name != 'pull_request'
       || github.event.pull_request.head.repo.full_name == github.repository)
@@ -56,11 +57,28 @@ jobs:
           curl -fsSL "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz" \
             | sudo tar -xz -C /usr/local/bin helm-docs
           helm plugin install https://github.com/losisin/helm-values-schema-json --version "${HELM_SCHEMA_VERSION}" --verify=false
+      - name: Add a changelog entry
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # The Changelog check wants an entry under [Unreleased]; an image bump is one users see.
+          body="${TITLE#*: }"
+          entry="- ${body^}."
+          if ! grep -qxF -- "$entry" CHANGELOG.md; then
+            awk -v entry="$entry" '
+              /^## \[Unreleased\]/ { print; unreleased = 1; next }
+              unreleased && /^### Changed/ { print; getline; print; print entry; unreleased = 0; next }
+              unreleased && /^## \[/ { print "### Changed\n\n" entry "\n"; unreleased = 0 }
+              { print }
+              END { if (unreleased) print "\n### Changed\n\n" entry }
+            ' CHANGELOG.md > "${RUNNER_TEMP}/CHANGELOG.md"
+            mv "${RUNNER_TEMP}/CHANGELOG.md" CHANGELOG.md
+          fi
       - name: make generate
         id: generate
         run: |
           make generate
-          changed=$(git diff --name-only -- charts/appwrite)
+          changed=$(git diff --name-only -- charts/appwrite CHANGELOG.md)
           if [[ -z "$changed" ]]; then
             echo "Generated files are up to date."
           else
