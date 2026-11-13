@@ -26,8 +26,8 @@ env:
   REGISTRY: ghcr.io
   REPOSITORY: ${{ github.repository_owner }}/charts
   CHART: appwrite
-  COSIGN_VERSION: v3.1.3
-  ORAS_VERSION: 1.3.4
+  COSIGN_VERSION: v3.1.4
+  ORAS_VERSION: 1.3.6
   # The signer docs/security.md tells users to verify against.
   CERT_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/release.yaml@refs/heads/main
   CERT_OIDC_ISSUER: https://token.actions.githubusercontent.com
@@ -53,7 +53,7 @@ jobs:
           persist-credentials: false
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v4.3.0
+          version: v4.3.1
 
       - name: Read the chart version
         id: chart

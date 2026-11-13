@@ -537,7 +537,7 @@ redis:
         # -- Image repository.
         repository: oliver006/redis_exporter
         # -- Image tag.
-        tag: v1.96.0-alpine
+        tag: v1.97.0-alpine
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
@@ -578,7 +578,7 @@ clickhouse:
       # -- Image repository.
       repository: clickhouse/clickhouse-server
       # -- Image tag.
-      tag: 26.8.36-alpine
+      tag: 26.10.4-alpine
       # -- Image digest.
       digest: ""
       # -- Image pull policy.
@@ -706,7 +706,7 @@ storage:
         # -- Image repository.
         repository: chrislusf/seaweedfs
         # -- Image tag.
-        tag: "4.52"
+        tag: "4.53"
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
