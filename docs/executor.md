@@ -334,10 +334,11 @@ Set them before users create functions and sites: existing ones keep the
 specification they have. Then size the `dind` limits for the runtimes you
 expect at once.
 
-Runtimes stay warm after use. The executor checks for idle runtimes once an
-hour and removes those idle for longer than
+Runtimes stay warm after use. The executor checks for idle runtimes every
+`compute.executor.maintenanceInterval` seconds (3600, an hour, by default)
+and removes those idle for longer than
 `compute.executor.inactiveThreshold` seconds (60 by default), so an idle
-runtime holds its memory for up to an hour.
+runtime holds its memory for up to one interval longer than that.
 
 `compute.executor.replicaCount` (1 by default) adds executor pods, each with
 its own daemon, spread across nodes where possible. Appwrite calls the

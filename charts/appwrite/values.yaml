@@ -896,10 +896,12 @@ compute:
         memory: 4Gi
     # -- Seconds a runtime may stay idle before it's removed
     # (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). The executor removes idle runtimes
-    # in its maintenance pass, which the chart runs hourly
-    # (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`), so a runtime can stay up to an
-    # hour longer.
+    # in its maintenance pass, so a runtime can stay up to one
+    # `maintenanceInterval` longer.
     inactiveThreshold: 60
+    # -- Seconds between the executor's maintenance passes, which remove idle
+    # runtimes (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`).
+    maintenanceInterval: 3600 # @schema minimum: 1
     # -- Runtime images to pull when the executor starts (`OPR_EXECUTOR_IMAGES`).
     # Empty derives them from `functionsRuntimes` and `sitesRuntimes`, e.g.
     # `node-22` becomes `openruntimes/node:v5-22`; with both of those empty

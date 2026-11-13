@@ -1326,8 +1326,13 @@
               }
             },
             "inactiveThreshold": {
-              "description": "Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). The executor removes idle runtimes in its maintenance pass, which the chart runs hourly (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`), so a runtime can stay up to an hour longer.",
+              "description": "Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). The executor removes idle runtimes in its maintenance pass, so a runtime can stay up to one `maintenanceInterval` longer.",
               "type": "integer"
+            },
+            "maintenanceInterval": {
+              "description": "Seconds between the executor's maintenance passes, which remove idle runtimes (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`).",
+              "type": "integer",
+              "minimum": 1
             },
             "namespace": {
               "description": "Namespace of the executor. Defaults to `<release namespace>-executor`. Use a different one per release when several releases share a namespace.",
