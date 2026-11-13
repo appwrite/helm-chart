@@ -81,7 +81,7 @@ annotations:
     - name: builds
       image: ghcr.io/open-runtimes/orchestrator/job-sidecar:5.1.0
     - name: clickhouse
-      image: docker.io/clickhouse/clickhouse-server:26.8.36-alpine
+      image: docker.io/clickhouse/clickhouse-server:26.10.4-alpine
     - name: console
       image: docker.io/appwrite/new:1.2.181-self-hosted
     - name: database
@@ -103,7 +103,7 @@ annotations:
     - name: redis
       image: docker.io/library/redis:7.4.12-alpine
     - name: redis-exporter
-      image: docker.io/oliver006/redis_exporter:v1.96.0-alpine
+      image: docker.io/oliver006/redis_exporter:v1.97.0-alpine
     - name: s3
-      image: docker.io/chrislusf/seaweedfs:4.52
+      image: docker.io/chrislusf/seaweedfs:4.53
   artifacthub.io/displayName: Appwrite
