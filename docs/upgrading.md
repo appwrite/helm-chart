@@ -11,6 +11,7 @@ the chart upgrades Appwrite. You can pin a different Appwrite version with
 | 1.0.0 | 2.3.0 |
 | 2.0.0 | 2.5.0 |
 | 2.1.0 | 2.6.1 |
+| 2.2.0 | 2.7.2 |
 
 The [changelog](../CHANGELOG.md) lists what changed in each chart version,
 and [version notes](#version-notes) what you have to do about it.
@@ -53,11 +54,11 @@ the Job as soon as the manifests are applied.
    for breaking API changes your apps depend on.
 4. **Don't skip a data migration.** `migrate` applies only the migration of
    the version it runs and doesn't replay those of the versions in between.
-   Several releases share a migration: every version from 1.9.6 to 2.6.2
+   Several releases share a migration: every version from 1.9.6 to 2.7.2
    uses the same one, so 2.0 → 2.6 is a single step. 1.8 → 2.6 isn't: go to
    a release from 1.9.0 to 1.9.5 first, whose migration 2.6 doesn't repeat.
    The table is in Appwrite's
-   [`src/Appwrite/Migration/Migration.php`](https://github.com/appwrite/appwrite/blob/2.6.2/src/Appwrite/Migration/Migration.php).
+   [`src/Appwrite/Migration/Migration.php`](https://github.com/appwrite/appwrite/blob/2.7.2/src/Appwrite/Migration/Migration.php).
 
 ```console
 helm upgrade appwrite oci://ghcr.io/appwrite/charts/appwrite \
@@ -182,6 +183,67 @@ first. Each entry says what changed, what to do, and shows the values before
 and after. A release without an entry needs nothing beyond `helm upgrade`.
 When you skip versions, apply the entries of every version in between,
 oldest first.
+
+### To 2.2.0
+
+Appwrite 2.7.2. The data migration runs: 2.6 and 2.7 share a migration
+class, but 2.7's adds attributes, indexes and collections, so back up first.
+The built-in PostgreSQL, Redis, ClickHouse and object store restart once, on
+newer images.
+
+**Built-in ClickHouse:** 26.8 needs AVX2 on x86 nodes. On a node without it
+the pod doesn't start; pin the previous image with `clickhouse.builtin.image.tag`
+or move the pod to a node that has it.
+
+**New pods.** With `workers.mode: separate`, a `worker-alerts` Deployment
+joins the workers, and with `tasks.scheduler.mode: separate`, a
+`scheduler-alerts` task.
+
+**Grouped workers:** the new `alerts` queue runs in a `worker-alerts`
+Deployment of its own unless a group lists it. To keep the number of pods,
+add it to a group:
+
+```yaml
+workers:
+  groups:
+    core:
+      queues: [databases, deletes, maintenance, alerts, mails, messaging, notifications, certificates, migrations, webhooks]
+```
+
+**Executor secret:** the executor Appwrite 2.6 ran (1.1.2) let a function or
+site read files from the executor container, its secret included. If anyone
+you don't fully trust can deploy functions or sites, rotate
+`compute.secrets.executorSecret` (or the `executor-secret` key of your own
+Secret) after the upgrade.
+
+**What Appwrite 2.7 changes** for self-hosters (release notes:
+[2.6.2](https://github.com/appwrite/appwrite/releases/tag/2.6.2),
+[2.7.0](https://github.com/appwrite/appwrite/releases/tag/2.7.0),
+[2.7.1](https://github.com/appwrite/appwrite/releases/tag/2.7.1),
+[2.7.2](https://github.com/appwrite/appwrite/releases/tag/2.7.2)):
+
+- A realtime connection holds at most 100 subscriptions, 100 channels and
+  100 queries, and a user at most 32 connections per realtime pod. Raise the
+  first three with `_APP_LIMIT_REALTIME_SUBSCRIPTIONS`,
+  `_APP_LIMIT_REALTIME_CHANNELS` and `_APP_LIMIT_REALTIME_QUERIES`, set
+  through `appwrite.config`.
+- Bulk update, upsert and delete from client sessions return 401. They need
+  an API key or a console user.
+- An API key that creates a migration needs the write scope of every
+  resource it imports, and a key that configures a function or site can only
+  add scopes it holds itself.
+- Turning MFA off needs a recent MFA challenge, and a TOTP code works once.
+- Push messages a device hadn't yet received over MQTT at the time of the
+  upgrade aren't delivered when it reconnects.
+- Project SMTP, messaging SMTP providers and migration sources on a private
+  or reserved address need it in `_APP_ALLOWED_INTERNAL_ADDRESSES`
+  ([networking.md](networking.md#requests-to-private-addresses)).
+- If you changed `_APP_DOMAIN_FUNCTIONS`, list the old domain in
+  `_APP_DOMAIN_FUNCTIONS_FALLBACK` to keep serving preview URLs on it.
+- `_APP_MAINTENANCE_INTERVAL` should be a multiple of 300 seconds. The
+  default, 86400, is.
+- The server key is versioned. Nothing changes with the default; keep
+  `_APP_OPENSSL_KEY_V1`.
 
 ### To 2.1.0
 
