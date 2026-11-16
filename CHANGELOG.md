@@ -8,6 +8,11 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-11-16
+
+Appwrite 2.7.2. Upgrading from 2.1.0: see
+[docs/upgrading.md](docs/upgrading.md#to-220).
+
 ### Security
 
 - `appwrite/geo` 0.3.9, which updates libpq to 18.7 and clears the image's high PostgreSQL findings.
