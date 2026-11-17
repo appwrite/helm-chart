@@ -8,6 +8,10 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ## [Unreleased]
 
+### Security
+
+- Appwrite 2.7.3 (`appVersion`), rebuilt on `appwrite/base` 2.2.12, which updates libpq to 18.7 and clears the Appwrite image's high PostgreSQL findings.
+
 ## [2.2.0] - 2026-11-16
 
 Appwrite 2.7.2. Upgrading from 2.1.0: see
