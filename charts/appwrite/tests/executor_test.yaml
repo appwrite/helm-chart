@@ -222,10 +222,22 @@ tests:
           content: {name: OPR_EXECUTOR_INACTIVE_THRESHOLD, value: "60"}
       - contains:
           path: spec.template.spec.containers[0].env
+          content: {name: OPR_EXECUTOR_MAINTENANCE_INTERVAL, value: "3600"}
+      - contains:
+          path: spec.template.spec.containers[0].env
           content:
             name: S3_SECRET_KEY
             valueFrom:
               secretKeyRef: {name: aw-appwrite-executor, key: s3-secret-key}
+
+  - it: takes a maintenance interval of your own
+    template: templates/executor/deployment.yaml
+    set:
+      compute.executor.maintenanceInterval: 60
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: OPR_EXECUTOR_MAINTENANCE_INTERVAL, value: "60"}
 
   - it: pulls the runtime images you list
     template: templates/executor/deployment.yaml
