@@ -3,10 +3,10 @@ name: appwrite
 description: Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 type: application
 version: 2.2.0
-appVersion: "2.7.2"
+appVersion: "2.7.3"
 kubeVersion: ">=1.29.0-0"
 home: https://github.com/appwrite/helm-chart
-icon: https://raw.githubusercontent.com/appwrite/appwrite/2.7.2/public/images/logos/appwrite-icon.svg
+icon: https://raw.githubusercontent.com/appwrite/appwrite/2.7.3/public/images/logos/appwrite-icon.svg
 sources:
   - https://github.com/appwrite/helm-chart
   - https://github.com/appwrite/appwrite
@@ -106,7 +106,7 @@ annotations:
       description: The `artifacthub.io/images` annotation names the built-in datastores' images after their component (`database`, `redis`, `clickhouse`, `s3`, `database-exporter`, `redis-exporter`) instead of `builtin` and `builtin-exporter`. The nightly Trivy scan uploads under these names, so the six images overwrote each other's results and alerts flapped between fixed and reopened every night.
   artifacthub.io/images: |
     - name: appwrite
-      image: docker.io/appwrite/appwrite:2.7.2
+      image: docker.io/appwrite/appwrite:2.7.3
     - name: autogravity
       image: ghcr.io/appwrite/autogravity:0.0.12
     - name: browser
