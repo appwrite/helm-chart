@@ -140,11 +140,11 @@ tests:
     asserts:
       - matchRegex:
           path: metadata.name
-          pattern: ^aw-appwrite-migrate-2-7-2-[0-9a-f]{8}$
+          pattern: ^aw-appwrite-migrate-2-7-3-[0-9a-f]{8}$
       # Pinned so the rename test below compares against this exact render.
       - equal:
           path: metadata.name
-          value: aw-appwrite-migrate-2-7-2-4c0f30e6
+          value: aw-appwrite-migrate-2-7-3-afea621c
       - notExists:
           path: metadata.annotations["helm.sh/hook"]
       - notExists:
@@ -158,10 +158,10 @@ tests:
     asserts:
       - notEqual:
           path: metadata.name
-          value: aw-appwrite-migrate-2-7-2-4c0f30e6
+          value: aw-appwrite-migrate-2-7-3-afea621c
       - matchRegex:
           path: metadata.name
-          pattern: ^aw-appwrite-migrate-2-7-2-[0-9a-f]{8}$
+          pattern: ^aw-appwrite-migrate-2-7-3-[0-9a-f]{8}$
 
   - it: renders nothing in none mode
     templates:
