@@ -8,6 +8,10 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-11-18
+
+Appwrite 2.7.3.
+
 ### Added
 
 - `compute.executor.maintenanceInterval` sets how often the executor's

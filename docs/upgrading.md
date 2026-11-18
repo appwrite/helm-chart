@@ -12,6 +12,7 @@ the chart upgrades Appwrite. You can pin a different Appwrite version with
 | 2.0.0 | 2.5.0 |
 | 2.1.0 | 2.6.1 |
 | 2.2.0 | 2.7.2 |
+| 2.3.0 | 2.7.3 |
 
 The [changelog](../CHANGELOG.md) lists what changed in each chart version,
 and [version notes](#version-notes) what you have to do about it.

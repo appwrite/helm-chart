@@ -2,7 +2,7 @@ apiVersion: v2
 name: appwrite
 description: Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 type: application
-version: 2.2.0
+version: 2.3.0
 appVersion: "2.7.3"
 kubeVersion: ">=1.29.0-0"
 home: https://github.com/appwrite/helm-chart
@@ -38,72 +38,10 @@ annotations:
     - name: support
       url: https://github.com/appwrite/helm-chart/issues
   artifacthub.io/changes: |
-    - kind: security
-      description: '`appwrite/geo` 0.3.9, which updates libpq to 18.7 and clears the image''s high PostgreSQL findings.'
-    - kind: security
-      description: '`openruntimes/executor` 1.3.4 and `appwrite/geo` 0.3.8, rebuilt on base images with patched git, which clear both images'' high findings.'
-    - kind: security
-      description: Console 1.2.176-self-hosted, `appwrite/embedding` 0.3.3, `appwrite/exiftool` 0.1.2 and `appwrite/autogravity` 0.0.12, rebuilt with patched Debian packages (and, for Autogravity, a patched Go), which clear the open critical and high findings in all four images.
-    - kind: security
-      description: ClickHouse 26.8.36, the newest patch of the 26.8 LTS line, which updates musl, zlib and OpenSSL and clears the image's high findings.
-    - kind: security
-      description: '`appwrite/geo` 0.3.7, which updates `symfony/http-client` to 7.4.23 and clears the image''s last high finding.'
-    - kind: security
-      description: '`appwrite/postgres` 0.2.1, `appwrite/browser` 0.3.13 and `openruntimes/executor` 1.3.3, rebuilt with patched packages, which clear all of the database and executor images'' critical and high findings and all but one of the browser''s. 0.2.1 adds pg_cron and preloads it with pg_stat_statements on new data directories.'
-    - kind: security
-      description: '`appwrite/embedding` 0.3.2, which clears the image''s critical findings and most of its high ones. Models now load on the first request and unload after five idle minutes, so the pod''s idle memory drops.'
-    - kind: security
-      description: Geo listens on 8080 (`GEO_PORT`) and no longer lowers the pod's unprivileged port range.
-    - kind: security
-      description: The nightly manifest scan ignores the executor's, the orchestrator Role's and the env ConfigMap's by-design findings, each scoped to that resource.
-    - kind: security
-      description: The orchestrator's jobs service and job sidecar 5.1.0, the major version on Appwrite's main branch, which clear both images' critical and high findings. 5.x gives build pods their own user namespace by default; the chart keeps them in the node's (`compute.builds.hostUsers`), as before.
-    - kind: security
-      description: '`appwrite/geo` 0.3.6, Docker 29.9.3-dind and Console 1.2.138-self-hosted, the Console tag on Appwrite''s main branch, which clear the critical findings in all three images and most of the high ones in the first two. The Console image now patches Brotli for CVE-2026-111497.'
-    - kind: security
-      description: '`openruntimes/executor` 1.3.2 and `appwrite/browser` 0.3.12, ahead of the tags in Appwrite 2.6.2''s `docker-compose.yml`, which clear most of both images'' critical and high findings.'
-    - kind: security
-      description: '`appwrite/geo` 0.3.5, which moves from `appwrite/base` 1.1.1 to 2.2.9 and clears most of the image''s critical and high findings.'
-    - kind: security
-      description: 'Appwrite 2.6.2, a security release: its base image patches Brotli for CVE-2026-111497, and it tightens API keys, realtime, GraphQL, storage, VCS and outbound requests (release notes). No schema change: the data migration is 2.6.1''s.'
-      links:
-        - name: release notes
-          url: https://github.com/appwrite/appwrite/releases/tag/2.6.2
-    - kind: security
-      description: Update the Console image to 1.2.108-self-hosted, the one Appwrite 2.6.2 ships, which patches DOMPurify to 3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr.
-    - kind: security
-      description: 'Update the images whose base layers the nightly Trivy scan flags to their newest patch releases: Redis 7.4.12-alpine, redis_exporter v1.96.0-alpine, SeaweedFS 4.52 and Docker 29.9.2-dind. SeaweedFS 4.52 also patches go-jose to 4.1.6 for CVE-2026-116587.'
-    - kind: changed
-      description: Appwrite 2.7.2 (`appVersion`), with Console 1.2.181-self-hosted. Adds the `alerts` queue (8 coroutines) in `separate` and `grouped` worker modes and the alerts scheduler in `separate` scheduler mode; the combined worker's coroutine budget goes to 83 and `screenshots` to 4, matching Appwrite. The env defaults gain 2.7's variables (realtime limits, alerts, APNs and Functions domain fallback). The migration hook runs 2.7's V25 migration on upgrade.
-    - kind: changed
-      description: The built-in ClickHouse's `init.sh` resets `table_readonly`, which ClickHouse 26.7 and later set on the system log tables they replace, before giving those tables a TTL. Without it the pod fails to start after the upgrade to 26.8, which also needs AVX2 on x86 nodes.
-    - kind: changed
-      description: The browser 0.3.8 and ExifTool 0.1.1 images, as in Appwrite 2.6.2's `docker-compose.yml`.
-    - kind: changed
-      description: '`_APP_MEMORY_LIMIT`, new in Appwrite 2.6.2, sets the PHP memory limit of every Appwrite process (512M, as before). Raise it, with realtime''s memory limit, for a realtime that holds thousands of connections (production.md).'
-      links:
-        - name: production.md
-          url: https://github.com/appwrite/helm-chart/blob/main/docs/production.md#capacity
-    - kind: changed
-      description: Project SMTP, messaging SMTP providers and migration sources on a private or reserved address need it in `_APP_ALLOWED_INTERNAL_ADDRESSES` from Appwrite 2.6.2 on (networking.md). The chart's own `smtp` settings aren't affected.
-      links:
-        - name: networking.md
-          url: https://github.com/appwrite/helm-chart/blob/main/docs/networking.md#requests-to-private-addresses
-    - kind: changed
-      description: The console offers Entire as a Git provider (integrations.md).
-      links:
-        - name: integrations.md
-          url: https://github.com/appwrite/helm-chart/blob/main/docs/integrations.md#entire
-    - kind: changed
-      description: CI upgrades from the published chart 2.1.0 with default values.
     - kind: added
-      description: The render fails when `compute.secrets.orchestratorSecret` is Appwrite's placeholder `your-secret-key`, which Appwrite 2.6.2 refuses for job callbacks, unless `compute.secrets.existingSecret` supplies the secret instead. An empty value, the default, still generates a random secret.
-    - kind: fixed
-      description: 'The weekly upstream drift check installs PHP, which the gcrunner image lacks: it found Appwrite 2.6.2 but failed before opening an issue.'
-    - kind: fixed
-      description: '`make update-images` writes quoted tags such as SeaweedFS''s `"4.48"` (it reported the bump but left the file unchanged) and runs on macOS''s bash 3.2, where an anonymous registry pull failed on an unbound variable.'
-    - kind: fixed
-      description: The `artifacthub.io/images` annotation names the built-in datastores' images after their component (`database`, `redis`, `clickhouse`, `s3`, `database-exporter`, `redis-exporter`) instead of `builtin` and `builtin-exporter`. The nightly Trivy scan uploads under these names, so the six images overwrote each other's results and alerts flapped between fixed and reopened every night.
+      description: '`compute.executor.maintenanceInterval` sets how often the executor''s maintenance pass removes idle runtimes (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`, 3600 seconds by default, as before), so a lower interval frees their memory sooner.'
+    - kind: security
+      description: Appwrite 2.7.3 (`appVersion`), rebuilt on `appwrite/base` 2.2.12, which updates libpq to 18.7 and clears the Appwrite image's high PostgreSQL findings.
   artifacthub.io/images: |
     - name: appwrite
       image: docker.io/appwrite/appwrite:2.7.3
