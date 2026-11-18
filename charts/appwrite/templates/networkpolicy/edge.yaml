@@ -1,19 +1,32 @@
 {{- if .Values.networkPolicy.enabled }}
-{{- /* Entry points: reachable from the configured sources and from this release. */}}
+{{- /*
+Entry points: reachable from the configured sources and from this release.
+One policy per port number, with the number instead of the port name "http":
+that name is 8080 on the API and realtime and 3000 on the console, and
+kube-router (the controller k3s ships) can briefly reject new connections
+when one policy admits a named port with two numbers
+(cloudnativelabs/kube-router#2226). The numbers are the containerPorts of
+the three Deployments. The console comes first, so an upgrade creates its
+policy before "edge" stops selecting it.
+*/}}
+{{- range list (dict "name" "edge-console" "components" (list "console") "port" 3000) (dict "name" "edge" "components" (list "api" "realtime") "port" 8080) }}
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-{{ include "appwrite.networkPolicy.metadata" (dict "root" . "name" "edge") }}
+{{ include "appwrite.networkPolicy.metadata" (dict "root" $ "name" .name) }}
 spec:
   podSelector:
-    {{- include "appwrite.networkPolicy.selector" (dict "root" . "components" (list "api" "console" "realtime")) | nindent 4 }}
+    {{- include "appwrite.networkPolicy.selector" (dict "root" $ "components" .components) | nindent 4 }}
   policyTypes: [Ingress]
   ingress:
     - ports:
-        - port: http
-      {{- with .Values.networkPolicy.ingress.from }}
+        - port: {{ .port }}
+          protocol: TCP
+      {{- with $.Values.networkPolicy.ingress.from }}
       from:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     - from:
-        - {{- include "appwrite.networkPolicy.releasePeer" . | nindent 10 }}
+        - {{- include "appwrite.networkPolicy.releasePeer" $ | nindent 10 }}
+{{- end }}
 {{- end }}

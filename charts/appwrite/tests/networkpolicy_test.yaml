@@ -33,14 +33,36 @@ tests:
     set:
       networkPolicy.enabled: true
     asserts:
+      - hasDocuments:
+          count: 2
       - equal:
           path: spec.podSelector.matchExpressions[0].values
-          value: [api, console, realtime]
+          value: [api, realtime]
+        documentSelector: {path: metadata.name, value: aw-appwrite-edge}
       - equal:
           path: spec.ingress[0]
           value:
             ports:
-              - port: http
+              - port: 8080
+                protocol: TCP
+        documentSelector: {path: metadata.name, value: aw-appwrite-edge}
+      - equal:
+          path: spec.podSelector.matchExpressions[0].values
+          value: [console]
+        documentSelector: {path: metadata.name, value: aw-appwrite-edge-console}
+      - equal:
+          path: spec.ingress[0]
+          value:
+            ports:
+              - port: 3000
+                protocol: TCP
+        documentSelector: {path: metadata.name, value: aw-appwrite-edge-console}
+      - equal:
+          path: spec.ingress[1]
+          value:
+            from:
+              - podSelector:
+                  matchLabels: {app.kubernetes.io/name: appwrite, app.kubernetes.io/instance: aw}
 
   - it: restricts the entry points to the configured sources
     template: templates/networkpolicy/edge.yaml
