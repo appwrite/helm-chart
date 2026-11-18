@@ -2,6 +2,7 @@ suite: pod labels used by NetworkPolicies
 templates:
   - templates/api/deployment.yaml
   - templates/console/deployment.yaml
+  - templates/realtime/deployment.yaml
 release:
   name: aw
 values:
@@ -27,3 +28,18 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content: {name: VITE_EXTRA, value: "1"}
+
+  - it: listens on the ports the edge NetworkPolicies admit by number
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value: [{name: http, containerPort: 8080, protocol: TCP}]
+        template: templates/api/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value: [{name: http, containerPort: 8080, protocol: TCP}]
+        template: templates/realtime/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value: [{name: http, containerPort: 3000, protocol: TCP}]
+        template: templates/console/deployment.yaml

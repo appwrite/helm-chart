@@ -276,7 +276,8 @@ which carry the label `appwrite/datastore-client: "true"`.
 
 | Policy | Selects | Allows in |
 | --- | --- | --- |
-| `<fullname>-edge` | API, console, realtime | `networkPolicy.ingress.from` on the HTTP port (any source when empty); pods of the release on any port |
+| `<fullname>-edge` | API, realtime | `networkPolicy.ingress.from` on port 8080 (any source when empty); pods of the release on any port |
+| `<fullname>-edge-console` | console | `networkPolicy.ingress.from` on port 3000 (any source when empty); pods of the release on any port |
 | `<fullname>-builds-to-api` | API (`compute.enabled`) | build pods, on the HTTP port |
 | `<fullname>-internal` | geo, browser, ExifTool, autogravity, embedding | pods of the release |
 | `<fullname>-datastores` | PostgreSQL, Redis, ClickHouse | Appwrite pods of the release; on the metrics ports (`database.builtin.metrics.enabled` and the same under `redis` and `clickhouse`), also `networkPolicy.metrics.from` |

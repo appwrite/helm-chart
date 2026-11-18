@@ -15,6 +15,17 @@ annotation in `charts/appwrite/Chart.yaml`.
   3600 seconds by default, as before), so a lower interval frees their memory
   sooner.
 
+### Changed
+
+- With `networkPolicy.enabled`, the entry points get one policy per port
+  number instead of one policy for the named port `http`: `<fullname>-edge`
+  now selects the API and realtime on port 8080, and the new
+  `<fullname>-edge-console` selects the console on port 3000. The same traffic
+  is admitted as before. This works around
+  [cloudnativelabs/kube-router#2226](https://github.com/cloudnativelabs/kube-router/issues/2226),
+  reported against the NetworkPolicy controller k3s ships: a policy that
+  admits a named port with two numbers can briefly reject new connections.
+
 ### Security
 
 - Appwrite 2.7.3 (`appVersion`), rebuilt on `appwrite/base` 2.2.12, which updates libpq to 18.7 and clears the Appwrite image's high PostgreSQL findings.

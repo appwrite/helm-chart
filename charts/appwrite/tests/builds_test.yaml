@@ -216,8 +216,15 @@ tests:
       - notContains:
           path: spec.ingress
           content:
-            ports: [{port: http}]
+            ports: [{port: 8080, protocol: TCP}]
             from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: apps-builds}}}]
+        documentSelector: {path: metadata.name, value: aw-appwrite-edge}
+      - notContains:
+          path: spec.ingress
+          content:
+            ports: [{port: 3000, protocol: TCP}]
+            from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: apps-builds}}}]
+        documentSelector: {path: metadata.name, value: aw-appwrite-edge-console}
 
   - it: lets build pods reach the API, and only the API
     template: templates/networkpolicy/builds-to-api.yaml
