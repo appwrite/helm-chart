@@ -9,7 +9,7 @@ KIND_CLUSTER     ?= appwrite
 VALUES           ?= $(CHART)/ci/default-values.yaml
 HELM_UNITTEST    ?= v1.2.1
 HELM_SCHEMA      ?= v2.6.0
-ZIZMOR           ?= 1.30.1
+ZIZMOR           ?= 1.32.0
 CRD_SCHEMAS      ?= https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json
 # Values files in examples/, each a space-free list of files joined with "+"
 # (applied in order with -f). Overlays are checked on top of a base file.

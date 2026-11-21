@@ -373,7 +373,7 @@ database:
         # -- Image repository.
         repository: prometheuscommunity/postgres-exporter
         # -- Image tag.
-        tag: v0.20.1
+        tag: v0.21.1
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
@@ -537,7 +537,7 @@ redis:
         # -- Image repository.
         repository: oliver006/redis_exporter
         # -- Image tag.
-        tag: v1.96.0-alpine
+        tag: v1.97.0-alpine
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
@@ -578,7 +578,7 @@ clickhouse:
       # -- Image repository.
       repository: clickhouse/clickhouse-server
       # -- Image tag.
-      tag: 26.8.36-alpine
+      tag: 26.10.9-alpine
       # -- Image digest.
       digest: ""
       # -- Image pull policy.
@@ -706,7 +706,7 @@ storage:
         # -- Image repository.
         repository: chrislusf/seaweedfs
         # -- Image tag.
-        tag: "4.52"
+        tag: "4.54"
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
@@ -868,7 +868,7 @@ compute:
         # -- Image repository of the Docker daemon, also used to start the executor.
         repository: library/docker
         # -- Image tag.
-        tag: 29.9.3-dind
+        tag: 29.10.0-dind
         # -- Image digest.
         digest: ""
         # -- Image pull policy.
