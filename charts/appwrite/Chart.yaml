@@ -56,7 +56,7 @@ annotations:
     - name: console
       image: docker.io/appwrite/new:1.2.181-self-hosted
     - name: database
-      image: docker.io/appwrite/postgres:0.2.1
+      image: docker.io/appwrite/postgres:0.3.2
     - name: database-exporter
       image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
     - name: dind

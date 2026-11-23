@@ -314,7 +314,7 @@ The main database, built-in PostgreSQL or your own, and the optional DocumentsDB
 | database.builtin.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | database.builtin.image.registry | string | `"docker.io"` | Image registry. |
 | database.builtin.image.repository | string | `"appwrite/postgres"` | Image repository. Appwrite's image is PostgreSQL 18 with the extensions Appwrite needs. |
-| database.builtin.image.tag | string | `"0.2.1"` | Image tag. |
+| database.builtin.image.tag | string | `"0.3.2"` | Image tag. |
 | database.builtin.maxConnections | string | `""` | `max_connections`. Defaults to `database.connectionsMax` + 20; the chart rejects a value below `connectionsMax`. |
 | database.builtin.metrics.enabled | bool | `false` | Run a postgres_exporter sidecar and expose it on port 9187 of the Service. See docs/production.md#monitoring. |
 | database.builtin.metrics.image.digest | string | `""` | Image digest. |
