@@ -8,6 +8,11 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ## [Unreleased]
 
+### Security
+
+- `appwrite/exiftool` 0.1.4 and `appwrite/postgres` 0.3.2, rebuilt with krb5 1.21.3-5+deb13u2, which clears both images' 14 high Kerberos findings. Postgres 0.3.2 also updates the MariaDB client and clears its high finding. The database stays on PostgreSQL 18: 0.3.x only adds PostgreSQL 19 images under their own tags.
+- `appwrite/geo` 0.3.10, rebuilt with a patched libxml2, which clears the image's high finding.
+
 ## [2.3.0] - 2026-11-18
 
 Appwrite 2.7.3.

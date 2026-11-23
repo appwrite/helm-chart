@@ -285,7 +285,7 @@ database:
       # -- Image repository. Appwrite's image is PostgreSQL 18 with the extensions Appwrite needs.
       repository: appwrite/postgres
       # -- Image tag.
-      tag: 0.2.1
+      tag: 0.3.2
       # -- Image digest.
       digest: ""
       # -- Image pull policy.
@@ -1869,7 +1869,7 @@ geo:
     # -- Image repository.
     repository: appwrite/geo
     # -- Image tag.
-    tag: 0.3.9
+    tag: 0.3.10
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -2067,7 +2067,7 @@ exiftool:
     # -- Image repository.
     repository: appwrite/exiftool
     # -- Image tag.
-    tag: 0.1.2
+    tag: 0.1.4
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
