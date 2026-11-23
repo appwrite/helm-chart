@@ -638,7 +638,7 @@ The SMTP server Appwrite sends mail through.
 | geo.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | geo.image.registry | string | `"docker.io"` | Image registry. |
 | geo.image.repository | string | `"appwrite/geo"` | Image repository. |
-| geo.image.tag | string | `"0.3.9"` | Image tag. |
+| geo.image.tag | string | `"0.3.10"` | Image tag. |
 | geo.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | geo.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | geo.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
@@ -1140,7 +1140,7 @@ Image, security contexts, scheduling defaults, names, labels and extra objects.
 | exiftool.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | exiftool.image.registry | string | `"ghcr.io"` | Image registry. |
 | exiftool.image.repository | string | `"appwrite/exiftool"` | Image repository. |
-| exiftool.image.tag | string | `"0.1.2"` | Image tag. |
+| exiftool.image.tag | string | `"0.1.4"` | Image tag. |
 | exiftool.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | exiftool.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | exiftool.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
