@@ -64,7 +64,7 @@ annotations:
     - name: embedding
       image: docker.io/appwrite/embedding:0.3.3
     - name: executor
-      image: docker.io/openruntimes/executor:1.3.4
+      image: docker.io/openruntimes/executor:1.3.7
     - name: exiftool
       image: ghcr.io/appwrite/exiftool:0.1.4
     - name: geo
