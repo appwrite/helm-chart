@@ -13,7 +13,7 @@ permissions:
 
 env:
   GATEWAY_API_VERSION: v1.6.2
-  TRAEFIK_CHART_VERSION: 41.6.1
+  TRAEFIK_CHART_VERSION: 42.4.1
 
 jobs:
   functions:
