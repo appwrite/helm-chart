@@ -12,6 +12,7 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 - `appwrite/exiftool` 0.1.4 and `appwrite/postgres` 0.3.2, rebuilt with krb5 1.21.3-5+deb13u2, which clears both images' 14 high Kerberos findings. Postgres 0.3.2 also updates the MariaDB client and clears its high finding. The database stays on PostgreSQL 18: 0.3.x only adds PostgreSQL 19 images under their own tags.
 - `appwrite/geo` 0.3.10, rebuilt with a patched libxml2, which clears the image's high finding.
+- `openruntimes/executor` 1.3.7, which upgrades the image's distro packages in its final stage and moves to PHP 8.5.13 (`appwrite/utopia-base` 2.1.9). It also brings 1.3.5 and 1.3.6: the internal Basic auth goes only to the static runtime, and a crashed runtime's output is reported instead of waiting for the startup timeout.
 
 ## [2.3.0] - 2026-11-18
 

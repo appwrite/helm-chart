@@ -911,7 +911,7 @@ The build orchestrator and the executor.
 | compute.executor.image.digest | string | `""` | Image digest. |
 | compute.executor.image.registry | string | `"docker.io"` | Image registry. The executor image is pulled by the Docker daemon in the pod, not by the kubelet, so image pull secrets don't apply to it. |
 | compute.executor.image.repository | string | `"openruntimes/executor"` | Image repository. |
-| compute.executor.image.tag | string | `"1.3.4"` | Image tag. |
+| compute.executor.image.tag | string | `"1.3.7"` | Image tag. |
 | compute.executor.images | list | `[]` | Runtime images to pull when the executor starts (`OPR_EXECUTOR_IMAGES`). Empty derives them from `functionsRuntimes` and `sitesRuntimes`, e.g. `node-22` becomes `openruntimes/node:v5-22`; with both of those empty too, nothing is pulled ahead of the first executions. |
 | compute.executor.inactiveThreshold | int | `60` | Seconds a runtime may stay idle before it's removed (`OPR_EXECUTOR_INACTIVE_THRESHOLD`). The executor removes idle runtimes in its maintenance pass, so a runtime can stay up to one `maintenanceInterval` longer. |
 | compute.executor.maintenanceInterval | int | `3600` | Seconds between the executor's maintenance passes, which remove idle runtimes (`OPR_EXECUTOR_MAINTENANCE_INTERVAL`). |
