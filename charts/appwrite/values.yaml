@@ -1936,7 +1936,7 @@ browser:
     # -- Image repository.
     repository: appwrite/browser
     # -- Image tag.
-    tag: 0.3.13
+    tag: 0.3.15
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
@@ -2067,7 +2067,7 @@ exiftool:
     # -- Image repository.
     repository: appwrite/exiftool
     # -- Image tag.
-    tag: 0.1.4
+    tag: 0.1.5
     # -- Image digest.
     digest: ""
     # -- Image pull policy.
