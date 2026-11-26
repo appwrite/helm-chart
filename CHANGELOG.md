@@ -8,6 +8,10 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ## [Unreleased]
 
+### Security
+
+- `appwrite/postgres` 0.3.3, `appwrite/browser` 0.3.16, `appwrite/exiftool` 0.1.5 and `appwrite/embedding` 0.3.4, each rebuilt with zstd 1.5.7+dfsg-1+deb13u1, which clears the high CVE-2026-124851 finding in all four images. Embedding 0.3.4 rebuilds 0.3.3 without code changes and stays on the 0.3 line that Appwrite 2.7 uses. Browser 0.3.16 also restarts Chromium when the container goes over its memory budget, where it used to close only the newest capture. The Console image (`appwrite/new`) keeps 1.2.181, the version Appwrite 2.7.4 ships with, so its zstd finding stays until Appwrite moves to a newer Console.
+
 ## [2.3.2] - 2026-11-26
 
 Appwrite 2.7.4.
