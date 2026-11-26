@@ -2,7 +2,7 @@ apiVersion: v2
 name: appwrite
 description: Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 type: application
-version: 2.3.1
+version: 2.3.2
 appVersion: "2.7.4"
 kubeVersion: ">=1.29.0-0"
 home: https://github.com/appwrite/helm-chart
@@ -24,7 +24,7 @@ maintainers:
 annotations:
   artifacthub.io/license: BSD-3-Clause
   artifacthub.io/prerelease: "false"
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/category: database
   artifacthub.io/links: |
     - name: Chart source
@@ -38,12 +38,8 @@ annotations:
     - name: support
       url: https://github.com/appwrite/helm-chart/issues
   artifacthub.io/changes: |
-    - kind: security
-      description: '`appwrite/exiftool` 0.1.4 and `appwrite/postgres` 0.3.2, rebuilt with krb5 1.21.3-5+deb13u2, which clears both images'' 14 high Kerberos findings. Postgres 0.3.2 also updates the MariaDB client and clears its high finding. The database stays on PostgreSQL 18: 0.3.x only adds PostgreSQL 19 images under their own tags.'
-    - kind: security
-      description: '`appwrite/geo` 0.3.10, rebuilt with a patched libxml2, which clears the image''s high finding.'
-    - kind: security
-      description: '`openruntimes/executor` 1.3.7, which upgrades the image''s distro packages in its final stage and moves to PHP 8.5.13 (`appwrite/utopia-base` 2.1.9). It also brings 1.3.5 and 1.3.6: the internal Basic auth goes only to the static runtime, and a crashed runtime''s output is reported instead of waiting for the startup timeout.'
+    - kind: fixed
+      description: Appwrite 2.7.4 (`appVersion`), rebuilt on PHP 8.5.13 (`appwrite/base` 2.2.13), which fixes an OPcache bug that could make a worker reject every `DateTime` value (`must be of type DateTime, DateTime given`) until it restarted. It uses the same migration as 2.7.1–2.7.3, so the migrate Job changes no data on an install already on 2.7, and it adds no environment variables. The chart already ships `openruntimes/executor` 1.3.7, which 2.7.4 moves to.
   artifacthub.io/images: |
     - name: appwrite
       image: docker.io/appwrite/appwrite:2.7.4

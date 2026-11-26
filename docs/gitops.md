@@ -294,7 +294,7 @@ spec:
   source:
     repoURL: ghcr.io/appwrite/charts
     chart: appwrite
-    targetRevision: 2.3.1
+    targetRevision: 2.3.2
     helm:
       valuesObject:
         appwrite:
@@ -374,7 +374,7 @@ Things that differ from the Helm CLI:
   dry run, which doesn't touch the cluster:
 
   ```console
-  helm install appwrite oci://ghcr.io/appwrite/charts/appwrite --version 2.3.1 \
+  helm install appwrite oci://ghcr.io/appwrite/charts/appwrite --version 2.3.2 \
     -n appwrite -f values.yaml --dry-run=client | sed -n '/^NOTES:/,$p'
   ```
 - **No `ignoreDifferences` needed.** With the values above, two renders are
