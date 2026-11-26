@@ -46,7 +46,7 @@ annotations:
     - name: autogravity
       image: ghcr.io/appwrite/autogravity:0.0.12
     - name: browser
-      image: docker.io/appwrite/browser:0.3.13
+      image: docker.io/appwrite/browser:0.3.16
     - name: builds
       image: ghcr.io/open-runtimes/orchestrator/job-sidecar:5.1.0
     - name: clickhouse
@@ -54,17 +54,17 @@ annotations:
     - name: console
       image: docker.io/appwrite/new:1.2.181-self-hosted
     - name: database
-      image: docker.io/appwrite/postgres:0.3.2
+      image: docker.io/appwrite/postgres:0.3.3
     - name: database-exporter
       image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
     - name: dind
       image: docker.io/library/docker:29.9.3-dind
     - name: embedding
-      image: docker.io/appwrite/embedding:0.3.3
+      image: docker.io/appwrite/embedding:0.3.4
     - name: executor
       image: docker.io/openruntimes/executor:1.3.7
     - name: exiftool
-      image: ghcr.io/appwrite/exiftool:0.1.4
+      image: ghcr.io/appwrite/exiftool:0.1.5
     - name: geo
       image: docker.io/appwrite/geo:0.3.10
     - name: orchestrator

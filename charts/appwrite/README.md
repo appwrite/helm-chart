@@ -314,7 +314,7 @@ The main database, built-in PostgreSQL or your own, and the optional DocumentsDB
 | database.builtin.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | database.builtin.image.registry | string | `"docker.io"` | Image registry. |
 | database.builtin.image.repository | string | `"appwrite/postgres"` | Image repository. Appwrite's image is PostgreSQL 18 with the extensions Appwrite needs. |
-| database.builtin.image.tag | string | `"0.3.2"` | Image tag. |
+| database.builtin.image.tag | string | `"0.3.3"` | Image tag. |
 | database.builtin.maxConnections | string | `""` | `max_connections`. Defaults to `database.connectionsMax` + 20; the chart rejects a value below `connectionsMax`. |
 | database.builtin.metrics.enabled | bool | `false` | Run a postgres_exporter sidecar and expose it on port 9187 of the Service. See docs/production.md#monitoring. |
 | database.builtin.metrics.image.digest | string | `""` | Image digest. |
@@ -990,7 +990,7 @@ The build orchestrator and the executor.
 | browser.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | browser.image.registry | string | `"docker.io"` | Image registry. |
 | browser.image.repository | string | `"appwrite/browser"` | Image repository. |
-| browser.image.tag | string | `"0.3.13"` | Image tag. |
+| browser.image.tag | string | `"0.3.16"` | Image tag. |
 | browser.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | browser.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | browser.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
@@ -1012,7 +1012,7 @@ The build orchestrator and the executor.
 | embedding.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | embedding.image.registry | string | `"docker.io"` | Image registry. |
 | embedding.image.repository | string | `"appwrite/embedding"` | Image repository. |
-| embedding.image.tag | string | `"0.3.3"` | Image tag. |
+| embedding.image.tag | string | `"0.3.4"` | Image tag. |
 | embedding.models | list | `["nomic-embed-text"]` | Models to load (`EMBEDDING_MODELS`). |
 | embedding.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | embedding.persistence.enabled | bool | `true` | Keep downloaded models in a PersistentVolumeClaim. |
@@ -1140,7 +1140,7 @@ Image, security contexts, scheduling defaults, names, labels and extra objects.
 | exiftool.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | exiftool.image.registry | string | `"ghcr.io"` | Image registry. |
 | exiftool.image.repository | string | `"appwrite/exiftool"` | Image repository. |
-| exiftool.image.tag | string | `"0.1.4"` | Image tag. |
+| exiftool.image.tag | string | `"0.1.5"` | Image tag. |
 | exiftool.nodeSelector | object | `{}` | Node selector. Empty inherits `defaults.nodeSelector`. |
 | exiftool.podAnnotations | object | `{}` | Pod annotations, merged over `defaults.podAnnotations`. |
 | exiftool.podLabels | object | `{}` | Pod labels, merged over `defaults.podLabels`. |
