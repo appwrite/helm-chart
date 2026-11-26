@@ -8,6 +8,10 @@ annotation in `charts/appwrite/Chart.yaml`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Appwrite 2.7.4 (`appVersion`), rebuilt on PHP 8.5.13 (`appwrite/base` 2.2.13), which fixes an OPcache bug that could make a worker reject every `DateTime` value (`must be of type DateTime, DateTime given`) until it restarted. It uses the same migration as 2.7.1–2.7.3, so the migrate Job changes no data on an install already on 2.7, and it adds no environment variables. The chart already ships `openruntimes/executor` 1.3.7, which 2.7.4 moves to.
+
 ## [2.3.1] - 2026-11-24
 
 Appwrite 2.7.3.
