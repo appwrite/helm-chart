@@ -3,10 +3,10 @@ name: appwrite
 description: Appwrite, the open-source backend platform, on Kubernetes. Deploys the API, console, realtime, workers and schedulers with optional built-in PostgreSQL, Redis and ClickHouse.
 type: application
 version: 2.3.1
-appVersion: "2.7.3"
+appVersion: "2.7.4"
 kubeVersion: ">=1.29.0-0"
 home: https://github.com/appwrite/helm-chart
-icon: https://raw.githubusercontent.com/appwrite/appwrite/2.7.3/public/images/logos/appwrite-icon.svg
+icon: https://raw.githubusercontent.com/appwrite/appwrite/2.7.4/public/images/logos/appwrite-icon.svg
 sources:
   - https://github.com/appwrite/helm-chart
   - https://github.com/appwrite/appwrite
@@ -46,7 +46,7 @@ annotations:
       description: '`openruntimes/executor` 1.3.7, which upgrades the image''s distro packages in its final stage and moves to PHP 8.5.13 (`appwrite/utopia-base` 2.1.9). It also brings 1.3.5 and 1.3.6: the internal Basic auth goes only to the static runtime, and a crashed runtime''s output is reported instead of waiting for the startup timeout.'
   artifacthub.io/images: |
     - name: appwrite
-      image: docker.io/appwrite/appwrite:2.7.3
+      image: docker.io/appwrite/appwrite:2.7.4
     - name: autogravity
       image: ghcr.io/appwrite/autogravity:0.0.12
     - name: browser
