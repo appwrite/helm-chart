@@ -16,7 +16,7 @@ concurrency:
 
 env:
   HELM_UNITTEST_VERSION: v1.2.1
-  HELM_SCHEMA_VERSION: v2.6.0
+  HELM_SCHEMA_VERSION: v2.6.1
   HELM_DOCS_VERSION: 1.14.2
   KUBECONFORM_VERSION: v0.8.0
 
@@ -118,7 +118,7 @@ jobs:
           persist-credentials: false
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v4.3.0
+          version: v4.3.2
       - name: Install kubeconform
         run: |
           curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
@@ -144,7 +144,7 @@ jobs:
           persist-credentials: false
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v4.3.0
+          version: v4.3.2
       - name: Install helm-docs and helm-values-schema-json
         run: |
           curl -fsSL "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz" \
@@ -181,7 +181,7 @@ jobs:
       # Run from the image, pinned by digest, with the runner's own uid: as a
       # job container, its user has to match the runner's to write the
       # runner's files, and that uid differs between runners.
-      AH_IMAGE: docker.io/artifacthub/ah:v1.23.0@sha256:e5d2a2cdef85aac4928e8176ffaad24746c5fe961d64ff6856f7222957095356
+      AH_IMAGE: docker.io/artifacthub/ah:v1.24.0@sha256:97a90dba76f9cf550f0f93187222505ba104e3af72ab4a7bbe63b370aebaa6e7
     steps:
       - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
